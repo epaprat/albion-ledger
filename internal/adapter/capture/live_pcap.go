@@ -26,7 +26,10 @@ type Live struct {
 	server  atomic.Value // string
 }
 
-// NewLive opens a live capture on iface (empty = first non-loopback device).
+// NewLive opens a live capture on iface (empty = auto-detect the primary LAN
+// interface). Auto-detect picks the first device carrying a real (non-loopback,
+// non-link-local) IPv4 address — i.e. the Wi-Fi/Ethernet the game traffic flows on,
+// not a VPN tunnel (utun), AirDrop (awdl), or bridge with only link-local addresses.
 func NewLive(iface string) (port.PacketSource, error) {
 	if iface == "" {
 		devs, err := pcap.FindAllDevs()
@@ -34,8 +37,17 @@ func NewLive(iface string) (port.PacketSource, error) {
 			return nil, err
 		}
 		for _, d := range devs {
-			if len(d.Addresses) > 0 {
-				iface = d.Name
+			for _, a := range d.Addresses {
+				ip := a.IP
+				if ip == nil || ip.IsLoopback() || ip.IsLinkLocalUnicast() || ip.IsLinkLocalMulticast() {
+					continue
+				}
+				if ip.To4() != nil { // a real IPv4-bearing device
+					iface = d.Name
+					break
+				}
+			}
+			if iface != "" {
 				break
 			}
 		}
