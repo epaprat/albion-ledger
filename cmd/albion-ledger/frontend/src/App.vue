@@ -61,10 +61,10 @@ const srcText = { live_market: 'live', server_estimate: 'est', unknown: '—' }
       <strong>{{ status.capturing ? 'Capturing' : 'Idle' }}</strong>
       <span class="muted" v-if="status.interface">· {{ status.interface }}</span>
       <span class="muted">· encrypted {{ Math.round((status.encryptedRate || 0) * 100) }}%</span>
-      <nav class="tabs" role="tablist">
-        <button :class="{ active: tab === 'holdings' }" @click="tab = 'holdings'" role="tab">Holdings</button>
-        <button :class="{ active: tab === 'market' }" @click="tab = 'market'" role="tab">Market</button>
-        <button :class="{ active: tab === 'spec' }" @click="tab = 'spec'" role="tab">Spec</button>
+      <nav class="tabs" role="tablist" aria-label="Views">
+        <button :class="{ active: tab === 'holdings' }" @click="tab = 'holdings'" role="tab" :aria-selected="tab === 'holdings'">Holdings</button>
+        <button :class="{ active: tab === 'market' }" @click="tab = 'market'" role="tab" :aria-selected="tab === 'market'">Market</button>
+        <button :class="{ active: tab === 'spec' }" @click="tab = 'spec'" role="tab" :aria-selected="tab === 'spec'">Spec</button>
       </nav>
     </header>
 
