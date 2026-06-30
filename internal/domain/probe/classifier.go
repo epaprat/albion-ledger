@@ -42,15 +42,23 @@ const (
 )
 
 // Albion operation codes (from AFM OperationCodes.cs).
+// Operation codes are taken from LIVE payload shapes, not the AFM enum, which is
+// version-skewed (e.g. it calls code 2 "Ping" though it carries character state).
 const (
-	opMove                       = 23
-	opAuctionGetOffers           = 82
-	opAuctionGetRequests         = 83
-	opAuctionGetItemAverageStats = 96
-	opGoldMarketGetAverageInfo   = 251
+	opMove             = 23
+	opAuctionGetOffers = 82 // R: []str sell orders (item-specific query)
+	// opAuctionGetRequests: code 81 returns []str orders for a broad query — the
+	// buy-orders view. Provisional: buy vs sell may ultimately need order-content
+	// parsing; for now the code separates them.
+	opAuctionGetRequests = 81
+	// opAuctionGetItemAverageStats: R:95 carries price + timestamp arrays for the
+	// requested item (price history). Enum says 96; live is 95.
+	opAuctionGetItemAverageStats = 95
+	// opGoldMarketGetAverageInfo: R:248 carries the 4 current gold prices. Enum
+	// says 251; live is 248.
+	opGoldMarketGetAverageInfo = 248
 	// opPlayerState is the own-character full-state response (login/zone change)
-	// that carries the masteries/specialization array at key 55. The stale AFM
-	// enum mislabels code 2 (version skew); the live payload is authoritative.
+	// carrying the masteries array at key 55. Enum mislabels code 2 as "Ping".
 	opPlayerState = 2
 )
 
