@@ -206,17 +206,25 @@ func registerNewItem(code int, params map[byte]interface{}) {
 	if !ok1 || !ok2 {
 		return
 	}
-	// Quality lives at a different param key per New*Item variant (live-verified):
-	// equipment(30) → key 6; furniture(33)/trophy(34) → key 2; others have none.
-	quality := 0
+	// Per New*Item variant (live-verified): equipment(30) → quality at key 6, count 1;
+	// furniture(33)/trophy(34) → quality at key 2, count 1; simple/stackable items
+	// (32 etc.) → key 2 is the STACK COUNT (e.g. 49), quality normal.
+	quality, count := 0, 1
 	switch code {
 	case 30:
 		quality, _ = capture.IntParam(params, 6)
 	case 33, 34:
 		quality, _ = capture.IntParam(params, 2)
+	default:
+		if c, ok := capture.IntParam(params, 2); ok {
+			count = c
+		}
 	}
 	if quality < 0 || quality > 5 {
 		quality = 0
+	}
+	if count < 1 {
+		count = 1
 	}
 	objMu.Lock()
 	if _, exists := objReg[objID]; !exists {
@@ -226,7 +234,7 @@ func registerNewItem(code int, params map[byte]interface{}) {
 		}
 		objOrder = append(objOrder, objID)
 	}
-	objReg[objID] = holdings.ItemRef{Index: idx, Quality: quality}
+	objReg[objID] = holdings.ItemRef{Index: idx, Quality: quality, Count: count}
 	objMu.Unlock()
 }
 

@@ -13,8 +13,11 @@ import (
 	"github.com/epaprat/albion-ledger/internal/port"
 )
 
-// ItemRef is a resolved container slot: item type index + quality.
-type ItemRef struct{ Index, Quality int }
+// ItemRef is a resolved container slot: item type index + quality + stack count.
+type ItemRef struct {
+	Index, Quality int
+	Count          int // stack quantity (1 for non-stackables); 0 is treated as 1
+}
 
 type container struct {
 	location model.Location
@@ -93,7 +96,7 @@ func (a *Aggregator) SetContainer(containerGUID, ownerGUID string, refs []ItemRe
 
 	items := make([]model.HoldingItem, 0, len(refs))
 	for _, r := range refs {
-		items = append(items, a.row(r.Index, r.Quality, loc, city, tab, nowMS))
+		items = append(items, a.row(r.Index, r.Quality, r.Count, loc, city, tab, nowMS))
 	}
 	if _, exists := a.containers[containerGUID]; !exists {
 		if len(a.containers) >= containerCap && len(a.order) > 0 {
@@ -129,19 +132,22 @@ func (a *Aggregator) SetEquipped(items []ItemRef, nowMS int64) {
 	defer a.mu.Unlock()
 	rows := make([]model.HoldingItem, 0, len(items))
 	for _, e := range items {
-		rows = append(rows, a.row(e.Index, e.Quality, model.LocEquipped, "", "Equipped", nowMS))
+		rows = append(rows, a.row(e.Index, e.Quality, e.Count, model.LocEquipped, "", "Equipped", nowMS))
 	}
 	a.equipped = &container{location: model.LocEquipped, city: "", tab: "Equipped", items: rows, lastSeen: nowMS}
 }
 
-func (a *Aggregator) row(index, quality int, loc model.Location, city, group string, nowMS int64) model.HoldingItem {
+func (a *Aggregator) row(index, quality, count int, loc model.Location, city, group string, nowMS int64) model.HoldingItem {
+	if count < 1 {
+		count = 1
+	}
 	return model.HoldingItem{
 		Item:      a.cat.Resolve(index, quality),
 		Valuation: a.val.Value(index, quality, nowMS),
 		Location:  loc,
 		City:      city,
 		Group:     group,
-		Count:     1,
+		Count:     count,
 		LastSeen:  nowMS,
 	}
 }
@@ -214,7 +220,7 @@ func (a *Aggregator) Summary(nowMS int64) model.HoldingsSummary {
 			if it.Valuation.Source == model.SourceUnknown {
 				t.unvalued++
 			} else {
-				t.subtotal += it.Valuation.Amount
+				t.subtotal += it.Valuation.Amount * int64(it.Count) // stack value
 			}
 		}
 	}

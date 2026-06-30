@@ -3,6 +3,7 @@ export namespace holdings {
 	export class ItemRef {
 	    Index: number;
 	    Quality: number;
+	    Count: number;
 	
 	    static createFrom(source: any = {}) {
 	        return new ItemRef(source);
@@ -12,6 +13,7 @@ export namespace holdings {
 	        if ('string' === typeof source) source = JSON.parse(source);
 	        this.Index = source["Index"];
 	        this.Quality = source["Quality"];
+	        this.Count = source["Count"];
 	    }
 	}
 

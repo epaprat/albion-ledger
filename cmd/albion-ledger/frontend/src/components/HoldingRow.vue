@@ -9,7 +9,10 @@ const srcText = { live_market: 'live', server_estimate: 'est', unknown: '—' }
 
 <template>
   <tr>
-    <td :class="{ unknown: !r.item.known }">{{ r.item.displayName }}</td>
+    <td :class="{ unknown: !r.item.known }">
+      {{ r.item.displayName }}
+      <span class="qty" v-if="r.count > 1">×{{ fmt(r.count) }}</span>
+    </td>
     <td class="dim">{{ tierLabel(r.item) }}</td>
     <td class="dim">{{ qLabel(r.item.quality) }}</td>
     <td class="num">
@@ -25,6 +28,7 @@ tbody td, td { padding: 7px 16px; border-bottom: 1px solid var(--border); font-s
 .num { text-align: right; font-variant-numeric: tabular-nums; }
 .dim { color: var(--muted); }
 .muted { color: var(--muted); }
+.qty { color: var(--muted); font-variant-numeric: tabular-nums; margin-left: 6px; font-size: 12px; }
 .unknown { color: var(--muted); font-style: italic; }
 .badge { font-size: 11px; padding: 1px 6px; border-radius: 4px; }
 .badge.live_market { background: rgba(63,185,80,.18); color: var(--good); }
