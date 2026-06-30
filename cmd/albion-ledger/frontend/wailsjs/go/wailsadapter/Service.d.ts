@@ -7,13 +7,17 @@ export function HoldingsSummary():Promise<model.HoldingsSummary>;
 
 export function IngestBankVault(arg1:Array<string>,arg2:Array<string>):Promise<void>;
 
-export function IngestContainer(arg1:string,arg2:string,arg3:Array<holdings.ItemRef>):Promise<void>;
+export function IngestContainer(arg1:string,arg2:string,arg3:Array<holdings.SlotItem>):Promise<void>;
+
+export function IngestDeleteItem(arg1:number):Promise<void>;
 
 export function IngestEMV(arg1:number,arg2:number,arg3:number,arg4:number):Promise<void>;
 
 export function IngestEquipment(arg1:Array<holdings.ItemRef>):Promise<void>;
 
 export function IngestMarket(arg1:number,arg2:number,arg3:number,arg4:number):Promise<void>;
+
+export function IngestPutItem(arg1:string,arg2:number,arg3:holdings.ItemRef):Promise<void>;
 
 export function ListHoldings():Promise<Array<model.HoldingItem>>;
 

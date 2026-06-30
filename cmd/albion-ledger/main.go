@@ -182,6 +182,16 @@ func ingest(clf *probe.Classifier, svc *wailsadapter.Service, kind probe.Kind, c
 		if city, ok := capture.CurrentCity(params); ok {
 			svc.SetCurrentCity(city)
 		}
+	case model.CatInventoryPut: // event 26 — item added/moved into a container (live)
+		if objID, cGUID, ok := capture.PutItem(params); ok {
+			if ref, ok := resolveObj(objID); ok {
+				svc.IngestPutItem(cGUID, objID, ref)
+			}
+		}
+	case model.CatInventoryDelete: // event 27 — item removed from a container (live)
+		if objID, ok := capture.DeleteItem(params); ok {
+			svc.IngestDeleteItem(objID)
+		}
 	}
 }
 
@@ -236,17 +246,26 @@ func registerNewItem(svc *wailsadapter.Service, code int, params map[byte]interf
 	}
 }
 
-// resolveObjects maps container object ids to item refs, skipping unresolved ones.
-func resolveObjects(objIDs []int) []holdings.ItemRef {
+// resolveObjects maps container object ids to slot items (objId + ref), skipping
+// unresolved ones. The objId is kept so incremental moves can target the item.
+func resolveObjects(objIDs []int) []holdings.SlotItem {
 	objMu.Lock()
 	defer objMu.Unlock()
-	refs := make([]holdings.ItemRef, 0, len(objIDs))
+	slots := make([]holdings.SlotItem, 0, len(objIDs))
 	for _, id := range objIDs {
 		if r, ok := objReg[id]; ok {
-			refs = append(refs, r)
+			slots = append(slots, holdings.SlotItem{ObjID: id, Ref: r})
 		}
 	}
-	return refs
+	return slots
+}
+
+// resolveObj returns the ref for a single object id (for incremental Put).
+func resolveObj(objID int) (holdings.ItemRef, bool) {
+	objMu.Lock()
+	defer objMu.Unlock()
+	r, ok := objReg[objID]
+	return r, ok
 }
 
 // emvScale: the server EMV is stored scaled by 10000 (silver = raw / 10000).

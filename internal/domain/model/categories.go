@@ -23,6 +23,10 @@ const (
 	// consumed by the holdings-by-location view (feature 004). It is NOT a probe coverage
 	// target, so it is intentionally absent from AllCategories/ExpectedFields.
 	CatCurrentLocation Category = "current_location"
+	// CatInventoryPut / CatInventoryDelete are incremental item moves (events 26/27)
+	// that keep holdings live without a full re-snapshot. Not probe coverage targets.
+	CatInventoryPut    Category = "inventory_put"
+	CatInventoryDelete Category = "inventory_delete"
 )
 
 // AllCategories is the full ordered set of target categories (13). The coverage

@@ -108,6 +108,32 @@ func TestCurrentCityRejectsNonCity(t *testing.T) {
 	}
 }
 
+func TestPutItemFromBytes(t *testing.T) {
+	guid := []byte{1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16}
+	params := decodeEvent(t, []photon.Field{
+		{Key: 0, Type: photon.TypeInteger, Val: int32(1633639)},
+		{Key: 1, Type: photon.TypeInteger, Val: int32(66)},
+		{Key: 2, Type: photon.TypeArray | photon.TypeByte, Val: guid},
+		{Key: 252, Type: photon.TypeShort, Val: int16(26)},
+	})
+	obj, cg, ok := PutItem(params)
+	if !ok || obj != 1633639 || cg != "0102030405060708090a0b0c0d0e0f10" {
+		t.Fatalf("PutItem → obj=%d cg=%q ok=%v", obj, cg, ok)
+	}
+}
+
+func TestDeleteItemFromBytes(t *testing.T) {
+	params := decodeEvent(t, []photon.Field{
+		{Key: 0, Type: photon.TypeInteger, Val: int32(1439513)},
+		{Key: 1, Type: photon.TypeInteger, Val: int32(15)},
+		{Key: 252, Type: photon.TypeShort, Val: int16(27)},
+	})
+	obj, ok := DeleteItem(params)
+	if !ok || obj != 1439513 {
+		t.Fatalf("DeleteItem → obj=%d ok=%v", obj, ok)
+	}
+}
+
 func TestExtractorsTolerateMissing(t *testing.T) {
 	if _, _, _, ok := ContainerItems(map[byte]interface{}{}); ok {
 		t.Fatal("empty container params must be not-ok")

@@ -19,11 +19,18 @@ type ItemRef struct {
 	Count          int // stack quantity (1 for non-stackables); 0 is treated as 1
 }
 
+// SlotItem pairs a container slot's in-world object id with its resolved ref, so
+// incremental moves (Put/Delete by object id) can target individual items.
+type SlotItem struct {
+	ObjID int
+	Ref   ItemRef
+}
+
 type container struct {
 	location model.Location
-	city     string // city display name; "" for inventory (or generic bank until a city is known)
-	tab      string // bank tab name, or "Inventory"
-	items    []model.HoldingItem
+	city     string                     // city display name; "" for inventory (or generic bank until a city is known)
+	tab      string                     // bank tab name, or "Inventory"
+	items    map[int]model.HoldingItem  // objId -> row
 	lastSeen int64
 }
 
@@ -39,6 +46,7 @@ type Aggregator struct {
 	mu          sync.Mutex
 	containers  map[string]*container // keyed by container GUID (one per tab/inventory)
 	order       []string              // insertion order for bounded eviction
+	objLoc      map[int]string        // objId -> containerGUID (for incremental move/delete)
 	equipped    *container
 	bankOwners  map[string]string // owner GUID -> tab name (from BankVaultInfo)
 	currentCity string            // latest observed city display name; "" if unknown
@@ -50,6 +58,7 @@ func New(cat port.Catalog, val port.Valuer, staleAfter int64) *Aggregator {
 	return &Aggregator{
 		cat: cat, val: val, staleAfter: staleAfter,
 		containers: map[string]*container{},
+		objLoc:     map[int]string{},
 		bankOwners: map[string]string{},
 		citySeen:   map[string]int64{},
 	}
@@ -76,9 +85,9 @@ func (a *Aggregator) SetBankVault(owners, tabNames []string) {
 	}
 }
 
-// SetContainer REPLACES a container's items. A known bank-tab owner → location bank,
-// grouped under the current city + its tab name; otherwise the player's inventory.
-func (a *Aggregator) SetContainer(containerGUID, ownerGUID string, refs []ItemRef, nowMS int64) model.Location {
+// SetContainer REPLACES a container's items from a full snapshot. A known bank-tab
+// owner → location bank under the current city + tab name; otherwise inventory.
+func (a *Aggregator) SetContainer(containerGUID, ownerGUID string, slots []SlotItem, nowMS int64) model.Location {
 	a.mu.Lock()
 	defer a.mu.Unlock()
 
@@ -94,24 +103,89 @@ func (a *Aggregator) SetContainer(containerGUID, ownerGUID string, refs []ItemRe
 		city = a.currentCity // "" until a current city is known (US3)
 	}
 
-	items := make([]model.HoldingItem, 0, len(refs))
-	for _, r := range refs {
-		items = append(items, a.row(r.Index, r.Quality, r.Count, loc, city, tab, nowMS))
+	c := a.ensureContainer(containerGUID)
+	// Drop the old object-id index entries for this container, then rebuild.
+	for objID := range c.items {
+		delete(a.objLoc, objID)
 	}
-	if _, exists := a.containers[containerGUID]; !exists {
-		if len(a.containers) >= containerCap && len(a.order) > 0 {
-			delete(a.containers, a.order[0])
-			a.order = a.order[1:]
+	c.location, c.city, c.tab, c.lastSeen = loc, city, tab, nowMS
+	c.items = make(map[int]model.HoldingItem, len(slots))
+	for _, s := range slots {
+		c.items[s.ObjID] = a.row(s.Ref.Index, s.Ref.Quality, s.Ref.Count, loc, city, tab, nowMS)
+		a.objLoc[s.ObjID] = containerGUID
+	}
+	a.touchCity(loc, city, nowMS)
+	return loc
+}
+
+// PutItem incrementally adds (or moves) one item into a container — InventoryPutItem.
+// The item is removed from any previous container first (a move), then placed here.
+func (a *Aggregator) PutItem(containerGUID string, objID int, ref ItemRef, nowMS int64) {
+	a.mu.Lock()
+	defer a.mu.Unlock()
+	a.removeObj(objID) // a move: drop from wherever it was
+	c := a.ensureContainer(containerGUID)
+	// A container first seen via a Put (e.g. inventory not yet snapshotted) defaults
+	// to inventory; one later seen via a full snapshot gets its real metadata.
+	if c.tab == "" {
+		c.location, c.tab, c.city = model.LocInventory, "Inventory", ""
+	}
+	c.items[objID] = a.row(ref.Index, ref.Quality, ref.Count, c.location, c.city, c.tab, nowMS)
+	c.lastSeen = nowMS
+	a.objLoc[objID] = containerGUID
+	a.touchCity(c.location, c.city, nowMS)
+}
+
+// DeleteItem incrementally removes one item by object id — InventoryDeleteItem.
+func (a *Aggregator) DeleteItem(objID int, nowMS int64) {
+	a.mu.Lock()
+	defer a.mu.Unlock()
+	if g, ok := a.objLoc[objID]; ok {
+		if c := a.containers[g]; c != nil {
+			c.lastSeen = nowMS
 		}
-		a.order = append(a.order, containerGUID)
 	}
-	a.containers[containerGUID] = &container{location: loc, city: city, tab: tab, items: items, lastSeen: nowMS}
+	a.removeObj(objID)
+}
+
+// ensureContainer returns the container for a GUID, creating an empty one (bounded)
+// if absent. New containers carry empty metadata until a Put/snapshot fills it.
+func (a *Aggregator) ensureContainer(guid string) *container {
+	if c, ok := a.containers[guid]; ok {
+		return c
+	}
+	if len(a.containers) >= containerCap && len(a.order) > 0 {
+		old := a.order[0]
+		a.order = a.order[1:]
+		if c := a.containers[old]; c != nil {
+			for objID := range c.items {
+				delete(a.objLoc, objID)
+			}
+		}
+		delete(a.containers, old)
+	}
+	a.order = append(a.order, guid)
+	c := &container{items: map[int]model.HoldingItem{}}
+	a.containers[guid] = c
+	return c
+}
+
+// removeObj drops an object id from its container and the index.
+func (a *Aggregator) removeObj(objID int) {
+	if g, ok := a.objLoc[objID]; ok {
+		if c := a.containers[g]; c != nil {
+			delete(c.items, objID)
+		}
+		delete(a.objLoc, objID)
+	}
+}
+
+func (a *Aggregator) touchCity(loc model.Location, city string, nowMS int64) {
 	if loc == model.LocBank {
 		a.citySeen[bankCityName(city)] = nowMS
 	} else {
 		a.citySeen[invName] = nowMS
 	}
-	return loc
 }
 
 // invName is the display name of the inventory pseudo-city group.
@@ -130,9 +204,9 @@ func bankCityName(city string) string {
 func (a *Aggregator) SetEquipped(items []ItemRef, nowMS int64) {
 	a.mu.Lock()
 	defer a.mu.Unlock()
-	rows := make([]model.HoldingItem, 0, len(items))
-	for _, e := range items {
-		rows = append(rows, a.row(e.Index, e.Quality, e.Count, model.LocEquipped, "", "Equipped", nowMS))
+	rows := make(map[int]model.HoldingItem, len(items))
+	for i, e := range items {
+		rows[i] = a.row(e.Index, e.Quality, e.Count, model.LocEquipped, "", "Equipped", nowMS)
 	}
 	a.equipped = &container{location: model.LocEquipped, city: "", tab: "Equipped", items: rows, lastSeen: nowMS}
 }
@@ -152,7 +226,8 @@ func (a *Aggregator) row(index, quality, count int, loc model.Location, city, gr
 	}
 }
 
-// List returns all held items (containers + equipped), ordered by group.
+// List returns all held items (containers + equipped). Items within a container are
+// ordered by display name for a stable view.
 func (a *Aggregator) List() []model.HoldingItem {
 	a.mu.Lock()
 	defer a.mu.Unlock()
@@ -162,11 +237,19 @@ func (a *Aggregator) List() []model.HoldingItem {
 		guids = append(guids, g)
 	}
 	sort.Strings(guids)
+	appendSorted := func(items map[int]model.HoldingItem) {
+		rows := make([]model.HoldingItem, 0, len(items))
+		for _, it := range items {
+			rows = append(rows, it)
+		}
+		sort.Slice(rows, func(i, j int) bool { return rows[i].Item.DisplayName < rows[j].Item.DisplayName })
+		out = append(out, rows...)
+	}
 	for _, g := range guids {
-		out = append(out, a.containers[g].items...)
+		appendSorted(a.containers[g].items)
 	}
 	if a.equipped != nil {
-		out = append(out, a.equipped.items...)
+		appendSorted(a.equipped.items)
 	}
 	return out
 }

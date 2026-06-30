@@ -13,6 +13,15 @@ const cat = `{"items":[
   {"index":837,"uniqueName":"T8_MEAL","name":"Avalonian Stew"}
 ]}`
 
+// slots wraps item indices into SlotItem with distinct object ids.
+func slots(indices ...int) []SlotItem {
+	s := make([]SlotItem, len(indices))
+	for i, idx := range indices {
+		s[i] = SlotItem{ObjID: 1000 + i, Ref: ItemRef{Index: idx}}
+	}
+	return s
+}
+
 func newAgg(t *testing.T) (*Aggregator, *valuation.Book) {
 	t.Helper()
 	c, err := catalog.New([]byte(cat))
@@ -25,11 +34,11 @@ func newAgg(t *testing.T) (*Aggregator, *valuation.Book) {
 
 func TestContainerReplaceNoDuplicate(t *testing.T) {
 	a, _ := newAgg(t)
-	a.SetContainer("c1", "owner", []ItemRef{{Index: 920}, {Index: 837}}, 1000)
+	a.SetContainer("c1", "owner", slots(920, 837), 1000)
 	if len(a.List()) != 2 {
 		t.Fatalf("want 2 items, got %d", len(a.List()))
 	}
-	a.SetContainer("c1", "owner", []ItemRef{{Index: 920}}, 1100) // item moved out → REPLACE
+	a.SetContainer("c1", "owner", slots(920), 1100) // item moved out → REPLACE
 	if n := len(a.List()); n != 1 {
 		t.Fatalf("after replace want 1, got %d (duplicate/append bug)", n)
 	}
@@ -38,13 +47,13 @@ func TestContainerReplaceNoDuplicate(t *testing.T) {
 func TestInventoryVsBankByOwner(t *testing.T) {
 	a, _ := newAgg(t)
 	// Unknown owner → Inventory.
-	a.SetContainer("c1", "playerOwner", []ItemRef{{Index: 920}}, 1000)
+	a.SetContainer("c1", "playerOwner", slots(920), 1000)
 	if got := a.List()[0]; got.Location != model.LocInventory || got.Group != "Inventory" {
 		t.Fatalf("unmatched owner should be Inventory, got loc=%s group=%q", got.Location, got.Group)
 	}
 	// Owner declared as a bank tab → location bank, tab name as group.
 	a.SetBankVault([]string{"bankOwner"}, []string{"Items"})
-	a.SetContainer("c2", "bankOwner", []ItemRef{{Index: 837}}, 1100)
+	a.SetContainer("c2", "bankOwner", slots(837), 1100)
 	var bankRow model.HoldingItem
 	for _, r := range a.List() {
 		if r.Item.Index == 837 {
@@ -59,7 +68,7 @@ func TestInventoryVsBankByOwner(t *testing.T) {
 func TestFriendlyTab(t *testing.T) {
 	a, _ := newAgg(t)
 	a.SetBankVault([]string{"o"}, []string{"@BUILDINGS_T1_BANK"})
-	a.SetContainer("c1", "o", []ItemRef{{Index: 920}}, 1000)
+	a.SetContainer("c1", "o", slots(920), 1000)
 	if a.List()[0].Group != "Main" {
 		t.Fatalf("loc-key tab should become 'Main', got %q", a.List()[0].Group)
 	}
@@ -70,7 +79,7 @@ func TestBankTabsGrouping(t *testing.T) {
 	book.SetEMV(920, 0, 1000, 1000)
 	// Two named tabs; only "Items" opened.
 	a.SetBankVault([]string{"o1", "o2"}, []string{"Items", "Resources"})
-	a.SetContainer("c1", "o1", []ItemRef{{Index: 920}, {Index: 837}}, 1000)
+	a.SetContainer("c1", "o1", slots(920, 837), 1000)
 
 	s := a.Summary(1000)
 	// One bank city group (no current city yet → "Bank").
@@ -103,8 +112,8 @@ func TestBankTabsGrouping(t *testing.T) {
 func TestTabReObserveReplaces(t *testing.T) {
 	a, _ := newAgg(t)
 	a.SetBankVault([]string{"o1"}, []string{"Items"})
-	a.SetContainer("c1", "o1", []ItemRef{{Index: 920}, {Index: 837}}, 1000)
-	a.SetContainer("c1", "o1", []ItemRef{{Index: 920}}, 1100) // item moved out → REPLACE
+	a.SetContainer("c1", "o1", slots(920, 837), 1000)
+	a.SetContainer("c1", "o1", slots(920), 1100) // item moved out → REPLACE
 	s := a.Summary(1100)
 	for _, c := range s.Cities {
 		for _, tb := range c.Tabs {
@@ -122,9 +131,9 @@ func TestCurrentCityGroupsBank(t *testing.T) {
 
 	// In Caerleon → bank container tagged Caerleon.
 	a.SetCurrentCity("Caerleon")
-	a.SetContainer("c1", "o1", []ItemRef{{Index: 920}}, 1000)
+	a.SetContainer("c1", "o1", slots(920), 1000)
 	// Inventory is city-independent.
-	a.SetContainer("inv", "player", []ItemRef{{Index: 920}}, 1000)
+	a.SetContainer("inv", "player", slots(920), 1000)
 
 	s := a.Summary(1000)
 	var caer, inv *model.CitySummary
@@ -153,10 +162,34 @@ func TestCurrentCityGroupsBank(t *testing.T) {
 	}
 }
 
+func TestIncrementalMoveAndDelete(t *testing.T) {
+	a, _ := newAgg(t)
+	a.SetBankVault([]string{"o1"}, []string{"Items"})
+	// Bank tab holds object 100 (item 920).
+	a.SetContainer("bankGuid", "o1", []SlotItem{{ObjID: 100, Ref: ItemRef{Index: 920}}}, 1000)
+	if n := len(a.List()); n != 1 {
+		t.Fatalf("after snapshot want 1, got %d", n)
+	}
+	// Move it to inventory (Put into a new container) → still exactly one item, now inventory.
+	a.PutItem("invGuid", 100, ItemRef{Index: 920}, 1100)
+	rows := a.List()
+	if len(rows) != 1 {
+		t.Fatalf("after move want 1 (no dup), got %d", len(rows))
+	}
+	if rows[0].Location != model.LocInventory {
+		t.Fatalf("moved item should be in inventory, got %s", rows[0].Location)
+	}
+	// Delete it → gone.
+	a.DeleteItem(100, 1200)
+	if n := len(a.List()); n != 0 {
+		t.Fatalf("after delete want 0, got %d", n)
+	}
+}
+
 func TestSummaryTotals(t *testing.T) {
 	a, book := newAgg(t)
 	book.SetEMV(920, 0, 3360, 1000)
-	a.SetContainer("c1", "owner", []ItemRef{{Index: 920}, {Index: 837}}, 1000)
+	a.SetContainer("c1", "owner", slots(920, 837), 1000)
 	s := a.Summary(1000)
 	if s.TotalValue != 3360 || s.UnvaluedCount != 1 {
 		t.Fatalf("summary = %+v, want total 3360 unvalued 1", s)

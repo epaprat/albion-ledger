@@ -37,6 +37,24 @@ func ContainerItems(params map[byte]interface{}) (containerGUID, ownerGUID strin
 	return containerGUID, ownerGUID, itemIndices, true
 }
 
+// PutItem pulls (object id, container GUID) from an InventoryPutItem event (26):
+// key 0 = item object id, key 2 = container GUID (matches AttachItemContainer key 1),
+// key 1 = slot (unused here). The item is now in that container.
+func PutItem(params map[byte]interface{}) (objID int, containerGUID string, ok bool) {
+	id, iok := toIntVal(params[0])
+	g, gok := params[2].([]byte)
+	if !iok || !gok {
+		return 0, "", false
+	}
+	return id, hex.EncodeToString(g), true
+}
+
+// DeleteItem pulls the removed object id from an InventoryDeleteItem event (27):
+// key 0 = item object id (which container it left is found by id).
+func DeleteItem(params map[byte]interface{}) (objID int, ok bool) {
+	return toIntVal(params[0])
+}
+
 // BankVault pulls the bank's tab owner ids and names from a BankVaultInfo event:
 // key 2 = concatenated 16-byte owner GUIDs (one per tab), key 3 = parallel tab names.
 func BankVault(params map[byte]interface{}) (owners, tabNames []string, ok bool) {
