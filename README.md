@@ -1,8 +1,8 @@
-# Albion Data Tool
+# Albion Ledger
 
-A cross-platform, **ToS-safe** desktop companion for Albion Online. It passively reads the
-local Photon network stream to surface market data and your own account data, and turns it into
-a clear earnings (profit/loss) tracker.
+**Albion Ledger Client** — a cross-platform, **ToS-safe** desktop tool for Albion Online. It
+passively reads the local Photon network stream to surface market data and your own account
+data, and turns it into a clear earnings (profit/loss) ledger.
 
 > **Status:** early work in progress. Architecture and scope are defined; implementation is starting.
 
@@ -32,7 +32,7 @@ automation) and limited to market data and your own account data.
 
 ```sh
 git clone <repo-url>
-cd albion-data-tool
+cd albion-ledger
 scripts/setup-hooks.sh   # activate local git gates (lint/hygiene/CI before push)
 ```
 
