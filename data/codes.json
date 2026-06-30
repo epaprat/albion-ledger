@@ -1,0 +1,21 @@
+{
+  "_comment": "Message code -> category map. Data-driven so a game patch that shifts codes is a JSON edit + reload, no recompile (FR-012). kind: event|response|request. guardKey: optional discriminator parameter that must be present. Codes NOT listed are unhandled (this is how position/radar codes stay excluded, ToS-safe).",
+  "entries": [
+    { "kind": "event", "code": 30,  "category": "equipment" },
+    { "kind": "event", "code": 38,  "category": "gather_fishing" },
+    { "kind": "event", "code": 61,  "category": "gather_fishing" },
+    { "kind": "event", "code": 267, "category": "gather_fishing" },
+    { "kind": "event", "code": 62,  "category": "silver" },
+    { "kind": "event", "code": 82,  "category": "fame" },
+    { "kind": "event", "code": 98,  "category": "loot" },
+    { "kind": "event", "code": 99,  "category": "inventory" },
+    { "kind": "event", "code": 143, "category": "character_spec" },
+    { "kind": "event", "code": 414, "category": "bank" },
+    { "kind": "event", "code": 466, "category": "item_value_emv" },
+    { "kind": "response", "code": 82,  "category": "market_sell_orders" },
+    { "kind": "response", "code": 81,  "category": "market_buy_orders" },
+    { "kind": "response", "code": 95,  "category": "market_history" },
+    { "kind": "response", "code": 248, "category": "gold_price" },
+    { "kind": "response", "code": 2,   "category": "character_spec", "guardKey": 55 }
+  ]
+}

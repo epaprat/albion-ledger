@@ -1,0 +1,10 @@
+{
+  "_comment": "Item catalog: numeric packet index -> item identity. Bundled SAMPLE; the full catalog is generated from ao-data/ao-bin-dumps (see scripts/gen-catalog notes) and dropped in here or via the override path — no recompile (FR-012). tier/enchant are derived from uniqueName at load time.",
+  "items": [
+    { "index": 1, "uniqueName": "T4_BAG", "name": "Adept's Bag" },
+    { "index": 2, "uniqueName": "T5_BAG", "name": "Expert's Bag" },
+    { "index": 3, "uniqueName": "T6_2H_AXE@2", "name": "Expert's Battleaxe" },
+    { "index": 4, "uniqueName": "T8_HEAD_CLOTH_SET3@3", "name": "Elder's Scholar Cowl" },
+    { "index": 5, "uniqueName": "T4_SItemFiberPLANT", "name": "Cotton" }
+  ]
+}

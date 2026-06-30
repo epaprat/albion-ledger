@@ -16,9 +16,11 @@ import (
 
 	"github.com/google/uuid"
 
+	"github.com/epaprat/albion-ledger/data"
 	"github.com/epaprat/albion-ledger/internal/adapter/capture"
 	"github.com/epaprat/albion-ledger/internal/adapter/store"
 	"github.com/epaprat/albion-ledger/internal/app"
+	"github.com/epaprat/albion-ledger/internal/codes"
 	"github.com/epaprat/albion-ledger/internal/domain/model"
 	"github.com/epaprat/albion-ledger/internal/domain/probe"
 	"github.com/epaprat/albion-ledger/internal/port"
@@ -120,7 +122,11 @@ func cmdRun(args []string, kind model.SourceKind) error {
 		fmt.Fprintln(os.Stderr, "capturing… play the game, then press Ctrl+C to stop and see the report")
 	}
 
-	runner := app.NewRunner(probe.DefaultThresholds())
+	reg, err := codes.New(data.CodesJSON)
+	if err != nil {
+		return err
+	}
+	runner := app.NewRunner(probe.New(reg), probe.DefaultThresholds())
 	if *dumpAll >= 0 {
 		runner.OnMessage = func(kind probe.Kind, code int, params map[byte]interface{}) {
 			if code == *dumpAll {

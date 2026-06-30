@@ -59,6 +59,16 @@ sudo ./bin/probe live                                     # passive; market + ow
 Capture stores default to `captures/` (created automatically, gitignored), so
 local session databases never clutter the repo root.
 
+### Game-change agility
+
+The data the game can change between patches lives in editable files under `data/`:
+
+- `data/items.json` — item index → name/tier/enchant catalog (generated from ao-bin-dumps)
+- `data/codes.json` — message code → category map
+
+Both are bundled (embedded) defaults and can be reloaded at runtime without recompiling, so a patch
+that shifts item names or message codes is fixed by editing a file, not the source.
+
 The default build is pure-Go (no libpcap) so tests and replay run anywhere.
 
 Validated against live traffic: all target categories (market sell/buy/history,

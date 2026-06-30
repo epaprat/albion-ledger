@@ -32,9 +32,9 @@ type Runner struct {
 	OnMessage func(kind probe.Kind, code int, params map[byte]interface{})
 }
 
-// NewRunner creates a Runner with the given verdict thresholds.
-func NewRunner(th probe.Thresholds) *Runner {
-	return &Runner{clf: probe.New(), th: th}
+// NewRunner creates a Runner with the given classifier and verdict thresholds.
+func NewRunner(clf *probe.Classifier, th probe.Thresholds) *Runner {
+	return &Runner{clf: clf, th: th}
 }
 
 // Run consumes the source to completion (or ctx cancel), persists observations
