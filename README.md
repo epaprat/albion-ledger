@@ -58,6 +58,10 @@ sudo ./bin/probe live --db probe.db                       # passive; market + ow
 
 The default build is pure-Go (no libpcap) so tests and replay run anywhere.
 
+Validated against live traffic: all target categories (market sell/buy/history,
+gold, inventory, equipment, bank, character spec, loot, gather, silver, fame,
+item value) are captured, and the market stream is unencrypted.
+
 ### Quality gates
 
 Enforcement runs **locally** (no CI minutes burned):

@@ -88,11 +88,14 @@ var opResponseCategory = map[int]model.Category{
 	opPlayerState:                model.CatCharacterSpec,
 }
 
-// responseGuard requires a discriminator key to be present before a response is
-// classified — prevents low-numbered codes (e.g. a bare Ping reusing code 2)
-// from being mis-counted as character data. Key absent → treated as unhandled.
+// responseGuard / eventGuard require a discriminator key to be present before a
+// message is classified — prevents look-alike/empty variants from being counted.
+// Key absent → treated as unhandled.
 var responseGuard = map[int]byte{
 	opPlayerState: 55, // only the real own-state blob carries the masteries array
+}
+var eventGuard = map[int]byte{
+	evEstimatedMarketValue: 1, // only EMV updates that actually carry a value array
 }
 
 // PositionCodes are movement/position codes explicitly EXCLUDED from
@@ -127,7 +130,11 @@ func (c *Classifier) Classify(kind Kind, code int, params map[byte]interface{}) 
 	if !ok {
 		return Classified{}, false
 	}
-	if guardKey, has := responseGuard[code]; has && kind == KindResponse {
+	guard := responseGuard
+	if kind == KindEvent {
+		guard = eventGuard
+	}
+	if guardKey, has := guard[code]; has {
 		if _, present := params[guardKey]; !present {
 			return Classified{}, false // discriminator missing → not this category
 		}

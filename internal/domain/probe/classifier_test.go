@@ -65,6 +65,18 @@ func TestPositionCodesExcluded(t *testing.T) {
 	}
 }
 
+func TestEMVGuard(t *testing.T) {
+	c := New()
+	// EMV update WITH the value array (key 1) classifies.
+	if got, ok := c.Classify(KindEvent, evEstimatedMarketValue, map[byte]interface{}{0: []int16{1879}, 1: []int32{500}}); !ok || got.Category != model.CatItemValueEMV {
+		t.Fatalf("EMV with value array → %v ok=%v, want item_value_emv", got.Category, ok)
+	}
+	// Empty EMV variant (no value array) must NOT be counted.
+	if _, ok := c.Classify(KindEvent, evEstimatedMarketValue, map[byte]interface{}{7: byte(0)}); ok {
+		t.Fatal("empty EMV (no key 1) must be unhandled")
+	}
+}
+
 func TestPartialCompleteness(t *testing.T) {
 	c := New()
 	// Silver expects 3 fields {0,3,5}; provide 2.
