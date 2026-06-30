@@ -34,6 +34,10 @@ export function ListItems() {
   return window['go']['wailsadapter']['Service']['ListItems']();
 }
 
+export function SetCurrentCity(arg1) {
+  return window['go']['wailsadapter']['Service']['SetCurrentCity'](arg1);
+}
+
 export function SetSpec(arg1) {
   return window['go']['wailsadapter']['Service']['SetSpec'](arg1);
 }

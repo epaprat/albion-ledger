@@ -24,7 +24,11 @@ type entry struct {
 	Name       string `json:"name"`
 }
 
-var line = regexp.MustCompile(`^\s*(\d+):\s*(\S+)\s*:\s*(.+?)\s*$`)
+// Two line shapes in items.txt: "<idx>: <UNIQUENAME> : <Localized Name>" and
+// "<idx>: <UNIQUENAME>" (no localized name — e.g. dungeon tokens). The localized
+// part is optional; when absent the uniquename becomes the display name (below),
+// so those items still resolve instead of dropping to "Unknown item #N".
+var line = regexp.MustCompile(`^\s*(\d+):\s*(\S+)(?:\s*:\s*(.+?))?\s*$`)
 
 func main() {
 	if len(os.Args) != 3 {

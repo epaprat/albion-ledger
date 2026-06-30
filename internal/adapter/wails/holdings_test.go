@@ -50,10 +50,10 @@ func TestHoldingsSummaryNestedTotals(t *testing.T) {
 	s, em, book := newHoldSvc(t)
 	book.SetEMV(920, 0, 3360, 1000)
 	// Inventory: one valued (920) + one unvalued (837, not in catalog book).
-	s.IngestContainerSlots("inv", "playerOwner", []int{920, 837})
+	s.IngestContainer("inv", "playerOwner", []holdings.ItemRef{{Index: 920}, {Index: 837}})
 	// Bank tab "Items": one valued (920).
 	s.IngestBankVault([]string{"bankOwner"}, []string{"Items"})
-	s.IngestContainerSlots("bank1", "bankOwner", []int{920})
+	s.IngestContainer("bank1", "bankOwner", []holdings.ItemRef{{Index: 920}})
 
 	sum := s.HoldingsSummary()
 	if sum.TotalValue != 6720 { // 3360 (inv) + 3360 (bank)
