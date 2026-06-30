@@ -71,6 +71,7 @@ func cmdRun(args []string, kind model.SourceKind) error {
 	dbPath := fs.String("db", "probe.db", "local store path")
 	iface := fs.String("iface", "", "capture interface (live)")
 	asJSON := fs.Bool("json", false, "emit JSON report")
+	dump := fs.Bool("dump", false, "print param table for each first-seen code (discovery, to stderr)")
 
 	// For replay the pcap file is the first positional, before any flags.
 	replayFile := ""
@@ -119,6 +120,17 @@ func cmdRun(args []string, kind model.SourceKind) error {
 	}
 
 	runner := app.NewRunner(probe.DefaultThresholds())
+	if *dump {
+		seen := map[string]bool{}
+		runner.OnMessage = func(kind probe.Kind, code int, params map[byte]interface{}) {
+			key := fmt.Sprintf("%s:%d", dumpKind(kind), code)
+			if seen[key] {
+				return
+			}
+			seen[key] = true
+			fmt.Fprintf(os.Stderr, "DUMP %-8s | %s\n", key, formatParams(params))
+		}
+	}
 	res, err := runner.Run(ctx, src, db, sess, nowMS)
 	if err != nil {
 		return err
@@ -232,6 +244,58 @@ func printTopUnhandled(m map[string]int, n int) {
 	fmt.Printf("\n  Top unhandled codes (kind:code → count):\n")
 	for i := 0; i < n && i < len(list); i++ {
 		fmt.Printf("  %-10s %d\n", list[i].k, list[i].v)
+	}
+}
+
+func dumpKind(k probe.Kind) string {
+	switch k {
+	case probe.KindResponse:
+		return "R"
+	case probe.KindRequest:
+		return "Q"
+	default:
+		return "E"
+	}
+}
+
+// formatParams renders a param table as "key=type(value)" sorted by key, with
+// values truncated, so we can read which index holds which field.
+func formatParams(params map[byte]interface{}) string {
+	keys := make([]int, 0, len(params))
+	for k := range params {
+		keys = append(keys, int(k))
+	}
+	sort.Ints(keys)
+	parts := make([]string, 0, len(keys))
+	for _, k := range keys {
+		parts = append(parts, fmt.Sprintf("%d=%s", k, shortVal(params[byte(k)])))
+	}
+	return strings.Join(parts, " ")
+}
+
+func shortVal(v interface{}) string {
+	switch t := v.(type) {
+	case string:
+		if len(t) > 24 {
+			t = t[:24] + "…"
+		}
+		return fmt.Sprintf("str(%q)", t)
+	case []string:
+		return fmt.Sprintf("[]str(n=%d)", len(t))
+	case []byte:
+		return fmt.Sprintf("[]byte(n=%d)", len(t))
+	case []int32:
+		return fmt.Sprintf("[]i32(n=%d)", len(t))
+	case []interface{}:
+		return fmt.Sprintf("[]any(n=%d)", len(t))
+	case map[interface{}]interface{}:
+		return fmt.Sprintf("map(n=%d)", len(t))
+	default:
+		s := fmt.Sprintf("%T(%v)", v, v)
+		if len(s) > 32 {
+			s = s[:32] + "…"
+		}
+		return s
 	}
 }
 

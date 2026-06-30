@@ -40,12 +40,12 @@ var ExpectedFields = map[Category][]byte{
 	CatInventory:        {0, 2},    // container id + slot items
 	CatEquipment:        {0, 1},    // object id + item id
 	CatBank:             {0, 1, 5}, // vault id + container ids/names + counts
-	CatCharacterSpec:    {0},       // skill/spec payload (decode TBD)
+	CatCharacterSpec:    {55},      // masteries/specialization array (own-state blob, key 55)
 	CatLoot:             {0, 3},    // object id + source name
 	CatGatherFishing:    {0, 1},    // harvestable/reward fields
-	CatSilver:           {0, 3, 5}, // object id + yield + tax
+	CatSilver:           {0, 2, 3}, // object id + target + yield (key 5 guild-tax often absent)
 	CatFame:             {1, 2, 3}, // total/zone fame + multiplier
-	CatItemValueEMV:     {0, 1},    // item id + estimated value
+	CatItemValueEMV:     {0, 1},    // item id array + estimated value array
 }
 
 // FieldsExpected returns how many fields a category is expected to carry.

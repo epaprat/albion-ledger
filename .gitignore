@@ -55,6 +55,7 @@ yarn-error.log*
 *.pcapng
 cap.log
 rep.txt
+dump.txt
 
 # --- Env / secrets ---
 .env

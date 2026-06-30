@@ -48,6 +48,10 @@ const (
 	opAuctionGetRequests         = 83
 	opAuctionGetItemAverageStats = 96
 	opGoldMarketGetAverageInfo   = 251
+	// opPlayerState is the own-character full-state response (login/zone change)
+	// that carries the masteries/specialization array at key 55. The stale AFM
+	// enum mislabels code 2 (version skew); the live payload is authoritative.
+	opPlayerState = 2
 )
 
 // eventCategory / opCategory are the classifier registries (Principle II): one
@@ -73,6 +77,14 @@ var opResponseCategory = map[int]model.Category{
 	opAuctionGetRequests:         model.CatMarketBuyOrders,
 	opAuctionGetItemAverageStats: model.CatMarketHistory,
 	opGoldMarketGetAverageInfo:   model.CatGoldPrice,
+	opPlayerState:                model.CatCharacterSpec,
+}
+
+// responseGuard requires a discriminator key to be present before a response is
+// classified — prevents low-numbered codes (e.g. a bare Ping reusing code 2)
+// from being mis-counted as character data. Key absent → treated as unhandled.
+var responseGuard = map[int]byte{
+	opPlayerState: 55, // only the real own-state blob carries the masteries array
 }
 
 // PositionCodes are movement/position codes explicitly EXCLUDED from
@@ -106,6 +118,11 @@ func (c *Classifier) Classify(kind Kind, code int, params map[byte]interface{}) 
 	}
 	if !ok {
 		return Classified{}, false
+	}
+	if guardKey, has := responseGuard[code]; has && kind == KindResponse {
+		if _, present := params[guardKey]; !present {
+			return Classified{}, false // discriminator missing → not this category
+		}
 	}
 	expected := model.ExpectedFields[cat]
 	present := 0

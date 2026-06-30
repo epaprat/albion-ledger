@@ -8,16 +8,29 @@ import (
 
 func TestClassifyKnownEvent(t *testing.T) {
 	c := New()
-	// CharacterStats (143) with its expected field present.
-	got, ok := c.Classify(KindEvent, evCharacterStats, map[byte]interface{}{0: byte(1)})
+	// NewEquipmentItem (30) with its expected fields {0,1} present.
+	got, ok := c.Classify(KindEvent, evNewEquipmentItem, map[byte]interface{}{0: int64(1), 1: int16(2)})
 	if !ok {
-		t.Fatal("CharacterStats should classify")
+		t.Fatal("NewEquipmentItem should classify")
 	}
-	if got.Category != model.CatCharacterSpec {
-		t.Fatalf("category = %s, want character_spec", got.Category)
+	if got.Category != model.CatEquipment {
+		t.Fatalf("category = %s, want equipment", got.Category)
 	}
-	if got.FieldsPresent != 1 || got.FieldsExpected != 1 {
-		t.Fatalf("completeness fields = %d/%d, want 1/1", got.FieldsPresent, got.FieldsExpected)
+	if got.FieldsPresent != 2 || got.FieldsExpected != 2 {
+		t.Fatalf("completeness fields = %d/%d, want 2/2", got.FieldsPresent, got.FieldsExpected)
+	}
+}
+
+func TestCharacterSpecResponseGuard(t *testing.T) {
+	c := New()
+	// The own-state response (code 2) WITH the masteries array (key 55) classifies.
+	got, ok := c.Classify(KindResponse, opPlayerState, map[byte]interface{}{55: []int32{1, 2, 3}})
+	if !ok || got.Category != model.CatCharacterSpec || got.FieldsPresent != 1 {
+		t.Fatalf("player-state with key 55 → %v ok=%v present=%d, want character_spec 1", got.Category, ok, got.FieldsPresent)
+	}
+	// Same code WITHOUT key 55 (e.g. a bare ping reusing code 2) must NOT classify.
+	if _, ok := c.Classify(KindResponse, opPlayerState, map[byte]interface{}{0: int64(1)}); ok {
+		t.Fatal("code 2 without masteries key must be unhandled (guard)")
 	}
 }
 

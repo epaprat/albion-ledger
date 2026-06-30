@@ -27,6 +27,9 @@ type Result struct {
 type Runner struct {
 	clf *probe.Classifier
 	th  probe.Thresholds
+	// OnMessage, if set, is called for EVERY decoded message (handled or not)
+	// before classification — used by the --dump discovery tool.
+	OnMessage func(kind probe.Kind, code int, params map[byte]interface{})
 }
 
 // NewRunner creates a Runner with the given verdict thresholds.
@@ -66,6 +69,9 @@ func (r *Runner) Run(ctx context.Context, src port.PacketSource, store port.Stor
 
 	record := func(kind probe.Kind, code int, params map[byte]interface{}) {
 		totals.DecodedCount++
+		if r.OnMessage != nil {
+			r.OnMessage(kind, code, params)
+		}
 		cl, ok := r.clf.Classify(kind, code, params)
 		if !ok {
 			totals.UnhandledCount++
