@@ -1,0 +1,6 @@
+#!/usr/bin/env bash
+# Constitution gates (pre-commit). Activate with: scripts/setup-hooks.sh
+set -euo pipefail
+root="$(git rev-parse --show-toplevel)"
+"$root/scripts/gates/repo-hygiene.sh"      # Principle IX — blocking
+"$root/scripts/gates/docs-freshness.sh"    # Principle X  — warn

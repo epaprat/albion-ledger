@@ -1,0 +1,62 @@
+# --- Claude Code / Spec Kit / planlama (public repo'da OLMAMALI) ---
+# Sadece yazılımla ilgili docs (README, API docs vb) public olacak.
+.claude/
+.specify/
+CLAUDE.md
+GEMINI.md
+AGENTS.md
+ROADMAP.md
+SPEC.md
+PLAN.md
+PLANNING.md
+*.plan.md
+/planning/
+/docs-internal/
+/.internal/
+
+# --- Vendored reference clients (ayrı projeler, reuse kaynağı) ---
+clients/
+
+# --- Go ---
+*.exe
+*.exe~
+*.dll
+*.so
+*.dylib
+*.test
+*.out
+/bin/
+/dist/
+/build/
+vendor/
+
+# --- Wails ---
+frontend/node_modules/
+frontend/dist/
+build/bin/
+
+# --- Node / frontend ---
+node_modules/
+.pnp.*
+npm-debug.log*
+yarn-error.log*
+
+# --- Local data / SQLite store ---
+*.db
+*.db-shm
+*.db-wal
+*.sqlite
+*.sqlite3
+/data/
+
+# --- Env / secrets ---
+.env
+.env.*
+!.env.example
+
+# --- OS / editor ---
+.DS_Store
+Thumbs.db
+.idea/
+.vscode/
+*.swp

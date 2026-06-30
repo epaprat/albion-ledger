@@ -1,0 +1,52 @@
+# Albion Data Tool
+
+A cross-platform, **ToS-safe** desktop companion for Albion Online. It passively reads the
+local Photon network stream to surface market data and your own account data, and turns it into
+a clear earnings (profit/loss) tracker.
+
+> **Status:** early work in progress. Architecture and scope are defined; implementation is starting.
+
+## What it does
+
+- **Market data** — sell/buy orders, price history, gold prices.
+- **Your own assets** — bank, inventory, equipment, and character specs.
+- **Activity** — loot, gathering/fishing, silver and fame gains.
+- **Valuation (EMV)** — every item priced from live market data (server estimate as fallback).
+- **Earnings / P&L** — net +/- silver per session / hour / 24h / day, with rate breakdowns
+  (silver/hr, loot value/hr, gather value/hr).
+
+### Not in scope
+
+No radar, ESP, entity positions, or anything that grants a real-time competitive advantage.
+This tool is strictly passive (reads network traffic only — no memory reading, no injection, no
+automation) and limited to market data and your own account data.
+
+## Tech
+
+- **Go** for packet capture (libpcap/Npcap) and Photon (Protocol16/18) parsing.
+- **Wails** desktop shell with a web UI.
+- **SQLite** local-first store; data is uploaded later in batches.
+- Single self-contained binary per OS — Windows, macOS, Linux.
+
+## Development
+
+```sh
+git clone <repo-url>
+cd albion-data-tool
+scripts/setup-hooks.sh   # activate local git gates (lint/hygiene/CI before push)
+```
+
+Packet capture requires capture privileges: Npcap on Windows, BPF permissions on macOS,
+`cap_net_raw` on Linux. Installers will bundle this step.
+
+### Quality gates
+
+Enforcement runs **locally** (no CI minutes burned):
+
+- `pre-commit` — repo hygiene + docs freshness
+- `commit-msg` — commit message checks
+- `pre-push` — full local CI (`scripts/ci-local.sh`)
+
+## License
+
+MIT — see [LICENSE](LICENSE).

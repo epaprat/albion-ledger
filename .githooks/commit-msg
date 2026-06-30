@@ -1,0 +1,5 @@
+#!/usr/bin/env bash
+# Constitution gate (commit-msg). Activate with: scripts/setup-hooks.sh
+set -euo pipefail
+root="$(git rev-parse --show-toplevel)"
+"$root/scripts/gates/no-ai-coauthor.sh" "$1"   # Principle IX — blocking

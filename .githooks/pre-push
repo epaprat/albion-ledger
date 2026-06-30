@@ -1,0 +1,6 @@
+#!/usr/bin/env bash
+# Local CI gate (pre-push) — runs all gates before anything leaves the machine.
+# Replaces GitHub Actions for everyday enforcement. Activate: scripts/setup-hooks.sh
+set -euo pipefail
+root="$(git rev-parse --show-toplevel)"
+exec "$root/scripts/ci-local.sh"
