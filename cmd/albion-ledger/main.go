@@ -161,17 +161,20 @@ func ingest(clf *probe.Classifier, svc *wailsadapter.Service, kind probe.Kind, c
 	// Market-order extraction (richer valuation) is a later task.
 }
 
-// extractEMV pulls (index, quality, value) from the two EMV layouts.
+// emvScale: the server EMV is stored scaled by 10000 (silver = raw / 10000).
+const emvScale = 10000
+
+// extractEMV pulls (index, quality, silver value) from the two EMV layouts.
 func extractEMV(params map[byte]interface{}) (index, quality int, value int64, ok bool) {
 	if id, okId := firstInt(params[0]); okId {
 		if v, okV := firstInt64(params[1]); okV {
-			return id, 0, v, true
+			return id, 0, v / emvScale, true
 		}
 	}
 	if id, okId := firstInt(params[2]); okId {
 		v, _ := firstInt64(params[4])
 		q, _ := firstInt(params[3])
-		return id, q, v, true
+		return id, q, v / emvScale, true
 	}
 	return 0, 0, 0, false
 }
