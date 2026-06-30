@@ -103,6 +103,10 @@ func encodeValue(tc byte, val interface{}) []byte {
 
 func encodeTypedArray(elemType byte, val interface{}) []byte {
 	switch elemType {
+	case typeByte:
+		arr := val.([]byte)
+		out := appendCompressedUint32(nil, uint32(len(arr)))
+		return append(out, arr...)
 	case typeString:
 		arr := val.([]string)
 		out := appendCompressedUint32(nil, uint32(len(arr)))

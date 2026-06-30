@@ -10,6 +10,7 @@ import (
 	"os"
 	"os/signal"
 	"sort"
+	"strconv"
 	"strings"
 	"syscall"
 	"time"
@@ -74,7 +75,7 @@ func cmdRun(args []string, kind model.SourceKind) error {
 	iface := fs.String("iface", "", "capture interface (live)")
 	asJSON := fs.Bool("json", false, "emit JSON report")
 	dump := fs.Bool("dump", false, "print param table for each first-seen code (discovery, to stderr)")
-	dumpAll := fs.Int("dumpall", -1, "print EVERY occurrence of this code's full param table (to stderr)")
+	dumpAll := fs.String("dumpall", "", "print EVERY occurrence of these codes' full param tables (comma-separated, to stderr)")
 
 	// For replay the pcap file is the first positional, before any flags.
 	replayFile := ""
@@ -127,9 +128,15 @@ func cmdRun(args []string, kind model.SourceKind) error {
 		return err
 	}
 	runner := app.NewRunner(probe.New(reg), probe.DefaultThresholds())
-	if *dumpAll >= 0 {
+	if *dumpAll != "" {
+		want := map[int]bool{}
+		for _, s := range strings.Split(*dumpAll, ",") {
+			if n, err := strconv.Atoi(strings.TrimSpace(s)); err == nil {
+				want[n] = true
+			}
+		}
 		runner.OnMessage = func(kind probe.Kind, code int, params map[byte]interface{}) {
-			if code == *dumpAll {
+			if want[code] {
 				fmt.Fprintf(os.Stderr, "ALL %s:%d | %s\n", dumpKind(kind), code, formatParams(params))
 			}
 		}
@@ -294,8 +301,14 @@ func shortVal(v interface{}) string {
 		}
 		return fmt.Sprintf("str(%q)", t)
 	case []string:
+		if len(t) <= 6 {
+			return fmt.Sprintf("[]str%v", t)
+		}
 		return fmt.Sprintf("[]str(n=%d)", len(t))
 	case []byte:
+		if len(t) <= 32 {
+			return fmt.Sprintf("0x%x", t) // show guids/short byte arrays as hex
+		}
 		return fmt.Sprintf("[]byte(n=%d)", len(t))
 	case []int32:
 		return fmt.Sprintf("[]i32(n=%d)", len(t))

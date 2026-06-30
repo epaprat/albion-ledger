@@ -37,6 +37,13 @@ vendor/
 **/node_modules/
 **/build/bin/
 cmd/albion-ledger/build/
+**/package.json.md5
+
+# --- stray compiled binaries (go build without -o) ---
+/probe
+/albion-ledger
+cmd/probe/probe
+cmd/albion-ledger/albion-ledger
 
 # --- Node / frontend ---
 node_modules/

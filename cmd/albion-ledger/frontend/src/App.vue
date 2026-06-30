@@ -1,44 +1,66 @@
 <script setup>
 import { ref, computed, onMounted } from 'vue'
 
-const items = ref(new Map())   // index -> LiveViewItem
+const tab = ref('holdings')
+const market = ref(new Map())        // index -> LiveViewItem
+const holdings = ref([])             // HoldingItem[]
+const summary = ref({ totalValue: 0, unvaluedCount: 0, sections: {} })
+const spec = ref({ masteries: [] })
 const status = ref({ capturing: false, interface: '', encryptedRate: 0, driftAlert: '' })
 const ready = ref(false)
 
-const rows = computed(() =>
-  [...items.value.values()].sort((a, b) => (b.lastSeen || 0) - (a.lastSeen || 0))
+const marketRows = computed(() =>
+  [...market.value.values()].sort((a, b) => (b.lastSeen || 0) - (a.lastSeen || 0))
 )
+const holdingsGroups = computed(() => {
+  const g = {}
+  for (const h of holdings.value) (g[h.group || 'Holdings'] ||= []).push(h)
+  // Inventory first, then bank tabs/others alphabetically.
+  return Object.keys(g).sort((a, b) =>
+    (a === 'Inventory' ? -1 : b === 'Inventory' ? 1 : a.localeCompare(b))
+  ).map((name) => ({ name, items: g[name] }))
+})
 
-function upsert(it) {
+const svc = () => (window.go && window.go.wailsadapter && window.go.wailsadapter.Service) || null
+
+function upsertMarket(it) {
   if (!it || !it.item) return
-  items.value.set(it.item.index, it)
-  items.value = new Map(items.value) // trigger reactivity
+  market.value.set(it.item.index, it)
+  market.value = new Map(market.value)
 }
-
-const svc = () =>
-  (window.go && window.go.wailsadapter && window.go.wailsadapter.Service) || null
+async function refreshHoldings() {
+  const s = svc(); if (!s) return
+  holdings.value = (await s.ListHoldings()) || []
+  summary.value = await s.HoldingsSummary()
+}
 
 onMounted(async () => {
   const s = svc()
-  if (!s) { ready.value = true; return }   // running outside Wails (browser dev)
+  if (!s) { ready.value = true; return }
   try {
-    const list = await s.ListItems()
-    for (const it of list || []) upsert(it)
+    for (const it of (await s.ListItems()) || []) upsertMarket(it)
+    await refreshHoldings()
+    spec.value = await s.Spec()
     status.value = await s.Status()
   } catch (_) {}
   ready.value = true
 
   if (window.runtime) {
-    window.runtime.EventsOn('item:updated', upsert)
+    window.runtime.EventsOn('item:updated', upsertMarket)
     window.runtime.EventsOn('status:changed', (st) => { status.value = st })
-    window.runtime.EventsOn('drift:alert', (msg) => { status.value = { ...status.value, driftAlert: msg } })
+    window.runtime.EventsOn('drift:alert', (m) => { status.value = { ...status.value, driftAlert: m } })
+    window.runtime.EventsOn('holdings:changed', (sum) => { summary.value = sum; refreshHoldings() })
+    window.runtime.EventsOn('spec:changed', (sp) => { spec.value = sp })
   }
 })
 
-const fmtSilver = (n) => (n || 0).toLocaleString('en-US')
+const fmt = (n) => (n || 0).toLocaleString('en-US')
 const tierLabel = (it) => it.tier ? `T${it.tier}${it.enchant ? '.' + it.enchant : ''}` : '—'
-const qualityLabel = (q) => q ? ['', 'Normal', 'Good', 'Outstanding', 'Excellent', 'Masterpiece'][q] : '—'
-const sourceLabel = { live_market: 'live', server_estimate: 'est', unknown: '—' }
+const qLabel = (q) => q ? ['', 'Normal', 'Good', 'Outstanding', 'Excellent', 'Masterpiece'][q] : '—'
+const srcText = { live_market: 'live', server_estimate: 'est', unknown: '—' }
+const locLabel = { inventory: 'Inventory', bank: 'Bank', equipped: 'Equipped', holdings: 'Holdings' }
+const locOrder = ['equipped', 'inventory', 'bank', 'holdings']
+function section(loc) { return summary.value.sections?.[loc] || { seen: false } }
 </script>
 
 <template>
@@ -47,75 +69,110 @@ const sourceLabel = { live_market: 'live', server_estimate: 'est', unknown: '—
       <span class="dot" :class="status.capturing ? 'on' : 'off'" aria-hidden="true"></span>
       <strong>{{ status.capturing ? 'Capturing' : 'Idle' }}</strong>
       <span class="muted" v-if="status.interface">· {{ status.interface }}</span>
-      <span class="muted" v-if="status.gameServer">· {{ status.gameServer }}</span>
       <span class="muted">· encrypted {{ Math.round((status.encryptedRate || 0) * 100) }}%</span>
-      <span class="spacer"></span>
-      <span class="count">{{ rows.length }} items</span>
+      <nav class="tabs" role="tablist">
+        <button :class="{ active: tab === 'holdings' }" @click="tab = 'holdings'" role="tab">Holdings</button>
+        <button :class="{ active: tab === 'market' }" @click="tab = 'market'" role="tab">Market</button>
+        <button :class="{ active: tab === 'spec' }" @click="tab = 'spec'" role="tab">Spec</button>
+      </nav>
     </header>
 
     <div class="drift" v-if="status.driftAlert" role="alert">⚠ {{ status.driftAlert }}</div>
 
     <main>
-      <div v-if="!ready" class="state">Loading…</div>
+      <!-- HOLDINGS -->
+      <section v-if="tab === 'holdings'">
+        <div class="total">
+          <span>Holdings total</span>
+          <strong>{{ fmt(summary.totalValue) }}</strong>
+          <span class="muted" v-if="summary.unvaluedCount">· {{ summary.unvaluedCount }} unvalued</span>
+        </div>
+        <div v-if="holdings.length === 0" class="state">
+          <p class="big">No holdings captured yet</p>
+          <p class="muted">Open your inventory or bank in game — held items appear here, valued.</p>
+        </div>
+        <div v-else v-for="grp in holdingsGroups" :key="grp.name" class="group">
+          <h3>{{ grp.name }} <span class="muted">· {{ grp.items.length }}</span></h3>
+          <table>
+            <tbody>
+              <tr v-for="(r, i) in grp.items" :key="grp.name + i">
+                <td :class="{ unknown: !r.item.known }">{{ r.item.displayName }}</td>
+                <td class="dim">{{ tierLabel(r.item) }}</td>
+                <td class="dim">{{ qLabel(r.item.quality) }}</td>
+                <td class="num">{{ fmt(r.valuation.amount) }}</td>
+                <td><span class="badge" :class="r.valuation.source">{{ srcText[r.valuation.source] }}</span></td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+      </section>
 
-      <div v-else-if="rows.length === 0" class="state">
-        <p class="big">No items captured yet</p>
-        <p class="muted">Play the game — open the market, your bank, hover items. Captured items
-          appear here by name with an estimated value.</p>
-      </div>
+      <!-- MARKET -->
+      <section v-else-if="tab === 'market'">
+        <div v-if="marketRows.length === 0" class="state">
+          <p class="big">No market items yet</p>
+          <p class="muted">Open the marketplace and click items.</p>
+        </div>
+        <table v-else>
+          <thead><tr><th>Item</th><th>Tier</th><th>Quality</th><th class="num">Value</th><th>Source</th></tr></thead>
+          <tbody>
+            <tr v-for="r in marketRows" :key="r.item.index">
+              <td :class="{ unknown: !r.item.known }">{{ r.item.displayName }}</td>
+              <td class="dim">{{ tierLabel(r.item) }}</td>
+              <td class="dim">{{ qLabel(r.item.quality) }}</td>
+              <td class="num">{{ fmt(r.valuation.amount) }}</td>
+              <td><span class="badge" :class="r.valuation.source">{{ srcText[r.valuation.source] }}</span></td>
+            </tr>
+          </tbody>
+        </table>
+      </section>
 
-      <table v-else>
-        <thead>
-          <tr>
-            <th>Item</th><th>Tier</th><th>Quality</th><th class="num">Value</th><th>Source</th>
-          </tr>
-        </thead>
-        <tbody>
-          <tr v-for="r in rows" :key="r.item.index">
-            <td :class="{ unknown: !r.item.known }">{{ r.item.displayName }}</td>
-            <td>{{ tierLabel(r.item) }}</td>
-            <td>{{ qualityLabel(r.item.quality) }}</td>
-            <td class="num">{{ fmtSilver(r.valuation.amount) }}</td>
-            <td>
-              <span class="badge" :class="r.valuation.source">{{ sourceLabel[r.valuation.source] }}</span>
-              <span v-if="r.valuation.stale" class="stale" title="value is stale">stale</span>
-            </td>
-          </tr>
-        </tbody>
-      </table>
+      <!-- SPEC -->
+      <section v-else>
+        <div v-if="!spec.masteries || spec.masteries.length === 0" class="state">
+          <p class="big">No specs captured yet</p>
+          <p class="muted">Open your character / destiny board (or relog) so the data streams.</p>
+        </div>
+        <table v-else>
+          <thead><tr><th>Mastery</th><th class="num">Level</th></tr></thead>
+          <tbody>
+            <tr v-for="m in spec.masteries.filter(x => x.level > 0)" :key="m.index">
+              <td>{{ m.name }}</td><td class="num">{{ m.level }}</td>
+            </tr>
+          </tbody>
+        </table>
+      </section>
     </main>
   </div>
 </template>
 
 <style scoped>
 .wrap { height: 100vh; display: flex; flex-direction: column; }
-.status {
-  display: flex; align-items: center; gap: 8px;
-  padding: 10px 16px; background: var(--panel); border-bottom: 1px solid var(--border);
-  font-size: 14px;
-}
+.status { display: flex; align-items: center; gap: 8px; padding: 10px 16px; background: var(--panel); border-bottom: 1px solid var(--border); font-size: 14px; }
 .dot { width: 9px; height: 9px; border-radius: 50%; }
-.dot.on { background: var(--good); box-shadow: 0 0 6px var(--good); }
-.dot.off { background: var(--muted); }
+.dot.on { background: var(--good); box-shadow: 0 0 6px var(--good); } .dot.off { background: var(--muted); }
 .muted { color: var(--muted); }
-.spacer { flex: 1; }
-.count { color: var(--muted); font-variant-numeric: tabular-nums; }
-.drift { padding: 8px 16px; background: #3a2d00; color: var(--warn); border-bottom: 1px solid var(--border); font-size: 13px; }
+.tabs { margin-left: auto; display: flex; gap: 4px; }
+.tabs button { background: transparent; border: 1px solid transparent; color: var(--muted); padding: 4px 12px; border-radius: 6px; cursor: pointer; font-size: 13px; }
+.tabs button.active { background: var(--bg); color: var(--text); border-color: var(--border); }
+.drift { padding: 8px 16px; background: #3a2d00; color: var(--warn); font-size: 13px; }
 main { flex: 1; overflow: auto; }
-.state { padding: 64px 24px; text-align: center; color: var(--muted); }
+.total { display: flex; align-items: baseline; gap: 10px; padding: 12px 16px; border-bottom: 1px solid var(--border); }
+.total strong { font-size: 18px; color: var(--accent); font-variant-numeric: tabular-nums; }
+.group { padding: 4px 0 12px; }
+.group h3 { margin: 0; padding: 10px 16px 6px; font-size: 13px; color: var(--muted); text-transform: uppercase; letter-spacing: .04em; }
+.state { padding: 56px 24px; text-align: center; color: var(--muted); }
 .state .big { font-size: 18px; color: var(--text); margin: 0 0 8px; }
 table { width: 100%; border-collapse: collapse; font-size: 14px; }
-thead th {
-  position: sticky; top: 0; background: var(--panel); text-align: left;
-  padding: 10px 16px; color: var(--muted); font-weight: 600; border-bottom: 1px solid var(--border);
-}
-tbody td { padding: 8px 16px; border-bottom: 1px solid var(--border); }
+thead th { position: sticky; top: 0; background: var(--panel); text-align: left; padding: 8px 16px; color: var(--muted); font-weight: 600; border-bottom: 1px solid var(--border); }
+tbody td { padding: 7px 16px; border-bottom: 1px solid var(--border); }
 tbody tr:hover { background: var(--panel); }
 .num { text-align: right; font-variant-numeric: tabular-nums; }
+.dim { color: var(--muted); }
 .unknown { color: var(--muted); font-style: italic; }
 .badge { font-size: 11px; padding: 1px 6px; border-radius: 4px; }
 .badge.live_market { background: rgba(63,185,80,.18); color: var(--good); }
 .badge.server_estimate { background: rgba(210,153,34,.18); color: var(--warn); }
 .badge.unknown { color: var(--muted); }
-.stale { margin-left: 6px; font-size: 11px; color: var(--bad); }
+.badge.stale { background: rgba(248,81,73,.18); color: var(--bad); margin-left: 8px; }
 </style>

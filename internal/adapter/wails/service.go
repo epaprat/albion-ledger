@@ -4,9 +4,11 @@
 package wailsadapter
 
 import (
+	"strconv"
 	"sync"
 
 	"github.com/epaprat/albion-ledger/internal/domain/model"
+	"github.com/epaprat/albion-ledger/internal/holdings"
 	"github.com/epaprat/albion-ledger/internal/port"
 	"github.com/epaprat/albion-ledger/internal/valuation"
 )
@@ -18,9 +20,11 @@ type Emitter interface {
 
 // Events emitted to the frontend.
 const (
-	EventItemUpdated   = "item:updated"
-	EventStatusChanged = "status:changed"
-	EventDriftAlert    = "drift:alert"
+	EventItemUpdated     = "item:updated"
+	EventStatusChanged   = "status:changed"
+	EventDriftAlert      = "drift:alert"
+	EventHoldingsChanged = "holdings:changed"
+	EventSpecChanged     = "spec:changed"
 )
 
 // Service holds the bounded live-view state and the bound methods.
@@ -31,6 +35,9 @@ type Service struct {
 	emit  Emitter
 	cap   int
 	nowMS func() int64
+
+	agg  *holdings.Aggregator
+	spec model.CharacterSpec
 
 	mu     sync.Mutex
 	items  map[int]*model.LiveViewItem // by item index
@@ -43,7 +50,11 @@ func NewService(cat port.Catalog, book *valuation.Book, val port.Valuer, emit Em
 	if cap <= 0 {
 		cap = 5000
 	}
-	return &Service{cat: cat, book: book, val: val, emit: emit, cap: cap, nowMS: nowMS, items: map[int]*model.LiveViewItem{}}
+	return &Service{
+		cat: cat, book: book, val: val, emit: emit, cap: cap, nowMS: nowMS,
+		items: map[int]*model.LiveViewItem{},
+		agg:   holdings.New(cat, val, model.DefaultStaleAfterMS),
+	}
 }
 
 // IngestEMV records an item's estimated value and refreshes its view row.
@@ -104,6 +115,48 @@ func (s *Service) SetStatus(st model.CaptureStatusView) {
 	}
 }
 
+// ── Holdings ingestion ───────────────────────────────────────────────────────
+
+// IngestContainer replaces a container's held items and broadcasts holdings.
+func (s *Service) IngestContainer(containerGUID, ownerGUID string, refs []holdings.ItemRef) {
+	s.agg.SetContainer(containerGUID, ownerGUID, refs, s.nowMS())
+	s.emitHoldings()
+}
+
+// IngestBankVault records bank tab owners + names (from BankVaultInfo).
+func (s *Service) IngestBankVault(owners, tabNames []string) { s.agg.SetBankVault(owners, tabNames) }
+
+// IngestEquipment replaces the equipped set and broadcasts holdings.
+func (s *Service) IngestEquipment(items []holdings.ItemRef) {
+	s.agg.SetEquipped(items, s.nowMS())
+	s.emitHoldings()
+}
+
+// SetSpec replaces the character spec and broadcasts it.
+func (s *Service) SetSpec(masteryLevels []int) {
+	masteries := make([]model.MasteryLevel, 0, len(masteryLevels))
+	for i, lvl := range masteryLevels {
+		masteries = append(masteries, model.MasteryLevel{Index: i, Name: masteryName(i), Level: lvl})
+	}
+	s.mu.Lock()
+	s.spec = model.CharacterSpec{Masteries: masteries}
+	snap := s.spec
+	s.mu.Unlock()
+	if s.emit != nil {
+		s.emit.Emit(EventSpecChanged, snap)
+	}
+}
+
+func (s *Service) emitHoldings() {
+	if s.emit != nil {
+		s.emit.Emit(EventHoldingsChanged, s.agg.Summary(s.nowMS()))
+	}
+}
+
+func masteryName(index int) string {
+	return "Mastery #" + strconv.Itoa(index)
+}
+
 // ── Bound methods (called from the frontend) ─────────────────────────────────
 
 // ListItems returns the current live view rows (most recently seen first).
@@ -124,4 +177,17 @@ func (s *Service) Status() model.CaptureStatusView {
 	s.mu.Lock()
 	defer s.mu.Unlock()
 	return s.status
+}
+
+// ListHoldings returns the player's held items (inventory/bank/equipped).
+func (s *Service) ListHoldings() []model.HoldingItem { return s.agg.List() }
+
+// HoldingsSummary returns the total value + per-location seen/stale state.
+func (s *Service) HoldingsSummary() model.HoldingsSummary { return s.agg.Summary(s.nowMS()) }
+
+// Spec returns the player's character specialization levels.
+func (s *Service) Spec() model.CharacterSpec {
+	s.mu.Lock()
+	defer s.mu.Unlock()
+	return s.spec
 }
