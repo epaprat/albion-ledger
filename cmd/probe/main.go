@@ -72,6 +72,7 @@ func cmdRun(args []string, kind model.SourceKind) error {
 	iface := fs.String("iface", "", "capture interface (live)")
 	asJSON := fs.Bool("json", false, "emit JSON report")
 	dump := fs.Bool("dump", false, "print param table for each first-seen code (discovery, to stderr)")
+	dumpAll := fs.Int("dumpall", -1, "print EVERY occurrence of this code's full param table (to stderr)")
 
 	// For replay the pcap file is the first positional, before any flags.
 	replayFile := ""
@@ -120,7 +121,13 @@ func cmdRun(args []string, kind model.SourceKind) error {
 	}
 
 	runner := app.NewRunner(probe.DefaultThresholds())
-	if *dump {
+	if *dumpAll >= 0 {
+		runner.OnMessage = func(kind probe.Kind, code int, params map[byte]interface{}) {
+			if code == *dumpAll {
+				fmt.Fprintf(os.Stderr, "ALL %s:%d | %s\n", dumpKind(kind), code, formatParams(params))
+			}
+		}
+	} else if *dump {
 		seen := map[string]bool{}
 		runner.OnMessage = func(kind probe.Kind, code int, params map[byte]interface{}) {
 			key := fmt.Sprintf("%s:%d", dumpKind(kind), code)

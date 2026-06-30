@@ -65,15 +65,19 @@ func TestPositionCodesExcluded(t *testing.T) {
 	}
 }
 
-func TestEMVGuard(t *testing.T) {
+func TestEMVVariants(t *testing.T) {
 	c := New()
-	// EMV update WITH the value array (key 1) classifies.
-	if got, ok := c.Classify(KindEvent, evEstimatedMarketValue, map[byte]interface{}{0: []int16{1879}, 1: []int32{500}}); !ok || got.Category != model.CatItemValueEMV {
-		t.Fatalf("EMV with value array → %v ok=%v, want item_value_emv", got.Category, ok)
+	// Variant A: {0=id, 1=value}.
+	if got, ok := c.Classify(KindEvent, evEstimatedMarketValue, map[byte]interface{}{0: []int16{1879}, 1: []int32{500}}); !ok || got.Category != model.CatItemValueEMV || got.FieldsPresent != 2 {
+		t.Fatalf("EMV variant A → %v ok=%v present=%d, want emv 2", got.Category, ok, got.FieldsPresent)
 	}
-	// Empty EMV variant (no value array) must NOT be counted.
+	// Variant B: {2=id, 3=quality, 4=value}.
+	if got, ok := c.Classify(KindEvent, evEstimatedMarketValue, map[byte]interface{}{2: []int16{7457}, 3: []byte{1}, 4: []int32{500}}); !ok || got.Category != model.CatItemValueEMV || got.FieldsPresent != 2 {
+		t.Fatalf("EMV variant B → %v ok=%v present=%d, want emv 2", got.Category, ok, got.FieldsPresent)
+	}
+	// No value array → unhandled.
 	if _, ok := c.Classify(KindEvent, evEstimatedMarketValue, map[byte]interface{}{7: byte(0)}); ok {
-		t.Fatal("empty EMV (no key 1) must be unhandled")
+		t.Fatal("EMV with no value key must be unhandled")
 	}
 }
 

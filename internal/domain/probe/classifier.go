@@ -94,9 +94,6 @@ var opResponseCategory = map[int]model.Category{
 var responseGuard = map[int]byte{
 	opPlayerState: 55, // only the real own-state blob carries the masteries array
 }
-var eventGuard = map[int]byte{
-	evEstimatedMarketValue: 1, // only EMV updates that actually carry a value array
-}
 
 // PositionCodes are movement/position codes explicitly EXCLUDED from
 // classification (ToS-safe, Constitution V). Exposed for the exclusion test.
@@ -130,11 +127,14 @@ func (c *Classifier) Classify(kind Kind, code int, params map[byte]interface{}) 
 	if !ok {
 		return Classified{}, false
 	}
-	guard := responseGuard
-	if kind == KindEvent {
-		guard = eventGuard
+	// EstimatedMarketValueUpdate has two wire layouts: {0=id,1=value} and
+	// {2=id,3=quality,4=value}. Handle both; an update with neither value key
+	// carries no valuation and is treated as unhandled.
+	if cat == model.CatItemValueEMV {
+		return classifyEMV(code, params)
 	}
-	if guardKey, has := guard[code]; has {
+
+	if guardKey, has := responseGuard[code]; has && kind == KindResponse {
 		if _, present := params[guardKey]; !present {
 			return Classified{}, false // discriminator missing → not this category
 		}
@@ -152,4 +152,34 @@ func (c *Classifier) Classify(kind Kind, code int, params map[byte]interface{}) 
 		FieldsPresent:  present,
 		FieldsExpected: len(expected),
 	}, true
+}
+
+// classifyEMV handles the two EstimatedMarketValueUpdate layouts:
+//   - A: key 0 = item ids,  key 1 = values
+//   - B: key 2 = item ids,  key 4 = values (key 3 = quality)
+//
+// We expect id + value (2 fields). An update with neither value key is unhandled.
+func classifyEMV(code int, params map[byte]interface{}) (Classified, bool) {
+	var idKey, valKey byte
+	switch {
+	case has(params, 1):
+		idKey, valKey = 0, 1
+	case has(params, 4):
+		idKey, valKey = 2, 4
+	default:
+		return Classified{}, false // no value array → not a valuation
+	}
+	present := 0
+	if has(params, idKey) {
+		present++
+	}
+	if has(params, valKey) {
+		present++
+	}
+	return Classified{Category: model.CatItemValueEMV, Code: code, FieldsPresent: present, FieldsExpected: 2}, true
+}
+
+func has(params map[byte]interface{}, k byte) bool {
+	_, ok := params[k]
+	return ok
 }
