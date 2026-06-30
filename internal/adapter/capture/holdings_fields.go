@@ -7,9 +7,10 @@ import "encoding/hex"
 // Field positions are from live capture (see specs/003 research-fields.md).
 
 // ContainerItems pulls a container's id, its owner id, and its non-empty slot
-// object ids from an AttachItemContainer event: key 1 = container GUID, key 2 =
-// owner GUID (distinguishes bank vault vs player inventory), key 3 = []i32 slots.
-func ContainerItems(params map[byte]interface{}) (containerGUID, ownerGUID string, objIDs []int, ok bool) {
+// item INDICES from an AttachItemContainer event: key 1 = container GUID, key 2 =
+// owner GUID (distinguishes bank vault vs player inventory), key 3 = []i32 item
+// indices (one per slot, -1/0 = empty). NOT object ids (research 004 R2).
+func ContainerItems(params map[byte]interface{}) (containerGUID, ownerGUID string, itemIndices []int, ok bool) {
 	raw, has := params[3]
 	if !has {
 		return "", "", nil, false
@@ -20,7 +21,7 @@ func ContainerItems(params map[byte]interface{}) (containerGUID, ownerGUID strin
 	}
 	for _, v := range arr {
 		if v > 0 { // empty slots are 0 or -1
-			objIDs = append(objIDs, int(v))
+			itemIndices = append(itemIndices, int(v))
 		}
 	}
 	if g, gok := params[1].([]byte); gok {
@@ -29,7 +30,7 @@ func ContainerItems(params map[byte]interface{}) (containerGUID, ownerGUID strin
 	if g, gok := params[2].([]byte); gok {
 		ownerGUID = hex.EncodeToString(g)
 	}
-	return containerGUID, ownerGUID, objIDs, true
+	return containerGUID, ownerGUID, itemIndices, true
 }
 
 // BankVault pulls the bank's tab owner ids and names from a BankVaultInfo event:

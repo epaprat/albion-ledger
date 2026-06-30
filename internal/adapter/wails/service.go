@@ -123,6 +123,23 @@ func (s *Service) IngestContainer(containerGUID, ownerGUID string, refs []holdin
 	s.emitHoldings()
 }
 
+// IngestContainerSlots replaces a container's items from raw slot item INDICES
+// (AttachItemContainer key 3 — research R2/FR-001). Slots are item catalog indices,
+// not object ids, so they map straight to refs; container slots carry no quality.
+func (s *Service) IngestContainerSlots(containerGUID, ownerGUID string, slotIndices []int) {
+	refs := make([]holdings.ItemRef, len(slotIndices))
+	for i, idx := range slotIndices {
+		refs[i] = holdings.ItemRef{Index: idx, Quality: 0}
+	}
+	s.IngestContainer(containerGUID, ownerGUID, refs)
+}
+
+// SetCurrentCity records the player's current city display name (US3).
+func (s *Service) SetCurrentCity(city string) {
+	s.agg.SetCurrentCity(city)
+	s.emitHoldings()
+}
+
 // IngestBankVault records bank tab owners + names (from BankVaultInfo).
 func (s *Service) IngestBankVault(owners, tabNames []string) { s.agg.SetBankVault(owners, tabNames) }
 

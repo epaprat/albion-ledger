@@ -42,7 +42,7 @@ func TestInventoryVsBankByOwner(t *testing.T) {
 	if got := a.List()[0]; got.Location != model.LocInventory || got.Group != "Inventory" {
 		t.Fatalf("unmatched owner should be Inventory, got loc=%s group=%q", got.Location, got.Group)
 	}
-	// Owner declared as a bank tab → Bank · <tab>.
+	// Owner declared as a bank tab → location bank, tab name as group.
 	a.SetBankVault([]string{"bankOwner"}, []string{"Items"})
 	a.SetContainer("c2", "bankOwner", []ItemRef{{837, 0}}, 1100)
 	var bankRow model.HoldingItem
@@ -51,8 +51,8 @@ func TestInventoryVsBankByOwner(t *testing.T) {
 			bankRow = r
 		}
 	}
-	if bankRow.Location != model.LocBank || bankRow.Group != "Bank · Items" {
-		t.Fatalf("bank-owner container should be 'Bank · Items', got loc=%s group=%q", bankRow.Location, bankRow.Group)
+	if bankRow.Location != model.LocBank || bankRow.Group != "Items" {
+		t.Fatalf("bank-owner container should be tab 'Items', got loc=%s group=%q", bankRow.Location, bankRow.Group)
 	}
 }
 
@@ -60,8 +60,8 @@ func TestFriendlyTab(t *testing.T) {
 	a, _ := newAgg(t)
 	a.SetBankVault([]string{"o"}, []string{"@BUILDINGS_T1_BANK"})
 	a.SetContainer("c1", "o", []ItemRef{{920, 0}}, 1000)
-	if a.List()[0].Group != "Bank · Main" {
-		t.Fatalf("loc-key tab should become 'Bank · Main', got %q", a.List()[0].Group)
+	if a.List()[0].Group != "Main" {
+		t.Fatalf("loc-key tab should become 'Main', got %q", a.List()[0].Group)
 	}
 }
 
@@ -73,7 +73,8 @@ func TestSummaryTotals(t *testing.T) {
 	if s.TotalValue != 3360 || s.UnvaluedCount != 1 {
 		t.Fatalf("summary = %+v, want total 3360 unvalued 1", s)
 	}
-	if s.Sections[model.LocBank].Seen {
-		t.Fatal("never-opened bank must be not-seen")
+	// Only inventory was observed → exactly one city group, the inventory group.
+	if len(s.Cities) != 1 || !s.Cities[0].IsInventory {
+		t.Fatalf("want single inventory city group, got %+v", s.Cities)
 	}
 }
