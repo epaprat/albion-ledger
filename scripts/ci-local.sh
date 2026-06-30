@@ -29,7 +29,11 @@ if [ -f go.mod ]; then
   else
     echo "  (golangci-lint not installed — skipped)"
   fi
-  # TODO(M0+): fuzz (IV), soak/leak (XI), ux-a11y (XII) gates here.
+  echo "▶ fuzz (deserializer, 15s)   [Principle IV]"
+  go test ./internal/photon -run=NONE -fuzz=FuzzDeserialize -fuzztime=15s || fail=1
+  echo "▶ soak (bounded memory)      [Principle XI]"
+  go test ./internal/adapter/capture -run TestSoakBounded || fail=1
+  # TODO(M5+): ux-a11y (XII) gate when the end-user UI lands.
 fi
 
 if [ "$fail" -eq 0 ]; then

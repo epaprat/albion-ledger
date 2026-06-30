@@ -11,6 +11,7 @@ PLAN.md
 PLANNING.md
 *.plan.md
 /planning/
+/specs/
 /docs-internal/
 /.internal/
 
@@ -48,6 +49,12 @@ yarn-error.log*
 *.sqlite
 *.sqlite3
 /data/
+
+# --- Generated capture fixtures / debug logs (not the fuzz corpus) ---
+*.pcap
+*.pcapng
+cap.log
+rep.txt
 
 # --- Env / secrets ---
 .env

@@ -39,6 +39,25 @@ scripts/setup-hooks.sh   # activate local git gates (lint/hygiene/CI before push
 Packet capture requires capture privileges: Npcap on Windows, BPF permissions on macOS,
 `cap_net_raw` on Linux. Installers will bundle this step.
 
+### Sniff probe
+
+A measurement CLI that reports which data categories can be sniffed and how completely:
+
+```sh
+go build -o bin/probe ./cmd/probe
+./bin/probe genfixture testdata/fixtures/synthetic.pcap   # deterministic offline sample
+./bin/probe replay testdata/fixtures/synthetic.pcap       # → coverage report (text or --json)
+```
+
+Live capture (reads the local game stream) needs the libpcap build tag:
+
+```sh
+go build -tags pcap -o bin/probe ./cmd/probe
+sudo ./bin/probe live --db probe.db                       # passive; market + own-account data only
+```
+
+The default build is pure-Go (no libpcap) so tests and replay run anywhere.
+
 ### Quality gates
 
 Enforcement runs **locally** (no CI minutes burned):

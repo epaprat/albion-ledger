@@ -7,7 +7,7 @@
 set -euo pipefail
 
 # Private path classes that must stay out of the public repo.
-PATTERNS='^\.claude/|^\.specify/|^CLAUDE\.md$|^GEMINI\.md$|^AGENTS\.md$|^ROADMAP\.md$|^SPEC\.md$|^PLAN.*\.md$|.*\.plan\.md$|^planning/|^docs-internal/|^\.internal/|^clients/'
+PATTERNS='^\.claude/|^\.specify/|^CLAUDE\.md$|^GEMINI\.md$|^AGENTS\.md$|^ROADMAP\.md$|^SPEC\.md$|^PLAN.*\.md$|.*\.plan\.md$|^planning/|^specs/|^docs-internal/|^\.internal/|^clients/'
 
 if [ "${1:-}" = "--all" ]; then
   files=$(git ls-files)
