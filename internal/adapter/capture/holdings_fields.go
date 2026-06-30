@@ -1,15 +1,20 @@
 package capture
 
-import "encoding/hex"
+import (
+	"encoding/hex"
+	"encoding/json"
+	"strings"
+)
 
 // Holdings field extractors. Pure functions over decoded Photon params; they
 // tolerate missing/odd keys (return ok=false) and never panic (Principle IV).
 // Field positions are from live capture (see specs/003 research-fields.md).
 
 // ContainerItems pulls a container's id, its owner id, and its non-empty slot
-// object ids from an AttachItemContainer event: key 1 = container GUID, key 2 =
-// owner GUID (distinguishes bank vault vs player inventory), key 3 = []i32 slots.
-func ContainerItems(params map[byte]interface{}) (containerGUID, ownerGUID string, objIDs []int, ok bool) {
+// item INDICES from an AttachItemContainer event: key 1 = container GUID, key 2 =
+// owner GUID (distinguishes bank vault vs player inventory), key 3 = []i32 item
+// indices (one per slot, -1/0 = empty). NOT object ids (research 004 R2).
+func ContainerItems(params map[byte]interface{}) (containerGUID, ownerGUID string, itemIndices []int, ok bool) {
 	raw, has := params[3]
 	if !has {
 		return "", "", nil, false
@@ -20,7 +25,7 @@ func ContainerItems(params map[byte]interface{}) (containerGUID, ownerGUID strin
 	}
 	for _, v := range arr {
 		if v > 0 { // empty slots are 0 or -1
-			objIDs = append(objIDs, int(v))
+			itemIndices = append(itemIndices, int(v))
 		}
 	}
 	if g, gok := params[1].([]byte); gok {
@@ -29,7 +34,7 @@ func ContainerItems(params map[byte]interface{}) (containerGUID, ownerGUID strin
 	if g, gok := params[2].([]byte); gok {
 		ownerGUID = hex.EncodeToString(g)
 	}
-	return containerGUID, ownerGUID, objIDs, true
+	return containerGUID, ownerGUID, itemIndices, true
 }
 
 // BankVault pulls the bank's tab owner ids and names from a BankVaultInfo event:
@@ -57,6 +62,36 @@ func EquippedItem(params map[byte]interface{}) (index, quality int, ok bool) {
 	}
 	q, _ := toIntVal(params[2])
 	return idx, q, true
+}
+
+// cityChangeSubtype is the key-0 subtype of the notification event (163) that
+// announces the player entered a city. Live-verified: key 0 = 39 → key 2 holds
+// {"city":"<Name>"}; other subtypes (e.g. 28 = challenge) are ignored.
+const cityChangeSubtype = 39
+
+// CurrentCity pulls the player's current city NAME from a notification event (163):
+// key 0 = subtype (39 = city entered), key 2 = JSON {"city":"<Name>"}. This is the
+// player's own client-side "you entered <city>" notice — own-state, not a position
+// (ToS-safe). Returns ok=false for any other subtype or unparseable payload. Tolerates
+// odd keys, never panics (Principle IV). See research 004 R1 (live capture 2026-06-30).
+func CurrentCity(params map[byte]interface{}) (city string, ok bool) {
+	if sub, _ := toIntVal(params[0]); sub != cityChangeSubtype {
+		return "", false
+	}
+	raw, isStr := params[2].(string)
+	if !isStr {
+		return "", false
+	}
+	var p struct {
+		City string `json:"city"`
+	}
+	if err := json.Unmarshal([]byte(raw), &p); err != nil {
+		return "", false
+	}
+	if p.City = strings.TrimSpace(p.City); p.City == "" {
+		return "", false
+	}
+	return p.City, true
 }
 
 // MasteryLevels pulls the mastery level array from an own-state response: key 55.

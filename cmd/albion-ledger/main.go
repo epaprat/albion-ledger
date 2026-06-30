@@ -8,7 +8,6 @@ import (
 	"embed"
 	"flag"
 	"log"
-	"sync"
 	"time"
 
 	"github.com/wailsapp/wails/v2"
@@ -23,7 +22,6 @@ import (
 	"github.com/epaprat/albion-ledger/internal/codes"
 	"github.com/epaprat/albion-ledger/internal/domain/model"
 	"github.com/epaprat/albion-ledger/internal/domain/probe"
-	"github.com/epaprat/albion-ledger/internal/holdings"
 	"github.com/epaprat/albion-ledger/internal/photon"
 	"github.com/epaprat/albion-ledger/internal/port"
 	"github.com/epaprat/albion-ledger/internal/valuation"
@@ -116,7 +114,6 @@ func runCapture(ctx context.Context, iface, replay string, clf *probe.Classifier
 		},
 		func(evByte byte, params map[byte]interface{}) {
 			code := codeFrom(params, 252, int(evByte))
-			registerNewItem(code, params) // declare object ids before containers reference them
 			ingest(clf, svc, probe.KindEvent, code, params)
 		},
 	)
@@ -150,63 +147,6 @@ func runCapture(ctx context.Context, iface, replay string, clf *probe.Classifier
 	}
 }
 
-// objReg maps in-world object ids to their item type+quality. Container slots
-// reference object ids (not item types), so New*Item events (codes 30-37, which
-// declare objectId→itemType) must be captured first to resolve a container.
-var (
-	objMu    sync.Mutex
-	objReg   = map[int]holdings.ItemRef{}
-	objOrder []int
-)
-
-const objRegCap = 50_000
-
-// registerNewItem records objectId → {itemIndex, quality} from a New*Item event.
-func registerNewItem(code int, params map[byte]interface{}) {
-	if code < 30 || code > 37 { // NewEquipmentItem..NewEquipmentItemLegendarySoul
-		return
-	}
-	objID, ok1 := capture.IntParam(params, 0)
-	idx, ok2 := capture.IntParam(params, 1)
-	if !ok1 || !ok2 {
-		return
-	}
-	// Quality lives at a different param key per New*Item variant (live-verified):
-	// equipment(30) → key 6; furniture(33)/trophy(34) → key 2; others have none.
-	quality := 0
-	switch code {
-	case 30:
-		quality, _ = capture.IntParam(params, 6)
-	case 33, 34:
-		quality, _ = capture.IntParam(params, 2)
-	}
-	if quality < 0 || quality > 5 {
-		quality = 0
-	}
-	objMu.Lock()
-	if _, exists := objReg[objID]; !exists {
-		if len(objReg) >= objRegCap && len(objOrder) > 0 {
-			delete(objReg, objOrder[0])
-			objOrder = objOrder[1:]
-		}
-		objOrder = append(objOrder, objID)
-	}
-	objReg[objID] = holdings.ItemRef{Index: idx, Quality: quality}
-	objMu.Unlock()
-}
-
-// resolveObjects maps container object ids to item refs, skipping unresolved ones.
-func resolveObjects(objIDs []int) []holdings.ItemRef {
-	objMu.Lock()
-	defer objMu.Unlock()
-	refs := make([]holdings.ItemRef, 0, len(objIDs))
-	for _, id := range objIDs {
-		if r, ok := objReg[id]; ok {
-			refs = append(refs, r)
-		}
-	}
-	return refs
-}
 
 // ingest routes a classified message into the views (market value + holdings + spec).
 func ingest(clf *probe.Classifier, svc *wailsadapter.Service, kind probe.Kind, code int, params map[byte]interface{}) {
@@ -219,9 +159,9 @@ func ingest(clf *probe.Classifier, svc *wailsadapter.Service, kind probe.Kind, c
 		if idx, quality, value, ok := extractEMV(params); ok {
 			svc.IngestEMV(idx, quality, value, nowMS())
 		}
-	case model.CatInventory: // AttachItemContainer — slots reference object ids
-		if cGUID, ownerGUID, objIDs, ok := capture.ContainerItems(params); ok {
-			svc.IngestContainer(cGUID, ownerGUID, resolveObjects(objIDs))
+	case model.CatInventory: // AttachItemContainer — key-3 slots are item indices (FR-001)
+		if cGUID, ownerGUID, slots, ok := capture.ContainerItems(params); ok {
+			svc.IngestContainerSlots(cGUID, ownerGUID, slots)
 		}
 	case model.CatBank: // BankVaultInfo — declares the bank tabs (owner GUIDs + names)
 		if owners, tabNames, ok := capture.BankVault(params); ok {
@@ -233,6 +173,10 @@ func ingest(clf *probe.Classifier, svc *wailsadapter.Service, kind probe.Kind, c
 	case model.CatCharacterSpec: // own-state masteries
 		if levels, ok := capture.MasteryLevels(params); ok {
 			svc.SetSpec(levels)
+		}
+	case model.CatCurrentLocation: // notification event 163 — "you entered <city>"
+		if city, ok := capture.CurrentCity(params); ok {
+			svc.SetCurrentCity(city)
 		}
 	}
 }

@@ -10,6 +10,7 @@
     { "kind": "event", "code": 98,  "category": "loot" },
     { "kind": "event", "code": 99,  "category": "inventory" },
     { "kind": "event", "code": 143, "category": "character_spec" },
+    { "kind": "event", "code": 163, "category": "current_location", "guardKey": 0 },
     { "kind": "event", "code": 414, "category": "bank" },
     { "kind": "event", "code": 466, "category": "item_value_emv" },
     { "kind": "response", "code": 82,  "category": "market_sell_orders" },

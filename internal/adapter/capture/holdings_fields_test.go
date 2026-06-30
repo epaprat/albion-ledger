@@ -43,7 +43,7 @@ func TestContainerItemsFromBytes(t *testing.T) {
 		t.Fatal("ContainerItems not ok")
 	}
 	if len(idx) != 3 || idx[0] != 920 || idx[1] != 3723 || idx[2] != 837 {
-		t.Fatalf("object ids = %v, want [920 3723 837] (empties filtered)", idx)
+		t.Fatalf("item indices = %v, want [920 3723 837] (empties filtered)", idx)
 	}
 	if cg != "0102030405060708090a0b0c0d0e0f10" {
 		t.Fatalf("container guid = %q", cg)
@@ -71,6 +71,40 @@ func TestMasteryLevelsFromBytes(t *testing.T) {
 	levels, ok := MasteryLevels(params)
 	if !ok || len(levels) != 4 || levels[2] != 86 {
 		t.Fatalf("masteries = %v ok=%v", levels, ok)
+	}
+}
+
+func TestCurrentCityFromBytes(t *testing.T) {
+	// Notification event 163: key 0 = subtype 39 (city), key 2 = {"city":"<Name>"}.
+	params := decodeEvent(t, []photon.Field{
+		{Key: 0, Type: photon.TypeInteger, Val: int32(39)},
+		{Key: 2, Type: photon.TypeString, Val: `{"city":"Fort Sterling"}`},
+		{Key: 252, Type: photon.TypeShort, Val: int16(163)},
+	})
+	city, ok := CurrentCity(params)
+	if !ok || city != "Fort Sterling" {
+		t.Fatalf("CurrentCity → city=%q ok=%v, want Fort Sterling/true", city, ok)
+	}
+}
+
+func TestCurrentCityRejectsNonCity(t *testing.T) {
+	// Wrong subtype (28 = challenge, not a city) → not-ok.
+	params := decodeEvent(t, []photon.Field{
+		{Key: 0, Type: photon.TypeInteger, Val: int32(28)},
+		{Key: 2, Type: photon.TypeString, Val: `{"reason":"X"}`},
+		{Key: 252, Type: photon.TypeShort, Val: int16(163)},
+	})
+	if _, ok := CurrentCity(params); ok {
+		t.Fatal("non-city subtype must be not-ok")
+	}
+	// Subtype 39 but no city in JSON → not-ok.
+	p2 := decodeEvent(t, []photon.Field{
+		{Key: 0, Type: photon.TypeInteger, Val: int32(39)},
+		{Key: 2, Type: photon.TypeString, Val: `{"other":"Y"}`},
+		{Key: 252, Type: photon.TypeShort, Val: int16(163)},
+	})
+	if _, ok := CurrentCity(p2); ok {
+		t.Fatal("subtype 39 without a city must be not-ok")
 	}
 }
 
