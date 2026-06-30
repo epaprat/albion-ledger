@@ -19,6 +19,10 @@ const (
 	CatSilver           Category = "silver"
 	CatFame             Category = "fame"
 	CatItemValueEMV     Category = "item_value_emv"
+	// CatCurrentLocation is the player's own current city/cluster (Join response key 8),
+	// consumed by the holdings-by-location view (feature 004). It is NOT a probe coverage
+	// target, so it is intentionally absent from AllCategories/ExpectedFields.
+	CatCurrentLocation Category = "current_location"
 )
 
 // AllCategories is the full ordered set of target categories (13). The coverage

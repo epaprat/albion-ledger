@@ -1,6 +1,9 @@
 package capture
 
-import "encoding/hex"
+import (
+	"encoding/hex"
+	"strings"
+)
 
 // Holdings field extractors. Pure functions over decoded Photon params; they
 // tolerate missing/odd keys (return ok=false) and never panic (Principle IV).
@@ -58,6 +61,26 @@ func EquippedItem(params map[byte]interface{}) (index, quality int, ok bool) {
 	}
 	q, _ := toIntVal(params[2])
 	return idx, q, true
+}
+
+// CurrentCity pulls the player's current location/cluster id from a Join response:
+// key 1 = CharacterID (guard — ensures this is a join, not another response), key 8
+// = location id string (numeric cluster id or "@ISLAND@…"). Own-account state, not a
+// position (ToS-safe). Returns ok=false on a non-join response or missing/implausible
+// location. Tolerates odd keys, never panics (Principle IV). See research 004 R1.
+func CurrentCity(params map[byte]interface{}) (locationID string, ok bool) {
+	if _, hasGuard := params[1]; !hasGuard { // CharacterID must be present
+		return "", false
+	}
+	s, isStr := params[8].(string)
+	if !isStr {
+		return "", false
+	}
+	s = strings.TrimSpace(strings.Trim(s, ",."))
+	if s == "" {
+		return "", false
+	}
+	return s, true
 }
 
 // MasteryLevels pulls the mastery level array from an own-state response: key 55.

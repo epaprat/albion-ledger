@@ -74,6 +74,38 @@ func TestMasteryLevelsFromBytes(t *testing.T) {
 	}
 }
 
+func TestCurrentCityFromBytes(t *testing.T) {
+	// Join response: key 1 = CharacterID (guard), key 8 = location id string.
+	params := decodeResponse(t, 0, []photon.Field{
+		{Key: 1, Type: photon.TypeArray | photon.TypeByte, Val: []byte{1, 2, 3, 4}},
+		{Key: 8, Type: photon.TypeString, Val: "1002"},
+		{Key: 253, Type: photon.TypeShort, Val: int16(2)},
+	})
+	id, ok := CurrentCity(params)
+	if !ok || id != "1002" {
+		t.Fatalf("CurrentCity → id=%q ok=%v, want 1002/true", id, ok)
+	}
+}
+
+func TestCurrentCityRejectsNonJoin(t *testing.T) {
+	// Missing the CharacterID guard (key 1) → not a join location.
+	params := decodeResponse(t, 0, []photon.Field{
+		{Key: 8, Type: photon.TypeString, Val: "1002"},
+		{Key: 253, Type: photon.TypeShort, Val: int16(2)},
+	})
+	if _, ok := CurrentCity(params); ok {
+		t.Fatal("location without CharacterID guard must be not-ok")
+	}
+	// Missing location (key 8) → not-ok.
+	p2 := decodeResponse(t, 0, []photon.Field{
+		{Key: 1, Type: photon.TypeArray | photon.TypeByte, Val: []byte{1, 2}},
+		{Key: 253, Type: photon.TypeShort, Val: int16(2)},
+	})
+	if _, ok := CurrentCity(p2); ok {
+		t.Fatal("missing location must be not-ok")
+	}
+}
+
 func TestExtractorsTolerateMissing(t *testing.T) {
 	if _, _, _, ok := ContainerItems(map[byte]interface{}{}); ok {
 		t.Fatal("empty container params must be not-ok")

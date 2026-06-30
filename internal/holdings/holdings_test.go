@@ -65,6 +65,94 @@ func TestFriendlyTab(t *testing.T) {
 	}
 }
 
+func TestBankTabsGrouping(t *testing.T) {
+	a, book := newAgg(t)
+	book.SetEMV(920, 0, 1000, 1000)
+	// Two named tabs; only "Items" opened.
+	a.SetBankVault([]string{"o1", "o2"}, []string{"Items", "Resources"})
+	a.SetContainer("c1", "o1", []ItemRef{{920, 0}, {837, 0}}, 1000)
+
+	s := a.Summary(1000)
+	// One bank city group (no current city yet → "Bank").
+	var bank *model.CitySummary
+	for i := range s.Cities {
+		if !s.Cities[i].IsInventory {
+			bank = &s.Cities[i]
+		}
+	}
+	if bank == nil {
+		t.Fatal("no bank city group")
+	}
+	tabs := map[string]model.TabSummary{}
+	for _, tb := range bank.Tabs {
+		tabs[tb.Name] = tb
+	}
+	items, okI := tabs["Items"]
+	res, okR := tabs["Resources"]
+	if !okI || !okR {
+		t.Fatalf("want both tabs, got %v", bank.Tabs)
+	}
+	if !items.Opened || items.ItemCount != 2 || items.Subtotal != 1000 {
+		t.Fatalf("Items tab wrong: %+v", items)
+	}
+	if res.Opened { // named via BankVaultInfo but never opened
+		t.Fatalf("Resources must be not-opened, got %+v", res)
+	}
+}
+
+func TestTabReObserveReplaces(t *testing.T) {
+	a, _ := newAgg(t)
+	a.SetBankVault([]string{"o1"}, []string{"Items"})
+	a.SetContainer("c1", "o1", []ItemRef{{920, 0}, {837, 0}}, 1000)
+	a.SetContainer("c1", "o1", []ItemRef{{920, 0}}, 1100) // item moved out → REPLACE
+	s := a.Summary(1100)
+	for _, c := range s.Cities {
+		for _, tb := range c.Tabs {
+			if tb.Name == "Items" && tb.ItemCount != 1 {
+				t.Fatalf("tab re-observe should replace → 1 item, got %d", tb.ItemCount)
+			}
+		}
+	}
+}
+
+func TestCurrentCityGroupsBank(t *testing.T) {
+	a, book := newAgg(t)
+	book.SetEMV(920, 0, 500, 1000)
+	a.SetBankVault([]string{"o1"}, []string{"Items"})
+
+	// In Caerleon → bank container tagged Caerleon.
+	a.SetCurrentCity("Caerleon")
+	a.SetContainer("c1", "o1", []ItemRef{{920, 0}}, 1000)
+	// Inventory is city-independent.
+	a.SetContainer("inv", "player", []ItemRef{{920, 0}}, 1000)
+
+	s := a.Summary(1000)
+	var caer, inv *model.CitySummary
+	for i := range s.Cities {
+		switch {
+		case s.Cities[i].Name == "Caerleon":
+			caer = &s.Cities[i]
+		case s.Cities[i].IsInventory:
+			inv = &s.Cities[i]
+		}
+	}
+	if caer == nil || caer.Total != 500 {
+		t.Fatalf("Caerleon bank group missing/total wrong: %+v", caer)
+	}
+	if inv == nil {
+		t.Fatal("inventory group must exist independent of city")
+	}
+	// A bank row carries the city; an inventory row does not.
+	for _, r := range a.List() {
+		if r.Location == model.LocBank && r.City != "Caerleon" {
+			t.Fatalf("bank row city = %q, want Caerleon", r.City)
+		}
+		if r.Location == model.LocInventory && r.City != "" {
+			t.Fatalf("inventory row city = %q, want empty", r.City)
+		}
+	}
+}
+
 func TestSummaryTotals(t *testing.T) {
 	a, book := newAgg(t)
 	book.SetEMV(920, 0, 3360, 1000)

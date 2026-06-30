@@ -19,6 +19,7 @@ import (
 	"github.com/epaprat/albion-ledger/internal/adapter/capture"
 	wailsadapter "github.com/epaprat/albion-ledger/internal/adapter/wails"
 	"github.com/epaprat/albion-ledger/internal/catalog"
+	"github.com/epaprat/albion-ledger/internal/cities"
 	"github.com/epaprat/albion-ledger/internal/codes"
 	"github.com/epaprat/albion-ledger/internal/domain/model"
 	"github.com/epaprat/albion-ledger/internal/domain/probe"
@@ -66,6 +67,8 @@ func main() {
 	if *codesPath != "" {
 		_ = reg.Reload(*codesPath)
 	}
+
+	cityTable = cities.New(data.CitiesJSON)
 
 	book := valuation.NewBook()
 	val := valuation.NewValuer(book, model.DefaultStaleAfterMS)
@@ -174,8 +177,15 @@ func ingest(clf *probe.Classifier, svc *wailsadapter.Service, kind probe.Kind, c
 		if levels, ok := capture.MasteryLevels(params); ok {
 			svc.SetSpec(levels)
 		}
+	case model.CatCurrentLocation: // Join response key 8 — the player's own current city
+		if id, ok := capture.CurrentCity(params); ok {
+			svc.SetCurrentCity(cityTable.Name(id))
+		}
 	}
 }
+
+// cityTable maps location ids → city display names (loaded from data/cities.json).
+var cityTable *cities.Table
 
 // emvScale: the server EMV is stored scaled by 10000 (silver = raw / 10000).
 const emvScale = 10000

@@ -1,0 +1,12 @@
+{
+  "_comment": "Best-effort location-id -> city display name map (FR-003/FR-005). Albion cluster/market ids; an id with no entry renders as 'Unknown city (<id>)'. Confirm/extend ids from a real session dump (tasks T026). '@ISLAND@...' prefixes are mapped to 'Island' by the loader, not here.",
+  "cities": {
+    "0007": "Thetford",
+    "1002": "Lymhurst",
+    "2004": "Bridgewatch",
+    "3005": "Caerleon",
+    "3008": "Martlock",
+    "4002": "Fort Sterling",
+    "5003": "Brecilien"
+  }
+}
