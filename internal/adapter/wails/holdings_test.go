@@ -46,6 +46,44 @@ func TestIngestContainerResolvedValued(t *testing.T) {
 	}
 }
 
+func TestHoldingsSummaryNestedTotals(t *testing.T) {
+	s, em, book := newHoldSvc(t)
+	book.SetEMV(920, 0, 3360, 1000)
+	// Inventory: one valued (920) + one unvalued (837, not in catalog book).
+	s.IngestContainerSlots("inv", "playerOwner", []int{920, 837})
+	// Bank tab "Items": one valued (920).
+	s.IngestBankVault([]string{"bankOwner"}, []string{"Items"})
+	s.IngestContainerSlots("bank1", "bankOwner", []int{920})
+
+	sum := s.HoldingsSummary()
+	if sum.TotalValue != 6720 { // 3360 (inv) + 3360 (bank)
+		t.Fatalf("grand total = %d, want 6720", sum.TotalValue)
+	}
+	if sum.UnvaluedCount != 1 {
+		t.Fatalf("unvalued = %d, want 1", sum.UnvaluedCount)
+	}
+	// Inventory group first; a separate bank city group exists.
+	if len(sum.Cities) < 2 || !sum.Cities[0].IsInventory {
+		t.Fatalf("want inventory-first + a bank group, got %+v", sum.Cities)
+	}
+	var bank *model.CitySummary
+	for i := range sum.Cities {
+		if !sum.Cities[i].IsInventory {
+			bank = &sum.Cities[i]
+		}
+	}
+	if bank == nil || len(bank.Tabs) == 0 || bank.Tabs[0].Name != "Items" || bank.Total != 3360 {
+		t.Fatalf("bank group/tab wrong: %+v", bank)
+	}
+	saw := false
+	for _, e := range em.events {
+		saw = saw || e == EventHoldingsChanged
+	}
+	if !saw {
+		t.Fatalf("expected holdings:changed, got %v", em.events)
+	}
+}
+
 func TestEquipmentAndSpec(t *testing.T) {
 	s, _, _ := newHoldSvc(t)
 	s.IngestEquipment([]holdings.ItemRef{{Index: 920, Quality: 2}})

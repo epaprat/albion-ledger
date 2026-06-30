@@ -1,10 +1,11 @@
 <script setup>
 import { ref, computed, onMounted } from 'vue'
+import HoldingsPanel from './components/HoldingsPanel.vue'
 
 const tab = ref('holdings')
 const market = ref(new Map())        // index -> LiveViewItem
 const holdings = ref([])             // HoldingItem[]
-const summary = ref({ totalValue: 0, unvaluedCount: 0, sections: {} })
+const summary = ref({ totalValue: 0, unvaluedCount: 0, cities: [] })
 const spec = ref({ masteries: [] })
 const status = ref({ capturing: false, interface: '', encryptedRate: 0, driftAlert: '' })
 const ready = ref(false)
@@ -12,14 +13,7 @@ const ready = ref(false)
 const marketRows = computed(() =>
   [...market.value.values()].sort((a, b) => (b.lastSeen || 0) - (a.lastSeen || 0))
 )
-const holdingsGroups = computed(() => {
-  const g = {}
-  for (const h of holdings.value) (g[h.group || 'Holdings'] ||= []).push(h)
-  // Inventory first, then bank tabs/others alphabetically.
-  return Object.keys(g).sort((a, b) =>
-    (a === 'Inventory' ? -1 : b === 'Inventory' ? 1 : a.localeCompare(b))
-  ).map((name) => ({ name, items: g[name] }))
-})
+const encrypted = computed(() => (status.value.encryptedRate || 0) > 0.5)
 
 const svc = () => (window.go && window.go.wailsadapter && window.go.wailsadapter.Service) || null
 
@@ -58,9 +52,6 @@ const fmt = (n) => (n || 0).toLocaleString('en-US')
 const tierLabel = (it) => it.tier ? `T${it.tier}${it.enchant ? '.' + it.enchant : ''}` : '—'
 const qLabel = (q) => q ? ['', 'Normal', 'Good', 'Outstanding', 'Excellent', 'Masterpiece'][q] : '—'
 const srcText = { live_market: 'live', server_estimate: 'est', unknown: '—' }
-const locLabel = { inventory: 'Inventory', bank: 'Bank', equipped: 'Equipped', holdings: 'Holdings' }
-const locOrder = ['equipped', 'inventory', 'bank', 'holdings']
-function section(loc) { return summary.value.sections?.[loc] || { seen: false } }
 </script>
 
 <template>
@@ -81,31 +72,12 @@ function section(loc) { return summary.value.sections?.[loc] || { seen: false } 
 
     <main>
       <!-- HOLDINGS -->
-      <section v-if="tab === 'holdings'">
-        <div class="total">
-          <span>Holdings total</span>
-          <strong>{{ fmt(summary.totalValue) }}</strong>
-          <span class="muted" v-if="summary.unvaluedCount">· {{ summary.unvaluedCount }} unvalued</span>
-        </div>
-        <div v-if="holdings.length === 0" class="state">
-          <p class="big">No holdings captured yet</p>
-          <p class="muted">Open your inventory or bank in game — held items appear here, valued.</p>
-        </div>
-        <div v-else v-for="grp in holdingsGroups" :key="grp.name" class="group">
-          <h3>{{ grp.name }} <span class="muted">· {{ grp.items.length }}</span></h3>
-          <table>
-            <tbody>
-              <tr v-for="(r, i) in grp.items" :key="grp.name + i">
-                <td :class="{ unknown: !r.item.known }">{{ r.item.displayName }}</td>
-                <td class="dim">{{ tierLabel(r.item) }}</td>
-                <td class="dim">{{ qLabel(r.item.quality) }}</td>
-                <td class="num">{{ fmt(r.valuation.amount) }}</td>
-                <td><span class="badge" :class="r.valuation.source">{{ srcText[r.valuation.source] }}</span></td>
-              </tr>
-            </tbody>
-          </table>
-        </div>
-      </section>
+      <HoldingsPanel
+        v-if="tab === 'holdings'"
+        :summary="summary"
+        :holdings="holdings"
+        :encrypted="encrypted"
+      />
 
       <!-- MARKET -->
       <section v-else-if="tab === 'market'">
