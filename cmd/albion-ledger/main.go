@@ -116,7 +116,7 @@ func runCapture(ctx context.Context, iface, replay string, clf *probe.Classifier
 		},
 		func(evByte byte, params map[byte]interface{}) {
 			code := codeFrom(params, 252, int(evByte))
-			registerNewItem(code, params) // declare object ids before containers reference them
+			registerNewItem(svc, code, params) // declare object ids + feed EMV before containers reference them
 			ingest(clf, svc, probe.KindEvent, code, params)
 		},
 	)
@@ -196,8 +196,11 @@ var (
 
 const objRegCap = 50_000
 
-// registerNewItem records objectId → {itemIndex, quality} from a New*Item event.
-func registerNewItem(code int, params map[byte]interface{}) {
+// registerNewItem records objectId → {itemIndex, quality, count} from a New*Item
+// event and feeds the item's server EstimatedMarketValue into valuation. Field map
+// (reference client NewItem): key 1 = itemIndex, key 2 = quantity, key 4 = EMV
+// (scaled ×10000), key 6 = quality, key 7 = durability.
+func registerNewItem(svc *wailsadapter.Service, code int, params map[byte]interface{}) {
 	if code < 30 || code > 37 { // NewEquipmentItem..NewEquipmentItemLegendarySoul
 		return
 	}
@@ -206,25 +209,13 @@ func registerNewItem(code int, params map[byte]interface{}) {
 	if !ok1 || !ok2 {
 		return
 	}
-	// Per New*Item variant (live-verified): equipment(30) → quality at key 6, count 1;
-	// furniture(33)/trophy(34) → quality at key 2, count 1; simple/stackable items
-	// (32 etc.) → key 2 is the STACK COUNT (e.g. 49), quality normal.
-	quality, count := 0, 1
-	switch code {
-	case 30:
-		quality, _ = capture.IntParam(params, 6)
-	case 33, 34:
-		quality, _ = capture.IntParam(params, 2)
-	default:
-		if c, ok := capture.IntParam(params, 2); ok {
-			count = c
-		}
+	count := 1
+	if c, ok := capture.IntParam(params, 2); ok && c > 0 {
+		count = c
 	}
-	if quality < 0 || quality > 5 {
+	quality, _ := capture.IntParam(params, 6)
+	if quality < 0 || quality > 5 { // furniture etc. put non-quality data here
 		quality = 0
-	}
-	if count < 1 {
-		count = 1
 	}
 	objMu.Lock()
 	if _, exists := objReg[objID]; !exists {
@@ -236,6 +227,13 @@ func registerNewItem(code int, params map[byte]interface{}) {
 	}
 	objReg[objID] = holdings.ItemRef{Index: idx, Quality: quality, Count: count}
 	objMu.Unlock()
+
+	// The item's own EstimatedMarketValue (key 4, a scalar int64) is the value the game
+	// shows when you open it — feed it to valuation so held items are valued without a
+	// market capture.
+	if emv, ok := capture.IntParam(params, 4); ok && emv > 0 {
+		svc.IngestEMV(idx, quality, int64(emv)/emvScale, nowMS())
+	}
 }
 
 // resolveObjects maps container object ids to item refs, skipping unresolved ones.
