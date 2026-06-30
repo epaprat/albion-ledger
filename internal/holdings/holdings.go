@@ -28,9 +28,9 @@ type SlotItem struct {
 
 type container struct {
 	location model.Location
-	city     string                     // city display name; "" for inventory (or generic bank until a city is known)
-	tab      string                     // bank tab name, or "Inventory"
-	items    map[int]model.HoldingItem  // objId -> row
+	city     string                    // city display name; "" for inventory (or generic bank until a city is known)
+	tab      string                    // bank tab name, or "Inventory"
+	items    map[int]model.HoldingItem // objId -> row
 	lastSeen int64
 }
 
@@ -43,24 +43,28 @@ type Aggregator struct {
 	val        port.Valuer
 	staleAfter int64
 
-	mu          sync.Mutex
-	containers  map[string]*container // keyed by container GUID (one per tab/inventory)
-	order       []string              // insertion order for bounded eviction
-	objLoc      map[int]string        // objId -> containerGUID (for incremental move/delete)
-	equipped    *container
-	bankOwners  map[string]string // owner GUID -> tab name (from BankVaultInfo)
-	currentCity string            // latest observed city display name; "" if unknown
-	citySeen    map[string]int64  // city display name -> last-seen ms
+	mu         sync.Mutex
+	containers map[string]*container // keyed by container GUID (one per tab/inventory)
+	order      []string              // insertion order for bounded eviction
+	objLoc     map[int]string        // objId -> containerGUID (for incremental move/delete)
+	equipped   *container
+	// bankOwners/bankOwnerCity/citySeen are keyed by a game-fixed set (bank-tab owner
+	// GUIDs, city names) that is tiny and bounded in practice — no eviction needed (XI).
+	bankOwners    map[string]string // owner GUID -> tab name (from BankVaultInfo)
+	bankOwnerCity map[string]string // owner GUID -> city it belongs to (current city at 414 time)
+	currentCity   string            // latest observed city display name; "" if unknown
+	citySeen      map[string]int64  // city display name -> last-seen ms
 }
 
 // New creates an Aggregator.
 func New(cat port.Catalog, val port.Valuer, staleAfter int64) *Aggregator {
 	return &Aggregator{
 		cat: cat, val: val, staleAfter: staleAfter,
-		containers: map[string]*container{},
-		objLoc:     map[int]string{},
-		bankOwners: map[string]string{},
-		citySeen:   map[string]int64{},
+		containers:    map[string]*container{},
+		objLoc:        map[int]string{},
+		bankOwners:    map[string]string{},
+		bankOwnerCity: map[string]string{},
+		citySeen:      map[string]int64{},
 	}
 }
 
@@ -82,6 +86,7 @@ func (a *Aggregator) SetBankVault(owners, tabNames []string) {
 			name = friendlyTab(tabNames[i])
 		}
 		a.bankOwners[o] = name
+		a.bankOwnerCity[o] = a.currentCity // the bank we're at right now owns these tabs
 	}
 }
 
@@ -100,18 +105,25 @@ func (a *Aggregator) SetContainer(containerGUID, ownerGUID string, slots []SlotI
 		if tabName != "" {
 			tab = tabName
 		}
-		city = a.currentCity // "" until a current city is known (US3)
+		city = a.currentCity              // "" until a current city is known (US3)
+		a.bankOwnerCity[ownerGUID] = city // opening the tab pins its city (most reliable)
 	}
 
 	c := a.ensureContainer(containerGUID)
-	// Drop the old object-id index entries for this container, then rebuild.
+	// Drop this container's own old index entries (only those still pointing here, so
+	// we never steal an entry an object earned by moving to another container).
 	for objID := range c.items {
-		delete(a.objLoc, objID)
+		if a.objLoc[objID] == containerGUID {
+			delete(a.objLoc, objID)
+		}
 	}
 	c.location, c.city, c.tab, c.lastSeen = loc, city, tab, nowMS
 	c.items = make(map[int]model.HoldingItem, len(slots))
 	for _, s := range slots {
-		c.items[s.ObjID] = a.row(s.Ref.Index, s.Ref.Quality, s.Ref.Count, loc, city, tab, nowMS)
+		a.removeObj(s.ObjID) // if this object still lived in another container, drop it there first
+		row := a.row(s.Ref.Index, s.Ref.Quality, s.Ref.Count, loc, city, tab, nowMS)
+		row.ObjID = s.ObjID
+		c.items[s.ObjID] = row
 		a.objLoc[s.ObjID] = containerGUID
 	}
 	a.touchCity(loc, city, nowMS)
@@ -130,7 +142,9 @@ func (a *Aggregator) PutItem(containerGUID string, objID int, ref ItemRef, nowMS
 	if c.tab == "" {
 		c.location, c.tab, c.city = model.LocInventory, "Inventory", ""
 	}
-	c.items[objID] = a.row(ref.Index, ref.Quality, ref.Count, c.location, c.city, c.tab, nowMS)
+	row := a.row(ref.Index, ref.Quality, ref.Count, c.location, c.city, c.tab, nowMS)
+	row.ObjID = objID
+	c.items[objID] = row
 	c.lastSeen = nowMS
 	a.objLoc[objID] = containerGUID
 	a.touchCity(c.location, c.city, nowMS)
@@ -159,7 +173,9 @@ func (a *Aggregator) ensureContainer(guid string) *container {
 		a.order = a.order[1:]
 		if c := a.containers[old]; c != nil {
 			for objID := range c.items {
-				delete(a.objLoc, objID)
+				if a.objLoc[objID] == old { // don't drop an entry an object earned elsewhere
+					delete(a.objLoc, objID)
+				}
 			}
 		}
 		delete(a.containers, old)
@@ -309,17 +325,16 @@ func (a *Aggregator) Summary(nowMS int64) model.HoldingsSummary {
 	}
 
 	// Known-but-unopened bank tabs (named via BankVaultInfo, not yet observed) are
-	// listed under the current city group so the user sees they exist (FR-004).
-	if len(a.bankOwners) > 0 {
-		ca := getCity(bankCityName(a.currentCity), false)
-		for _, tabName := range a.bankOwners {
-			name := tabName
-			if name == "" {
-				name = "Bank"
-			}
-			if _, ok := ca.tabs[name]; !ok {
-				ca.tabs[name] = &tabAcc{opened: false}
-			}
+	// listed under THEIR OWN city (recorded at 414 time), not the current one, so a
+	// tab never shows under the wrong city (FR-003/FR-004).
+	for owner, tabName := range a.bankOwners {
+		ca := getCity(bankCityName(a.bankOwnerCity[owner]), false)
+		name := tabName
+		if name == "" {
+			name = "Bank"
+		}
+		if _, ok := ca.tabs[name]; !ok {
+			ca.tabs[name] = &tabAcc{opened: false}
 		}
 	}
 

@@ -12,6 +12,7 @@ const (
 
 // HoldingItem is a held item with its value and where it is held.
 type HoldingItem struct {
+	ObjID     int       `json:"objId"` // in-world object id — a stable per-item key for the UI
 	Item      Item      `json:"item"`
 	Valuation Valuation `json:"valuation"` // per-item value + source + stale
 	Location  Location  `json:"location"`

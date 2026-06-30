@@ -43,7 +43,7 @@ func TestContainerItemsFromBytes(t *testing.T) {
 		t.Fatal("ContainerItems not ok")
 	}
 	if len(idx) != 3 || idx[0] != 920 || idx[1] != 3723 || idx[2] != 837 {
-		t.Fatalf("item indices = %v, want [920 3723 837] (empties filtered)", idx)
+		t.Fatalf("object ids = %v, want [920 3723 837] (empties filtered)", idx)
 	}
 	if cg != "0102030405060708090a0b0c0d0e0f10" {
 		t.Fatalf("container guid = %q", cg)

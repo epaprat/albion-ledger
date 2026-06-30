@@ -1,10 +1,6 @@
 <script setup>
-import { fmt, compact } from '../format.js'
+import { fmt, compact, tierLabel, qLabel, srcText } from '../format.js'
 defineProps({ r: { type: Object, required: true } })
-
-const tierLabel = (it) => (it.tier ? `T${it.tier}${it.enchant ? '.' + it.enchant : ''}` : '—')
-const qLabel = (q) => (q ? ['', 'Normal', 'Good', 'Outstanding', 'Excellent', 'Masterpiece'][q] : '—')
-const srcText = { live_market: 'live', server_estimate: 'est', unknown: '—' }
 </script>
 
 <template>

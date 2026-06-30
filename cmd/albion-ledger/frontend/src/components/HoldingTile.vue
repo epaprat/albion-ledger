@@ -1,6 +1,6 @@
 <script setup>
 import { ref } from 'vue'
-import { fmt, compact } from '../format.js'
+import { fmt, compact, tierLabel, qLabel } from '../format.js'
 defineProps({ r: { type: Object, required: true } })
 
 const broken = ref(false) // some items (quest/unlock) have no render icon → fall back
@@ -12,8 +12,6 @@ const initials = (name) =>
 const iconUrl = (it) =>
   `https://render.albiononline.com/v1/item/${encodeURIComponent(it.uniqueName || 'UNKNOWN')}.png?quality=${it.quality || 1}&size=78`
 
-const tierLabel = (it) => (it.tier ? `T${it.tier}${it.enchant ? '.' + it.enchant : ''}` : '')
-const qLabel = (q) => (q ? ['', 'Normal', 'Good', 'Outstanding', 'Excellent', 'Masterpiece'][q] : 'Normal')
 // Quality border colours, in-game style.
 const qColor = (q) => ['#30363d', '#8b949e', '#3fb950', '#58a6ff', '#bc8cff', '#d4a017'][q || 1]
 </script>

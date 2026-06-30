@@ -13,11 +13,16 @@ const cat = `{"items":[
   {"index":837,"uniqueName":"T8_MEAL","name":"Avalonian Stew"}
 ]}`
 
+// objCounter gives every test slot a globally unique object id, so two containers
+// never accidentally share one (which the aggregator correctly treats as a move).
+var objCounter int
+
 // slots wraps item indices into SlotItem with distinct object ids.
 func slots(indices ...int) []SlotItem {
 	s := make([]SlotItem, len(indices))
 	for i, idx := range indices {
-		s[i] = SlotItem{ObjID: 1000 + i, Ref: ItemRef{Index: idx}}
+		objCounter++
+		s[i] = SlotItem{ObjID: objCounter, Ref: ItemRef{Index: idx}}
 	}
 	return s
 }

@@ -11,10 +11,12 @@ import (
 // Field positions are from live capture (see specs/003 research-fields.md).
 
 // ContainerItems pulls a container's id, its owner id, and its non-empty slot
-// item INDICES from an AttachItemContainer event: key 1 = container GUID, key 2 =
-// owner GUID (distinguishes bank vault vs player inventory), key 3 = []i32 item
-// indices (one per slot, -1/0 = empty). NOT object ids (research 004 R2).
-func ContainerItems(params map[byte]interface{}) (containerGUID, ownerGUID string, itemIndices []int, ok bool) {
+// in-world OBJECT IDS from an AttachItemContainer event: key 1 = container GUID,
+// key 2 = owner GUID (distinguishes bank vault vs player inventory), key 3 = []i32
+// object ids (one per slot, -1/0 = empty). These are object ids, not item type
+// indices — the caller resolves them via the New*Item object registry (real capture
+// 2026-07-01; the "item indices" reading was a misdiagnosis, since reverted).
+func ContainerItems(params map[byte]interface{}) (containerGUID, ownerGUID string, objIDs []int, ok bool) {
 	raw, has := params[3]
 	if !has {
 		return "", "", nil, false
@@ -25,7 +27,7 @@ func ContainerItems(params map[byte]interface{}) (containerGUID, ownerGUID strin
 	}
 	for _, v := range arr {
 		if v > 0 { // empty slots are 0 or -1
-			itemIndices = append(itemIndices, int(v))
+			objIDs = append(objIDs, int(v))
 		}
 	}
 	if g, gok := params[1].([]byte); gok {
@@ -34,7 +36,7 @@ func ContainerItems(params map[byte]interface{}) (containerGUID, ownerGUID strin
 	if g, gok := params[2].([]byte); gok {
 		ownerGUID = hex.EncodeToString(g)
 	}
-	return containerGUID, ownerGUID, itemIndices, true
+	return containerGUID, ownerGUID, objIDs, true
 }
 
 // PutItem pulls (object id, container GUID) from an InventoryPutItem event (26):

@@ -258,6 +258,7 @@ export namespace model {
 	    }
 	}
 	export class HoldingItem {
+	    objId: number;
 	    item: Item;
 	    valuation: Valuation;
 	    location: string;
@@ -272,6 +273,7 @@ export namespace model {
 	
 	    constructor(source: any = {}) {
 	        if ('string' === typeof source) source = JSON.parse(source);
+	        this.objId = source["objId"];
 	        this.item = this.convertValues(source["item"], Item);
 	        this.valuation = this.convertValues(source["valuation"], Valuation);
 	        this.location = source["location"];

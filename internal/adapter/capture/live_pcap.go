@@ -37,6 +37,9 @@ func NewLive(iface string) (port.PacketSource, error) {
 			return nil, err
 		}
 		for _, d := range devs {
+			if isVirtualIface(d.Name) { // skip VPN tunnels, AirDrop, bridges by name
+				continue
+			}
 			for _, a := range d.Addresses {
 				ip := a.IP
 				if ip == nil || ip.IsLoopback() || ip.IsLinkLocalUnicast() || ip.IsLinkLocalMulticast() {
@@ -55,6 +58,17 @@ func NewLive(iface string) (port.PacketSource, error) {
 	l := &Live{iface: iface}
 	l.server.Store("")
 	return l, nil
+}
+
+// isVirtualIface reports whether a device name is a VPN tunnel, AirDrop link, or
+// bridge that never carries the game's LAN traffic — skipped during auto-detect.
+func isVirtualIface(name string) bool {
+	for _, p := range []string{"utun", "awdl", "llw", "bridge", "ap", "tun", "tap", "vnic", "vmnet", "ppp"} {
+		if len(name) >= len(p) && name[:len(p)] == p {
+			return true
+		}
+	}
+	return false
 }
 
 // Packets opens the handle, applies the Albion BPF filter, and streams payloads.
