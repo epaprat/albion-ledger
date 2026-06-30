@@ -19,6 +19,8 @@ export function ListHoldings():Promise<Array<model.HoldingItem>>;
 
 export function ListItems():Promise<Array<model.LiveViewItem>>;
 
+export function SetCurrentCity(arg1:string):Promise<void>;
+
 export function SetSpec(arg1:Array<number>):Promise<void>;
 
 export function SetStatus(arg1:model.CaptureStatusView):Promise<void>;

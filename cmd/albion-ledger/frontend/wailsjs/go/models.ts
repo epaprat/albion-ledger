@@ -85,6 +85,102 @@ export namespace model {
 		    return a;
 		}
 	}
+	export class SectionState {
+	    seen: boolean;
+	    lastSeen: number;
+	    stale: boolean;
+	
+	    static createFrom(source: any = {}) {
+	        return new SectionState(source);
+	    }
+	
+	    constructor(source: any = {}) {
+	        if ('string' === typeof source) source = JSON.parse(source);
+	        this.seen = source["seen"];
+	        this.lastSeen = source["lastSeen"];
+	        this.stale = source["stale"];
+	    }
+	}
+	export class TabSummary {
+	    name: string;
+	    itemCount: number;
+	    subtotal: number;
+	    unvaluedCount: number;
+	    opened: boolean;
+	    state: SectionState;
+	
+	    static createFrom(source: any = {}) {
+	        return new TabSummary(source);
+	    }
+	
+	    constructor(source: any = {}) {
+	        if ('string' === typeof source) source = JSON.parse(source);
+	        this.name = source["name"];
+	        this.itemCount = source["itemCount"];
+	        this.subtotal = source["subtotal"];
+	        this.unvaluedCount = source["unvaluedCount"];
+	        this.opened = source["opened"];
+	        this.state = this.convertValues(source["state"], SectionState);
+	    }
+	
+		convertValues(a: any, classs: any, asMap: boolean = false): any {
+		    if (!a) {
+		        return a;
+		    }
+		    if (a.slice && a.map) {
+		        return (a as any[]).map(elem => this.convertValues(elem, classs));
+		    } else if ("object" === typeof a) {
+		        if (asMap) {
+		            for (const key of Object.keys(a)) {
+		                a[key] = new classs(a[key]);
+		            }
+		            return a;
+		        }
+		        return new classs(a);
+		    }
+		    return a;
+		}
+	}
+	export class CitySummary {
+	    name: string;
+	    isInventory: boolean;
+	    total: number;
+	    unvaluedCount: number;
+	    tabs: TabSummary[];
+	    state: SectionState;
+	
+	    static createFrom(source: any = {}) {
+	        return new CitySummary(source);
+	    }
+	
+	    constructor(source: any = {}) {
+	        if ('string' === typeof source) source = JSON.parse(source);
+	        this.name = source["name"];
+	        this.isInventory = source["isInventory"];
+	        this.total = source["total"];
+	        this.unvaluedCount = source["unvaluedCount"];
+	        this.tabs = this.convertValues(source["tabs"], TabSummary);
+	        this.state = this.convertValues(source["state"], SectionState);
+	    }
+	
+		convertValues(a: any, classs: any, asMap: boolean = false): any {
+		    if (!a) {
+		        return a;
+		    }
+		    if (a.slice && a.map) {
+		        return (a as any[]).map(elem => this.convertValues(elem, classs));
+		    } else if ("object" === typeof a) {
+		        if (asMap) {
+		            for (const key of Object.keys(a)) {
+		                a[key] = new classs(a[key]);
+		            }
+		            return a;
+		        }
+		        return new classs(a);
+		    }
+		    return a;
+		}
+	}
 	export class Valuation {
 	    amount: number;
 	    source: string;
@@ -131,6 +227,7 @@ export namespace model {
 	    item: Item;
 	    valuation: Valuation;
 	    location: string;
+	    city: string;
 	    group: string;
 	    count: number;
 	    lastSeen: number;
@@ -144,6 +241,7 @@ export namespace model {
 	        this.item = this.convertValues(source["item"], Item);
 	        this.valuation = this.convertValues(source["valuation"], Valuation);
 	        this.location = source["location"];
+	        this.city = source["city"];
 	        this.group = source["group"];
 	        this.count = source["count"];
 	        this.lastSeen = source["lastSeen"];
@@ -167,26 +265,10 @@ export namespace model {
 		    return a;
 		}
 	}
-	export class SectionState {
-	    seen: boolean;
-	    lastSeen: number;
-	    stale: boolean;
-	
-	    static createFrom(source: any = {}) {
-	        return new SectionState(source);
-	    }
-	
-	    constructor(source: any = {}) {
-	        if ('string' === typeof source) source = JSON.parse(source);
-	        this.seen = source["seen"];
-	        this.lastSeen = source["lastSeen"];
-	        this.stale = source["stale"];
-	    }
-	}
 	export class HoldingsSummary {
 	    totalValue: number;
 	    unvaluedCount: number;
-	    sections: Record<string, SectionState>;
+	    cities: CitySummary[];
 	
 	    static createFrom(source: any = {}) {
 	        return new HoldingsSummary(source);
@@ -196,7 +278,7 @@ export namespace model {
 	        if ('string' === typeof source) source = JSON.parse(source);
 	        this.totalValue = source["totalValue"];
 	        this.unvaluedCount = source["unvaluedCount"];
-	        this.sections = this.convertValues(source["sections"], SectionState, true);
+	        this.cities = this.convertValues(source["cities"], CitySummary);
 	    }
 	
 		convertValues(a: any, classs: any, asMap: boolean = false): any {
@@ -254,6 +336,7 @@ export namespace model {
 		    return a;
 		}
 	}
+	
 	
 	
 
