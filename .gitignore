@@ -32,9 +32,11 @@ clients/
 vendor/
 
 # --- Wails ---
-frontend/node_modules/
-frontend/dist/
-build/bin/
+# frontend/dist is COMMITTED: go:embed needs it for `go build`. node_modules + the
+# wails build output are not.
+**/node_modules/
+**/build/bin/
+cmd/albion-ledger/build/
 
 # --- Node / frontend ---
 node_modules/
