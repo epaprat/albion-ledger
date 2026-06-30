@@ -56,10 +56,10 @@ func usage() {
 	fmt.Fprint(os.Stderr, `albion-ledger probe — measure what we can sniff
 
 usage:
-  probe replay <file.pcap> [--db probe.db] [--json]
-  probe live [--iface NAME] [--db probe.db] [--json]   (requires -tags pcap)
-  probe report --session <id> [--db probe.db] [--json]
-  probe reconcile --session <id> --category C --ingame V --captured V --result pass|fail [--notes N] [--db probe.db]
+  probe replay <file.pcap> [--db captures/x.db] [--json]
+  probe live [--iface NAME] [--db captures/x.db] [--json]   (requires -tags pcap)
+  probe report --session <id> [--db captures/x.db] [--json]
+  probe reconcile --session <id> --category C --ingame V --captured V --result pass|fail [--notes N] [--db captures/x.db]
   probe genfixture <out.pcap>
 `)
 }
@@ -68,7 +68,7 @@ func nowMS() int64 { return time.Now().UnixMilli() }
 
 func cmdRun(args []string, kind model.SourceKind) error {
 	fs := flag.NewFlagSet("run", flag.ContinueOnError)
-	dbPath := fs.String("db", "probe.db", "local store path")
+	dbPath := fs.String("db", "captures/probe.db", "local store path (under captures/, gitignored)")
 	iface := fs.String("iface", "", "capture interface (live)")
 	asJSON := fs.Bool("json", false, "emit JSON report")
 	dump := fs.Bool("dump", false, "print param table for each first-seen code (discovery, to stderr)")
@@ -159,7 +159,7 @@ func cmdRun(args []string, kind model.SourceKind) error {
 
 func cmdReport(args []string) error {
 	fs := flag.NewFlagSet("report", flag.ContinueOnError)
-	dbPath := fs.String("db", "probe.db", "local store path")
+	dbPath := fs.String("db", "captures/probe.db", "local store path (under captures/, gitignored)")
 	sessionID := fs.String("session", "", "session id")
 	asJSON := fs.Bool("json", false, "emit JSON report")
 	if err := fs.Parse(args); err != nil {
@@ -192,7 +192,7 @@ func cmdReport(args []string) error {
 
 func cmdReconcile(args []string) error {
 	fs := flag.NewFlagSet("reconcile", flag.ContinueOnError)
-	dbPath := fs.String("db", "probe.db", "local store path")
+	dbPath := fs.String("db", "captures/probe.db", "local store path (under captures/, gitignored)")
 	sessionID := fs.String("session", "", "session id")
 	category := fs.String("category", "", "category")
 	ingame := fs.String("ingame", "", "in-game value")

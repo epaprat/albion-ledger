@@ -49,6 +49,7 @@ yarn-error.log*
 *.sqlite
 *.sqlite3
 /data/
+/captures/
 
 # --- Generated capture fixtures / debug logs (not the fuzz corpus) ---
 *.pcap

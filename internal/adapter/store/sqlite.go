@@ -6,6 +6,8 @@ import (
 	"context"
 	"database/sql"
 	"fmt"
+	"os"
+	"path/filepath"
 
 	_ "modernc.org/sqlite"
 
@@ -47,7 +49,14 @@ CREATE TABLE IF NOT EXISTS reconciliation_notes (
 type SQLite struct{ db *sql.DB }
 
 // Open opens (creating if needed) the SQLite store at path with WAL + sane PRAGMAs.
+// The parent directory is created if missing so capture stores land tidily under
+// captures/ (gitignored) by default.
 func Open(path string) (*SQLite, error) {
+	if dir := filepath.Dir(path); dir != "" && dir != "." {
+		if err := os.MkdirAll(dir, 0o755); err != nil {
+			return nil, err
+		}
+	}
 	dsn := fmt.Sprintf("file:%s?_pragma=journal_mode(WAL)&_pragma=synchronous(NORMAL)&_pragma=busy_timeout(5000)", path)
 	db, err := sql.Open("sqlite", dsn)
 	if err != nil {

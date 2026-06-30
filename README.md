@@ -53,8 +53,11 @@ Live capture (reads the local game stream) needs the libpcap build tag:
 
 ```sh
 go build -tags pcap -o bin/probe ./cmd/probe
-sudo ./bin/probe live --db probe.db                       # passive; market + own-account data only
+sudo ./bin/probe live                                     # passive; market + own-account data only
 ```
+
+Capture stores default to `captures/` (created automatically, gitignored), so
+local session databases never clutter the repo root.
 
 The default build is pure-Go (no libpcap) so tests and replay run anywhere.
 
