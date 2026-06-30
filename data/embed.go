@@ -9,6 +9,3 @@ var ItemsJSON []byte
 
 //go:embed codes.json
 var CodesJSON []byte
-
-//go:embed cities.json
-var CitiesJSON []byte

@@ -75,34 +75,36 @@ func TestMasteryLevelsFromBytes(t *testing.T) {
 }
 
 func TestCurrentCityFromBytes(t *testing.T) {
-	// Join response: key 1 = CharacterID (guard), key 8 = location id string.
-	params := decodeResponse(t, 0, []photon.Field{
-		{Key: 1, Type: photon.TypeArray | photon.TypeByte, Val: []byte{1, 2, 3, 4}},
-		{Key: 8, Type: photon.TypeString, Val: "1002"},
-		{Key: 253, Type: photon.TypeShort, Val: int16(2)},
+	// Notification event 163: key 0 = subtype 39 (city), key 2 = {"city":"<Name>"}.
+	params := decodeEvent(t, []photon.Field{
+		{Key: 0, Type: photon.TypeInteger, Val: int32(39)},
+		{Key: 2, Type: photon.TypeString, Val: `{"city":"Fort Sterling"}`},
+		{Key: 252, Type: photon.TypeShort, Val: int16(163)},
 	})
-	id, ok := CurrentCity(params)
-	if !ok || id != "1002" {
-		t.Fatalf("CurrentCity → id=%q ok=%v, want 1002/true", id, ok)
+	city, ok := CurrentCity(params)
+	if !ok || city != "Fort Sterling" {
+		t.Fatalf("CurrentCity → city=%q ok=%v, want Fort Sterling/true", city, ok)
 	}
 }
 
-func TestCurrentCityRejectsNonJoin(t *testing.T) {
-	// Missing the CharacterID guard (key 1) → not a join location.
-	params := decodeResponse(t, 0, []photon.Field{
-		{Key: 8, Type: photon.TypeString, Val: "1002"},
-		{Key: 253, Type: photon.TypeShort, Val: int16(2)},
+func TestCurrentCityRejectsNonCity(t *testing.T) {
+	// Wrong subtype (28 = challenge, not a city) → not-ok.
+	params := decodeEvent(t, []photon.Field{
+		{Key: 0, Type: photon.TypeInteger, Val: int32(28)},
+		{Key: 2, Type: photon.TypeString, Val: `{"reason":"X"}`},
+		{Key: 252, Type: photon.TypeShort, Val: int16(163)},
 	})
 	if _, ok := CurrentCity(params); ok {
-		t.Fatal("location without CharacterID guard must be not-ok")
+		t.Fatal("non-city subtype must be not-ok")
 	}
-	// Missing location (key 8) → not-ok.
-	p2 := decodeResponse(t, 0, []photon.Field{
-		{Key: 1, Type: photon.TypeArray | photon.TypeByte, Val: []byte{1, 2}},
-		{Key: 253, Type: photon.TypeShort, Val: int16(2)},
+	// Subtype 39 but no city in JSON → not-ok.
+	p2 := decodeEvent(t, []photon.Field{
+		{Key: 0, Type: photon.TypeInteger, Val: int32(39)},
+		{Key: 2, Type: photon.TypeString, Val: `{"other":"Y"}`},
+		{Key: 252, Type: photon.TypeShort, Val: int16(163)},
 	})
 	if _, ok := CurrentCity(p2); ok {
-		t.Fatal("missing location must be not-ok")
+		t.Fatal("subtype 39 without a city must be not-ok")
 	}
 }
 

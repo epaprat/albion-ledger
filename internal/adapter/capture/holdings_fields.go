@@ -2,6 +2,7 @@ package capture
 
 import (
 	"encoding/hex"
+	"encoding/json"
 	"strings"
 )
 
@@ -63,24 +64,34 @@ func EquippedItem(params map[byte]interface{}) (index, quality int, ok bool) {
 	return idx, q, true
 }
 
-// CurrentCity pulls the player's current location/cluster id from a Join response:
-// key 1 = CharacterID (guard — ensures this is a join, not another response), key 8
-// = location id string (numeric cluster id or "@ISLAND@…"). Own-account state, not a
-// position (ToS-safe). Returns ok=false on a non-join response or missing/implausible
-// location. Tolerates odd keys, never panics (Principle IV). See research 004 R1.
-func CurrentCity(params map[byte]interface{}) (locationID string, ok bool) {
-	if _, hasGuard := params[1]; !hasGuard { // CharacterID must be present
+// cityChangeSubtype is the key-0 subtype of the notification event (163) that
+// announces the player entered a city. Live-verified: key 0 = 39 → key 2 holds
+// {"city":"<Name>"}; other subtypes (e.g. 28 = challenge) are ignored.
+const cityChangeSubtype = 39
+
+// CurrentCity pulls the player's current city NAME from a notification event (163):
+// key 0 = subtype (39 = city entered), key 2 = JSON {"city":"<Name>"}. This is the
+// player's own client-side "you entered <city>" notice — own-state, not a position
+// (ToS-safe). Returns ok=false for any other subtype or unparseable payload. Tolerates
+// odd keys, never panics (Principle IV). See research 004 R1 (live capture 2026-06-30).
+func CurrentCity(params map[byte]interface{}) (city string, ok bool) {
+	if sub, _ := toIntVal(params[0]); sub != cityChangeSubtype {
 		return "", false
 	}
-	s, isStr := params[8].(string)
+	raw, isStr := params[2].(string)
 	if !isStr {
 		return "", false
 	}
-	s = strings.TrimSpace(strings.Trim(s, ",."))
-	if s == "" {
+	var p struct {
+		City string `json:"city"`
+	}
+	if err := json.Unmarshal([]byte(raw), &p); err != nil {
 		return "", false
 	}
-	return s, true
+	if p.City = strings.TrimSpace(p.City); p.City == "" {
+		return "", false
+	}
+	return p.City, true
 }
 
 // MasteryLevels pulls the mastery level array from an own-state response: key 55.
