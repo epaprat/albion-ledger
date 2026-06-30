@@ -1,7 +1,7 @@
 <script setup>
+import { fmt, compact } from '../format.js'
 defineProps({ r: { type: Object, required: true } })
 
-const fmt = (n) => (n || 0).toLocaleString('en-US')
 const tierLabel = (it) => (it.tier ? `T${it.tier}${it.enchant ? '.' + it.enchant : ''}` : '—')
 const qLabel = (q) => (q ? ['', 'Normal', 'Good', 'Outstanding', 'Excellent', 'Masterpiece'][q] : '—')
 const srcText = { live_market: 'live', server_estimate: 'est', unknown: '—' }
@@ -17,7 +17,7 @@ const srcText = { live_market: 'live', server_estimate: 'est', unknown: '—' }
     <td class="dim">{{ qLabel(r.item.quality) }}</td>
     <td class="num">
       <template v-if="r.valuation.source === 'unknown'"><span class="muted">value unknown</span></template>
-      <template v-else>{{ fmt(r.valuation.amount) }}</template>
+      <template v-else>{{ compact(r.valuation.amount) }}</template>
     </td>
     <td><span class="badge" :class="r.valuation.source">{{ srcText[r.valuation.source] }}</span></td>
   </tr>
