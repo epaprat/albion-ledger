@@ -9,3 +9,6 @@ var ItemsJSON []byte
 
 //go:embed codes.json
 var CodesJSON []byte
+
+//go:embed clusters.json
+var ClustersJSON []byte
