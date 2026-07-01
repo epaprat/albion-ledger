@@ -66,3 +66,45 @@ func TestStoreRoundTrip(t *testing.T) {
 		t.Fatalf("recon load: %v notes=%v", err, notes)
 	}
 }
+
+func TestAppendFlowEventsIdempotent(t *testing.T) {
+	ctx := context.Background()
+	db, err := Open(filepath.Join(t.TempDir(), "flow.db"))
+	if err != nil {
+		t.Fatalf("open: %v", err)
+	}
+	defer db.Close()
+
+	if err := db.StartSession(ctx, model.CaptureSession{ID: "s1", StartedAt: 1000, SourceKind: model.SourceReplay}); err != nil {
+		t.Fatalf("start: %v", err)
+	}
+	batch := []model.FlowEvent{
+		{ID: "sv:1:47", Kind: model.FlowSilver, TS: 1001, Count: 1, Silver: 47, Valued: true, Source: "mob"},
+		{ID: "lt:9:920:2", Kind: model.FlowLoot, TS: 1002, Item: model.Item{Index: 920}, Count: 2, Valued: false},
+	}
+	if err := db.AppendFlowEvents(ctx, "s1", batch); err != nil {
+		t.Fatalf("append: %v", err)
+	}
+	// Re-append the loot event now valued → upsert, not duplicate (FR-008 / at-least-once).
+	batch[1].Silver = 1000
+	batch[1].Valued = true
+	if err := db.AppendFlowEvents(ctx, "s1", batch[1:]); err != nil {
+		t.Fatalf("re-append: %v", err)
+	}
+
+	var rows int
+	var lootSilver int64
+	var lootValued int
+	if err := db.db.QueryRowContext(ctx, `SELECT COUNT(*) FROM flow_events WHERE session_id='s1'`).Scan(&rows); err != nil {
+		t.Fatal(err)
+	}
+	if err := db.db.QueryRowContext(ctx, `SELECT silver, valued FROM flow_events WHERE event_id='lt:9:920:2'`).Scan(&lootSilver, &lootValued); err != nil {
+		t.Fatal(err)
+	}
+	if rows != 2 {
+		t.Fatalf("flow rows = %d, want 2 (idempotent upsert, no dup)", rows)
+	}
+	if lootSilver != 1000 || lootValued != 1 {
+		t.Fatalf("loot upsert not applied: silver=%d valued=%d, want 1000/1", lootSilver, lootValued)
+	}
+}
