@@ -97,7 +97,7 @@ func (a *Aggregator) SetContainer(containerGUID, ownerGUID string, slots []SlotI
 	defer a.mu.Unlock()
 
 	loc := model.LocInventory
-	tab := "Inventory"
+	tab := "Bag"
 	city := ""
 	if tabName, isBank := a.bankOwners[ownerGUID]; isBank {
 		loc = model.LocBank
@@ -161,10 +161,11 @@ func (a *Aggregator) PutItem(containerGUID string, objID int, ref ItemRef, nowMS
 	defer a.mu.Unlock()
 	a.removeObj(objID) // a move: drop from wherever it was
 	c := a.ensureContainer(containerGUID)
-	// A container first seen via a Put (e.g. inventory not yet snapshotted) defaults
-	// to inventory; one later seen via a full snapshot gets its real metadata.
+	// A container first seen via a Put (the player's bag, not yet snapshotted) defaults
+	// to the Bag tab so moves merge with the own-state bag; a later full snapshot can
+	// still relabel it.
 	if c.tab == "" {
-		c.location, c.tab, c.city = model.LocInventory, "Inventory", ""
+		c.location, c.tab, c.city = model.LocInventory, "Bag", ""
 	}
 	row := a.row(ref.Index, ref.Quality, ref.Count, c.location, c.city, c.tab, nowMS)
 	row.ObjID = objID

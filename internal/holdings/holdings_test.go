@@ -53,8 +53,8 @@ func TestInventoryVsBankByOwner(t *testing.T) {
 	a, _ := newAgg(t)
 	// Unknown owner → Inventory.
 	a.SetContainer("c1", "playerOwner", slots(920), 1000)
-	if got := a.List()[0]; got.Location != model.LocInventory || got.Group != "Inventory" {
-		t.Fatalf("unmatched owner should be Inventory, got loc=%s group=%q", got.Location, got.Group)
+	if got := a.List()[0]; got.Location != model.LocInventory || got.Group != "Bag" {
+		t.Fatalf("unmatched owner should be Bag/inventory, got loc=%s group=%q", got.Location, got.Group)
 	}
 	// Owner declared as a bank tab → location bank, tab name as group.
 	a.SetBankVault([]string{"bankOwner"}, []string{"Items"})
