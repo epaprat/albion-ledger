@@ -135,9 +135,9 @@ func TestDeleteItemFromBytes(t *testing.T) {
 }
 
 func TestOwnInventoryFromBytes(t *testing.T) {
-	// Own-state response (op-2): key 52 = inventory slot object ids (0 = empty slot).
+	// Own-state response (op-2): key 55 = bag slot object ids (0 = empty slot).
 	params := decodeResponse(t, 0, []photon.Field{
-		{Key: 52, Type: photon.TypeArray | photon.TypeInteger, Val: []int32{1651108, 0, 1651104, 1651109}},
+		{Key: 55, Type: photon.TypeArray | photon.TypeInteger, Val: []int32{1651108, 0, 1651104, 1651109}},
 		{Key: 253, Type: photon.TypeShort, Val: int16(2)},
 	})
 	ids, ok := OwnInventory(params)

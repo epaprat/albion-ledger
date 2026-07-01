@@ -174,13 +174,9 @@ func ingest(clf *probe.Classifier, svc *wailsadapter.Service, kind probe.Kind, c
 		if owners, tabNames, ok := capture.BankVault(params); ok {
 			svc.IngestBankVault(owners, tabNames)
 		}
-	// NewEquipmentItem(30) is an equipment-item DECLARATION (handled by the object
-	// registry), not the player's worn loadout — so it does not populate "equipped".
-	// The real equipped source is the equipment container; identifying it is future work.
-	case model.CatCharacterSpec: // own-state (op-2): masteries + the login inventory baseline
-		if levels, ok := capture.MasteryLevels(params); ok {
-			svc.SetSpec(levels)
-		}
+	case model.CatCharacterSpec: // own-state (op-2): the login BAG baseline (key 55)
+		// NOTE: key 55 is the bag, not masteries — the earlier mastery reading was wrong;
+		// the real spec/mastery source is TBD, so Spec is not populated from here.
 		if objIDs, ok := capture.OwnInventory(params); ok {
 			ingestSelfInventory(svc, objIDs)
 		}

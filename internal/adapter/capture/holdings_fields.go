@@ -114,13 +114,23 @@ func CurrentCity(params map[byte]interface{}) (city string, ok bool) {
 	return p.City, true
 }
 
-// OwnInventory pulls the player's inventory slot object ids from the Join own-state
-// response (op-2): key 52 = []i32 slot object ids (0/-1 = empty). This is the login
-// baseline inventory — it is NOT re-sent as an AttachItemContainer on bank/bag open,
-// so it must be read here. The objects are declared by New*Item events (resolved via
-// the object registry). Live capture 2026-07-01.
+// OwnInventory pulls the player's BAG slot object ids from the Join own-state
+// response (op-2): key 55 = []i32 slot object ids (0 = empty). This is the login
+// baseline inventory — NOT re-sent as an AttachItemContainer on bank/bag open, so it
+// must be read here. (Key 52 is the WORN/equipped set, verified live: it held one
+// mainhand while key 55 held two two-handers — impossible if equipped.) Objects are
+// declared by New*Item events (resolved via the object registry). Live 2026-07-01.
 func OwnInventory(params map[byte]interface{}) ([]int, bool) {
-	arr, ok := params[52].([]int32)
+	return slotObjIDs(params, 55)
+}
+
+// OwnEquipped pulls the player's WORN/equipped slot object ids: own-state key 52.
+func OwnEquipped(params map[byte]interface{}) ([]int, bool) {
+	return slotObjIDs(params, 52)
+}
+
+func slotObjIDs(params map[byte]interface{}, key byte) ([]int, bool) {
+	arr, ok := params[key].([]int32)
 	if !ok {
 		return nil, false
 	}
