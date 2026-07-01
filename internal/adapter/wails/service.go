@@ -123,6 +123,13 @@ func (s *Service) IngestContainer(containerGUID, ownerGUID string, slots []holdi
 	s.emitHoldings()
 }
 
+// IngestSelfContainer replaces a player-owned bag/equipped container (from own-state)
+// under the inventory group with the given tab, and broadcasts.
+func (s *Service) IngestSelfContainer(containerGUID, tab string, slots []holdings.SlotItem) {
+	s.agg.SetSelfContainer(containerGUID, tab, slots, s.nowMS())
+	s.emitHoldings()
+}
+
 // IngestPutItem incrementally adds/moves one item into a container (live update).
 func (s *Service) IngestPutItem(containerGUID string, objID int, ref holdings.ItemRef) {
 	s.agg.PutItem(containerGUID, objID, ref, s.nowMS())

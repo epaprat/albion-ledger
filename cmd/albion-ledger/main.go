@@ -174,11 +174,14 @@ func ingest(clf *probe.Classifier, svc *wailsadapter.Service, kind probe.Kind, c
 		if owners, tabNames, ok := capture.BankVault(params); ok {
 			svc.IngestBankVault(owners, tabNames)
 		}
-	case model.CatCharacterSpec: // own-state (op-2): the login BAG baseline (key 55)
-		// NOTE: key 55 is the bag, not masteries — the earlier mastery reading was wrong;
-		// the real spec/mastery source is TBD, so Spec is not populated from here.
+	case model.CatCharacterSpec: // own-state (op-2): the login bag (key 55) + equipped (key 52)
+		// NOTE: key 55 is the bag and key 52 the worn set — neither is masteries (the
+		// earlier reading was wrong); the real spec source is TBD, so Spec stays empty.
 		if objIDs, ok := capture.OwnInventory(params); ok {
-			ingestSelfInventory(svc, objIDs)
+			ingestSelf(svc, selfBagGUID, "Bag", objIDs)
+		}
+		if objIDs, ok := capture.OwnEquipped(params); ok {
+			ingestSelf(svc, selfEquipGUID, "Equipped", objIDs)
 		}
 	case model.CatCurrentLocation: // notification event 163 — "you entered <city>"
 		if city, ok := capture.CurrentCity(params); ok {
@@ -239,14 +242,14 @@ func registerNewItem(svc *wailsadapter.Service, code int, params map[byte]interf
 	}
 	ref := holdings.ItemRef{Index: idx, Quality: quality, Count: count}
 	objReg[objID] = ref
-	wasPending := pendingInv[objID] // login-inventory slot awaiting its declaration
+	pendGUID := pendingInv[objID] // own-state slot awaiting its declaration ("" = none)
 	delete(pendingInv, objID)
 	objMu.Unlock()
 
-	// A login-inventory object (from own-state key 52) declared after the fact: place
-	// it into the inventory now that it resolves.
-	if wasPending {
-		svc.IngestPutItem(selfInvGUID, objID, ref)
+	// An own-state bag/equipped object declared after the fact: place it into its
+	// self-container now that it resolves.
+	if pendGUID != "" {
+		svc.IngestPutItem(pendGUID, objID, ref)
 	}
 
 	// The item's own EstimatedMarketValue (key 4, a scalar int64) is the value the game
@@ -257,32 +260,37 @@ func registerNewItem(svc *wailsadapter.Service, code int, params map[byte]interf
 	}
 }
 
-// selfInvGUID/selfInvOwner identify the player's own inventory container. Its baseline
-// comes from own-state key 52 (Join), which carries no container GUID, so we use a
-// fixed one; selfInvOwner is deliberately not a bank owner so it groups as inventory.
-const selfInvGUID = "self-inventory"
-const selfInvOwner = "self"
+// Fixed container ids for the player's own bag + equipped sets, which arrive in
+// own-state slot arrays without a wire GUID. They group under the inventory city as
+// separate tabs.
+const (
+	selfBagGUID   = "self-bag"
+	selfEquipGUID = "self-equipped"
+)
 
-// pendingInv holds inventory object ids seen in own-state but not yet declared by a
-// New*Item; each is placed into the inventory when its declaration arrives.
-var pendingInv = map[int]bool{}
+// pendingInv maps an own-state object id (bag/equipped) not yet declared by a New*Item
+// to the self-container it belongs to; it is placed there when its declaration arrives.
+var pendingInv = map[int]string{}
 
-// ingestSelfInventory sets the player inventory from own-state slot object ids: the
-// already-declared ones are placed now, the rest are queued in pendingInv.
-func ingestSelfInventory(svc *wailsadapter.Service, objIDs []int) {
+// ingestSelf sets one own-state self-container (bag or equipped) from its slot object
+// ids: already-declared objects are placed now, the rest queue in pendingInv keyed to
+// this container. Re-runs replace the container wholesale (own-state is a full list).
+func ingestSelf(svc *wailsadapter.Service, guid, tab string, objIDs []int) {
 	slots := resolveObjects(objIDs)
-	svc.IngestContainer(selfInvGUID, selfInvOwner, slots)
+	svc.IngestSelfContainer(guid, tab, slots)
 	resolved := make(map[int]bool, len(slots))
 	for _, s := range slots {
 		resolved[s.ObjID] = true
 	}
 	objMu.Lock()
-	for k := range pendingInv {
-		delete(pendingInv, k)
+	for id, g := range pendingInv { // clear this container's stale pending entries
+		if g == guid {
+			delete(pendingInv, id)
+		}
 	}
 	for _, id := range objIDs {
 		if !resolved[id] {
-			pendingInv[id] = true
+			pendingInv[id] = guid
 		}
 	}
 	objMu.Unlock()

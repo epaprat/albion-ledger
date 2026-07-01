@@ -34,6 +34,10 @@ export function IngestPutItem(arg1, arg2, arg3) {
   return window['go']['wailsadapter']['Service']['IngestPutItem'](arg1, arg2, arg3);
 }
 
+export function IngestSelfContainer(arg1, arg2, arg3) {
+  return window['go']['wailsadapter']['Service']['IngestSelfContainer'](arg1, arg2, arg3);
+}
+
 export function ListHoldings() {
   return window['go']['wailsadapter']['Service']['ListHoldings']();
 }

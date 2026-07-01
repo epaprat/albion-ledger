@@ -130,6 +130,30 @@ func (a *Aggregator) SetContainer(containerGUID, ownerGUID string, slots []SlotI
 	return loc
 }
 
+// SetSelfContainer REPLACES a player-owned container (bag / equipped) that has no
+// owner GUID in the wire data — it comes from own-state slot arrays. Grouped under
+// the inventory city with the given tab (e.g. "Bag", "Equipped").
+func (a *Aggregator) SetSelfContainer(containerGUID, tab string, slots []SlotItem, nowMS int64) {
+	a.mu.Lock()
+	defer a.mu.Unlock()
+	c := a.ensureContainer(containerGUID)
+	for objID := range c.items {
+		if a.objLoc[objID] == containerGUID {
+			delete(a.objLoc, objID)
+		}
+	}
+	c.location, c.city, c.tab, c.lastSeen = model.LocInventory, "", tab, nowMS
+	c.items = make(map[int]model.HoldingItem, len(slots))
+	for _, s := range slots {
+		a.removeObj(s.ObjID)
+		row := a.row(s.Ref.Index, s.Ref.Quality, s.Ref.Count, model.LocInventory, "", tab, nowMS)
+		row.ObjID = s.ObjID
+		c.items[s.ObjID] = row
+		a.objLoc[s.ObjID] = containerGUID
+	}
+	a.citySeen[invName] = nowMS
+}
+
 // PutItem incrementally adds (or moves) one item into a container — InventoryPutItem.
 // The item is removed from any previous container first (a move), then placed here.
 func (a *Aggregator) PutItem(containerGUID string, objID int, ref ItemRef, nowMS int64) {

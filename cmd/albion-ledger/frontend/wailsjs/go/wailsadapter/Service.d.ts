@@ -19,6 +19,8 @@ export function IngestMarket(arg1:number,arg2:number,arg3:number,arg4:number):Pr
 
 export function IngestPutItem(arg1:string,arg2:number,arg3:holdings.ItemRef):Promise<void>;
 
+export function IngestSelfContainer(arg1:string,arg2:string,arg3:Array<holdings.SlotItem>):Promise<void>;
+
 export function ListHoldings():Promise<Array<model.HoldingItem>>;
 
 export function ListItems():Promise<Array<model.LiveViewItem>>;
