@@ -271,7 +271,11 @@ const (
 
 // pendingInv maps an own-state object id (bag/equipped) not yet declared by a New*Item
 // to the self-container it belongs to; it is placed there when its declaration arrives.
+// Reset per own-state, so it is naturally small (bag + equipped); pendingInvCap is a
+// hard backstop against unbounded growth (Principle XI).
 var pendingInv = map[int]string{}
+
+const pendingInvCap = 1024
 
 // ingestSelf sets one own-state self-container (bag or equipped) from its slot object
 // ids: already-declared objects are placed now, the rest queue in pendingInv keyed to
@@ -290,7 +294,7 @@ func ingestSelf(svc *wailsadapter.Service, guid, tab string, objIDs []int) {
 		}
 	}
 	for _, id := range objIDs {
-		if !resolved[id] {
+		if !resolved[id] && len(pendingInv) < pendingInvCap {
 			pendingInv[id] = guid
 		}
 	}

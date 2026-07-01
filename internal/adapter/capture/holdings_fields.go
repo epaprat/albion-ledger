@@ -167,18 +167,8 @@ func slotObjIDs(params map[byte]interface{}, key byte) ([]int, bool) {
 	return out, len(out) > 0
 }
 
-// MasteryLevels pulls the mastery level array from an own-state response: key 55.
-func MasteryLevels(params map[byte]interface{}) ([]int, bool) {
-	arr, ok := params[55].([]int32)
-	if !ok {
-		return nil, false
-	}
-	out := make([]int, len(arr))
-	for i, v := range arr {
-		out[i] = int(v)
-	}
-	return out, true
-}
+// (Removed MasteryLevels: own-state key 55 is the BAG, not mastery levels — the real
+// spec/mastery source is not yet identified. See protocol-findings.md open follow-ups.)
 
 // IntParam reads an integer-valued param by key.
 func IntParam(params map[byte]interface{}, key byte) (int, bool) {

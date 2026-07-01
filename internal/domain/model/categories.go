@@ -48,7 +48,7 @@ var ExpectedFields = map[Category][]byte{
 	CatInventory:        {0, 2},    // container id + slot items
 	CatEquipment:        {0, 1},    // object id + item id
 	CatBank:             {0, 1, 5}, // vault id + container ids/names + counts
-	CatCharacterSpec:    {55},      // masteries/specialization array (own-state blob, key 55)
+	CatCharacterSpec:    {55},      // own-state discriminator (key 55 present = op-2 own-state; it holds the bag object ids, not masteries)
 	CatLoot:             {0, 3},    // object id + source name
 	CatGatherFishing:    {0, 1},    // harvestable/reward fields
 	CatSilver:           {0, 2, 3}, // object id + target + yield (key 5 guild-tax often absent)

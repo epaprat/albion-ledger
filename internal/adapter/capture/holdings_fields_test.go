@@ -77,17 +77,6 @@ func TestEquippedItemFromBytes(t *testing.T) {
 	}
 }
 
-func TestMasteryLevelsFromBytes(t *testing.T) {
-	params := decodeResponse(t, 0, []photon.Field{
-		{Key: 55, Type: photon.TypeArray | photon.TypeInteger, Val: []int32{8, 0, 86, 170}},
-		{Key: 253, Type: photon.TypeShort, Val: int16(2)},
-	})
-	levels, ok := MasteryLevels(params)
-	if !ok || len(levels) != 4 || levels[2] != 86 {
-		t.Fatalf("masteries = %v ok=%v", levels, ok)
-	}
-}
-
 func TestCurrentCityFromBytes(t *testing.T) {
 	// Notification event 163: key 0 = subtype 39 (city), key 2 = {"city":"<Name>"}.
 	params := decodeEvent(t, []photon.Field{
@@ -170,7 +159,7 @@ func TestExtractorsTolerateMissing(t *testing.T) {
 	if _, _, ok := EquippedItem(map[byte]interface{}{}); ok {
 		t.Fatal("empty equipped params must be not-ok")
 	}
-	if _, ok := MasteryLevels(map[byte]interface{}{}); ok {
-		t.Fatal("empty mastery params must be not-ok")
+	if _, ok := OwnInventory(map[byte]interface{}{}); ok {
+		t.Fatal("empty own-inventory params must be not-ok")
 	}
 }
