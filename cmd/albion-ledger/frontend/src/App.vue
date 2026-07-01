@@ -1,6 +1,7 @@
 <script setup>
 import { ref, computed, onMounted } from 'vue'
 import HoldingsPanel from './components/HoldingsPanel.vue'
+import { fmt, tierLabel, qLabel, srcText } from './format.js'
 
 const tab = ref('holdings')
 const market = ref(new Map())        // index -> LiveViewItem
@@ -27,6 +28,14 @@ async function refreshHoldings() {
   holdings.value = (await s.ListHoldings()) || []
   summary.value = await s.HoldingsSummary()
 }
+// Coalesce holdings:changed bursts (a mass move fires ~2 events/item) into one
+// refresh so the webview isn't rebuilt per event (Principle XI — bounded UI).
+let refreshQueued = false
+function scheduleHoldingsRefresh() {
+  if (refreshQueued) return
+  refreshQueued = true
+  setTimeout(() => { refreshQueued = false; refreshHoldings() }, 80)
+}
 
 onMounted(async () => {
   const s = svc()
@@ -43,15 +52,11 @@ onMounted(async () => {
     window.runtime.EventsOn('item:updated', upsertMarket)
     window.runtime.EventsOn('status:changed', (st) => { status.value = st })
     window.runtime.EventsOn('drift:alert', (m) => { status.value = { ...status.value, driftAlert: m } })
-    window.runtime.EventsOn('holdings:changed', (sum) => { summary.value = sum; refreshHoldings() })
+    window.runtime.EventsOn('holdings:changed', scheduleHoldingsRefresh)
     window.runtime.EventsOn('spec:changed', (sp) => { spec.value = sp })
   }
 })
 
-const fmt = (n) => (n || 0).toLocaleString('en-US')
-const tierLabel = (it) => it.tier ? `T${it.tier}${it.enchant ? '.' + it.enchant : ''}` : '—'
-const qLabel = (q) => q ? ['', 'Normal', 'Good', 'Outstanding', 'Excellent', 'Masterpiece'][q] : '—'
-const srcText = { live_market: 'live', server_estimate: 'est', unknown: '—' }
 </script>
 
 <template>
@@ -60,6 +65,8 @@ const srcText = { live_market: 'live', server_estimate: 'est', unknown: '—' }
       <span class="dot" :class="status.capturing ? 'on' : 'off'" aria-hidden="true"></span>
       <strong>{{ status.capturing ? 'Capturing' : 'Idle' }}</strong>
       <span class="muted" v-if="status.interface">· {{ status.interface }}</span>
+      <span class="muted">· {{ fmt(status.decoded || 0) }} pkts</span>
+      <span class="muted" v-if="status.gameServer">· {{ status.gameServer }}</span>
       <span class="muted">· encrypted {{ Math.round((status.encryptedRate || 0) * 100) }}%</span>
       <nav class="tabs" role="tablist" aria-label="Views">
         <button :class="{ active: tab === 'holdings' }" @click="tab = 'holdings'" role="tab" :aria-selected="tab === 'holdings'">Holdings</button>
@@ -129,10 +136,6 @@ const srcText = { live_market: 'live', server_estimate: 'est', unknown: '—' }
 .tabs button.active { background: var(--bg); color: var(--text); border-color: var(--border); }
 .drift { padding: 8px 16px; background: #3a2d00; color: var(--warn); font-size: 13px; }
 main { flex: 1; overflow: auto; }
-.total { display: flex; align-items: baseline; gap: 10px; padding: 12px 16px; border-bottom: 1px solid var(--border); }
-.total strong { font-size: 18px; color: var(--accent); font-variant-numeric: tabular-nums; }
-.group { padding: 4px 0 12px; }
-.group h3 { margin: 0; padding: 10px 16px 6px; font-size: 13px; color: var(--muted); text-transform: uppercase; letter-spacing: .04em; }
 .state { padding: 56px 24px; text-align: center; color: var(--muted); }
 .state .big { font-size: 18px; color: var(--text); margin: 0 0 8px; }
 table { width: 100%; border-collapse: collapse; font-size: 14px; }

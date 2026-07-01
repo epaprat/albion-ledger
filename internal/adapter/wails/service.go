@@ -117,9 +117,28 @@ func (s *Service) SetStatus(st model.CaptureStatusView) {
 
 // ── Holdings ingestion ───────────────────────────────────────────────────────
 
-// IngestContainer replaces a container's held items and broadcasts holdings.
-func (s *Service) IngestContainer(containerGUID, ownerGUID string, refs []holdings.ItemRef) {
-	s.agg.SetContainer(containerGUID, ownerGUID, refs, s.nowMS())
+// IngestContainer replaces a container's held items (full snapshot) and broadcasts.
+func (s *Service) IngestContainer(containerGUID, ownerGUID string, slots []holdings.SlotItem) {
+	s.agg.SetContainer(containerGUID, ownerGUID, slots, s.nowMS())
+	s.emitHoldings()
+}
+
+// IngestSelfContainer replaces a player-owned bag/equipped container (from own-state)
+// under the inventory group with the given tab, and broadcasts.
+func (s *Service) IngestSelfContainer(containerGUID, tab string, slots []holdings.SlotItem) {
+	s.agg.SetSelfContainer(containerGUID, tab, slots, s.nowMS())
+	s.emitHoldings()
+}
+
+// IngestPutItem incrementally adds/moves one item into a container (live update).
+func (s *Service) IngestPutItem(containerGUID string, objID int, ref holdings.ItemRef) {
+	s.agg.PutItem(containerGUID, objID, ref, s.nowMS())
+	s.emitHoldings()
+}
+
+// IngestDeleteItem incrementally removes one item by object id (live update).
+func (s *Service) IngestDeleteItem(objID int) {
+	s.agg.DeleteItem(objID, s.nowMS())
 	s.emitHoldings()
 }
 

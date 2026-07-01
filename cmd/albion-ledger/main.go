@@ -112,11 +112,14 @@ func runCapture(ctx context.Context, iface, replay string, clf *probe.Classifier
 	parser := photon.NewPhotonParser(
 		nil,
 		func(opByte byte, _ int16, _ string, params map[byte]interface{}) {
-			ingest(clf, svc, probe.KindResponse, int(opByte), params)
+			// The operation code lives in param 253 for responses (opByte is the raw
+			// Photon opcode); own-state Join carries 253=2. Without this, op-2 responses
+			// (masteries + login inventory) never classify.
+			ingest(clf, svc, probe.KindResponse, codeFrom(params, 253, int(opByte)), params)
 		},
 		func(evByte byte, params map[byte]interface{}) {
 			code := codeFrom(params, 252, int(evByte))
-			registerNewItem(code, params) // declare object ids before containers reference them
+			registerNewItem(svc, code, params) // declare object ids + feed EMV before containers reference them
 			ingest(clf, svc, probe.KindEvent, code, params)
 		},
 	)
@@ -135,6 +138,7 @@ func runCapture(ctx context.Context, iface, replay string, clf *probe.Classifier
 				svc.SetStatus(model.CaptureStatusView{
 					Capturing: st.Capturing, Interface: st.Interface,
 					GameServer: st.GameServer, EncryptedRate: st.EncryptedRate,
+					Decoded: st.Decoded,
 				})
 			}
 		}
@@ -171,16 +175,28 @@ func ingest(clf *probe.Classifier, svc *wailsadapter.Service, kind probe.Kind, c
 		if owners, tabNames, ok := capture.BankVault(params); ok {
 			svc.IngestBankVault(owners, tabNames)
 		}
-	// NewEquipmentItem(30) is an equipment-item DECLARATION (handled by the object
-	// registry), not the player's worn loadout — so it does not populate "equipped".
-	// The real equipped source is the equipment container; identifying it is future work.
-	case model.CatCharacterSpec: // own-state masteries
-		if levels, ok := capture.MasteryLevels(params); ok {
-			svc.SetSpec(levels)
+	case model.CatCharacterSpec: // own-state (op-2): the login bag (key 55) + equipped (key 52)
+		// NOTE: key 55 is the bag and key 52 the worn set — neither is masteries (the
+		// earlier reading was wrong); the real spec source is TBD, so Spec stays empty.
+		if objIDs, ok := capture.OwnInventory(params); ok {
+			ingestSelf(svc, selfBagGUID, "Bag", objIDs)
+		}
+		if objIDs, ok := capture.OwnEquipped(params); ok {
+			ingestSelf(svc, selfEquipGUID, "Equipped", objIDs)
 		}
 	case model.CatCurrentLocation: // notification event 163 — "you entered <city>"
 		if city, ok := capture.CurrentCity(params); ok {
 			svc.SetCurrentCity(city)
+		}
+	case model.CatInventoryPut: // event 26 — item added/moved into a container (live)
+		if objID, cGUID, ok := capture.PutItem(params); ok {
+			if ref, ok := resolveObj(objID); ok {
+				svc.IngestPutItem(cGUID, objID, ref)
+			}
+		}
+	case model.CatInventoryDelete: // event 27 — item removed from a container (live)
+		if objID, ok := capture.DeleteItem(params); ok {
+			svc.IngestDeleteItem(objID)
 		}
 	}
 }
@@ -196,8 +212,11 @@ var (
 
 const objRegCap = 50_000
 
-// registerNewItem records objectId → {itemIndex, quality} from a New*Item event.
-func registerNewItem(code int, params map[byte]interface{}) {
+// registerNewItem records objectId → {itemIndex, quality, count} from a New*Item
+// event and feeds the item's server EstimatedMarketValue into valuation. Field map
+// (reference client NewItem): key 1 = itemIndex, key 2 = quantity, key 4 = EMV
+// (scaled ×10000), key 6 = quality, key 7 = durability.
+func registerNewItem(svc *wailsadapter.Service, code int, params map[byte]interface{}) {
 	if code < 30 || code > 37 { // NewEquipmentItem..NewEquipmentItemLegendarySoul
 		return
 	}
@@ -206,16 +225,12 @@ func registerNewItem(code int, params map[byte]interface{}) {
 	if !ok1 || !ok2 {
 		return
 	}
-	// Quality lives at a different param key per New*Item variant (live-verified):
-	// equipment(30) → key 6; furniture(33)/trophy(34) → key 2; others have none.
-	quality := 0
-	switch code {
-	case 30:
-		quality, _ = capture.IntParam(params, 6)
-	case 33, 34:
-		quality, _ = capture.IntParam(params, 2)
+	count := 1
+	if c, ok := capture.IntParam(params, 2); ok && c > 0 {
+		count = c
 	}
-	if quality < 0 || quality > 5 {
+	quality, _ := capture.IntParam(params, 6)
+	if quality < 0 || quality > 5 { // furniture etc. put non-quality data here
 		quality = 0
 	}
 	objMu.Lock()
@@ -226,21 +241,86 @@ func registerNewItem(code int, params map[byte]interface{}) {
 		}
 		objOrder = append(objOrder, objID)
 	}
-	objReg[objID] = holdings.ItemRef{Index: idx, Quality: quality}
+	ref := holdings.ItemRef{Index: idx, Quality: quality, Count: count}
+	objReg[objID] = ref
+	pendGUID := pendingInv[objID] // own-state slot awaiting its declaration ("" = none)
+	delete(pendingInv, objID)
+	objMu.Unlock()
+
+	// An own-state bag/equipped object declared after the fact: place it into its
+	// self-container now that it resolves.
+	if pendGUID != "" {
+		svc.IngestPutItem(pendGUID, objID, ref)
+	}
+
+	// The item's own EstimatedMarketValue (key 4, a scalar int64) is the value the game
+	// shows when you open it — feed it to valuation so held items are valued without a
+	// market capture.
+	if emv, ok := capture.IntParam(params, 4); ok && emv > 0 {
+		svc.IngestEMV(idx, quality, int64(emv)/emvScale, nowMS())
+	}
+}
+
+// Fixed container ids for the player's own bag + equipped sets, which arrive in
+// own-state slot arrays without a wire GUID. They group under the inventory city as
+// separate tabs.
+const (
+	selfBagGUID   = "self-bag"
+	selfEquipGUID = "self-equipped"
+)
+
+// pendingInv maps an own-state object id (bag/equipped) not yet declared by a New*Item
+// to the self-container it belongs to; it is placed there when its declaration arrives.
+// Reset per own-state, so it is naturally small (bag + equipped); pendingInvCap is a
+// hard backstop against unbounded growth (Principle XI).
+var pendingInv = map[int]string{}
+
+const pendingInvCap = 1024
+
+// ingestSelf sets one own-state self-container (bag or equipped) from its slot object
+// ids: already-declared objects are placed now, the rest queue in pendingInv keyed to
+// this container. Re-runs replace the container wholesale (own-state is a full list).
+func ingestSelf(svc *wailsadapter.Service, guid, tab string, objIDs []int) {
+	slots := resolveObjects(objIDs)
+	svc.IngestSelfContainer(guid, tab, slots)
+	resolved := make(map[int]bool, len(slots))
+	for _, s := range slots {
+		resolved[s.ObjID] = true
+	}
+	objMu.Lock()
+	for id, g := range pendingInv { // clear this container's stale pending entries
+		if g == guid {
+			delete(pendingInv, id)
+		}
+	}
+	for _, id := range objIDs {
+		if !resolved[id] && len(pendingInv) < pendingInvCap {
+			pendingInv[id] = guid
+		}
+	}
 	objMu.Unlock()
 }
 
-// resolveObjects maps container object ids to item refs, skipping unresolved ones.
-func resolveObjects(objIDs []int) []holdings.ItemRef {
+// resolveObjects maps container object ids to slot items (objId + ref), skipping
+// unresolved ones. The objId is kept so incremental moves can target the item.
+func resolveObjects(objIDs []int) []holdings.SlotItem {
 	objMu.Lock()
 	defer objMu.Unlock()
-	refs := make([]holdings.ItemRef, 0, len(objIDs))
+	slots := make([]holdings.SlotItem, 0, len(objIDs))
 	for _, id := range objIDs {
 		if r, ok := objReg[id]; ok {
-			refs = append(refs, r)
+			slots = append(slots, holdings.SlotItem{ObjID: id, Ref: r})
 		}
 	}
-	return refs
+	return slots
+}
+
+// resolveObj returns the ref for a single object id (for incremental Put).
+func resolveObj(objID int) (holdings.ItemRef, bool) {
+	objMu.Lock()
+	defer objMu.Unlock()
+	r, ok := objReg[objID]
+	return r, ok
 }
 
 // emvScale: the server EMV is stored scaled by 10000 (silver = raw / 10000).

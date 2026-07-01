@@ -10,22 +10,48 @@ import (
 // tolerate missing/odd keys (return ok=false) and never panic (Principle IV).
 // Field positions are from live capture (see specs/003 research-fields.md).
 
-// ContainerItems pulls a container's id, its owner id, and its non-empty slot
-// item INDICES from an AttachItemContainer event: key 1 = container GUID, key 2 =
-// owner GUID (distinguishes bank vault vs player inventory), key 3 = []i32 item
-// indices (one per slot, -1/0 = empty). NOT object ids (research 004 R2).
-func ContainerItems(params map[byte]interface{}) (containerGUID, ownerGUID string, itemIndices []int, ok bool) {
-	raw, has := params[3]
-	if !has {
-		return "", "", nil, false
+// intSlice reads an integer array param regardless of its Photon element width.
+// Photon sizes int arrays by value magnitude, so the SAME field is []int16 when the
+// values are small (e.g. object ids early in a session) and []int32 when large — both
+// must be accepted or the field silently drops.
+func intSlice(v interface{}) ([]int, bool) {
+	switch a := v.(type) {
+	case []int32:
+		out := make([]int, len(a))
+		for i, x := range a {
+			out[i] = int(x)
+		}
+		return out, true
+	case []int16:
+		out := make([]int, len(a))
+		for i, x := range a {
+			out[i] = int(x)
+		}
+		return out, true
+	case []int64:
+		out := make([]int, len(a))
+		for i, x := range a {
+			out[i] = int(x)
+		}
+		return out, true
 	}
-	arr, isArr := raw.([]int32)
+	return nil, false
+}
+
+// ContainerItems pulls a container's id, its owner id, and its non-empty slot
+// in-world OBJECT IDS from an AttachItemContainer event: key 1 = container GUID,
+// key 2 = owner GUID (distinguishes bank vault vs player inventory), key 3 = slot
+// object ids (one per slot, -1/0 = empty). The caller resolves them via the New*Item
+// object registry. (Real capture 2026-07-01: slots are object ids; small ones arrive
+// as []int16 in a fresh session, larger ones as []int32 — both handled.)
+func ContainerItems(params map[byte]interface{}) (containerGUID, ownerGUID string, objIDs []int, ok bool) {
+	arr, isArr := intSlice(params[3])
 	if !isArr {
 		return "", "", nil, false
 	}
 	for _, v := range arr {
 		if v > 0 { // empty slots are 0 or -1
-			itemIndices = append(itemIndices, int(v))
+			objIDs = append(objIDs, v)
 		}
 	}
 	if g, gok := params[1].([]byte); gok {
@@ -34,7 +60,25 @@ func ContainerItems(params map[byte]interface{}) (containerGUID, ownerGUID strin
 	if g, gok := params[2].([]byte); gok {
 		ownerGUID = hex.EncodeToString(g)
 	}
-	return containerGUID, ownerGUID, itemIndices, true
+	return containerGUID, ownerGUID, objIDs, true
+}
+
+// PutItem pulls (object id, container GUID) from an InventoryPutItem event (26):
+// key 0 = item object id, key 2 = container GUID (matches AttachItemContainer key 1),
+// key 1 = slot (unused here). The item is now in that container.
+func PutItem(params map[byte]interface{}) (objID int, containerGUID string, ok bool) {
+	id, iok := toIntVal(params[0])
+	g, gok := params[2].([]byte)
+	if !iok || !gok {
+		return 0, "", false
+	}
+	return id, hex.EncodeToString(g), true
+}
+
+// DeleteItem pulls the removed object id from an InventoryDeleteItem event (27):
+// key 0 = item object id (which container it left is found by id).
+func DeleteItem(params map[byte]interface{}) (objID int, ok bool) {
+	return toIntVal(params[0])
 }
 
 // BankVault pulls the bank's tab owner ids and names from a BankVaultInfo event:
@@ -94,18 +138,37 @@ func CurrentCity(params map[byte]interface{}) (city string, ok bool) {
 	return p.City, true
 }
 
-// MasteryLevels pulls the mastery level array from an own-state response: key 55.
-func MasteryLevels(params map[byte]interface{}) ([]int, bool) {
-	arr, ok := params[55].([]int32)
+// OwnInventory pulls the player's BAG slot object ids from the Join own-state
+// response (op-2): key 55 = []i32 slot object ids (0 = empty). This is the login
+// baseline inventory — NOT re-sent as an AttachItemContainer on bank/bag open, so it
+// must be read here. (Key 52 is the WORN/equipped set, verified live: it held one
+// mainhand while key 55 held two two-handers — impossible if equipped.) Objects are
+// declared by New*Item events (resolved via the object registry). Live 2026-07-01.
+func OwnInventory(params map[byte]interface{}) ([]int, bool) {
+	return slotObjIDs(params, 55)
+}
+
+// OwnEquipped pulls the player's WORN/equipped slot object ids: own-state key 52.
+func OwnEquipped(params map[byte]interface{}) ([]int, bool) {
+	return slotObjIDs(params, 52)
+}
+
+func slotObjIDs(params map[byte]interface{}, key byte) ([]int, bool) {
+	arr, ok := intSlice(params[key])
 	if !ok {
 		return nil, false
 	}
-	out := make([]int, len(arr))
-	for i, v := range arr {
-		out[i] = int(v)
+	out := make([]int, 0, len(arr))
+	for _, v := range arr {
+		if v > 0 {
+			out = append(out, v)
+		}
 	}
-	return out, true
+	return out, len(out) > 0
 }
+
+// (Removed MasteryLevels: own-state key 55 is the BAG, not mastery levels — the real
+// spec/mastery source is not yet identified. See protocol-findings.md open follow-ups.)
 
 // IntParam reads an integer-valued param by key.
 func IntParam(params map[byte]interface{}, key byte) (int, bool) {

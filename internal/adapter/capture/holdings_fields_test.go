@@ -43,12 +43,26 @@ func TestContainerItemsFromBytes(t *testing.T) {
 		t.Fatal("ContainerItems not ok")
 	}
 	if len(idx) != 3 || idx[0] != 920 || idx[1] != 3723 || idx[2] != 837 {
-		t.Fatalf("item indices = %v, want [920 3723 837] (empties filtered)", idx)
+		t.Fatalf("object ids = %v, want [920 3723 837] (empties filtered)", idx)
 	}
 	if cg != "0102030405060708090a0b0c0d0e0f10" {
 		t.Fatalf("container guid = %q", cg)
 	}
 	_ = owner
+}
+
+// A fresh session's small object ids arrive as []int16, not []int32 (Photon sizes
+// int arrays by magnitude). intSlice must read both widths, else the field drops.
+func TestIntSliceWidths(t *testing.T) {
+	if got, ok := intSlice([]int16{1278, 0, 1325}); !ok || len(got) != 3 || got[0] != 1278 || got[2] != 1325 {
+		t.Fatalf("[]int16 → %v ok=%v", got, ok)
+	}
+	if got, ok := intSlice([]int32{1063460, 0, 1063465}); !ok || got[2] != 1063465 {
+		t.Fatalf("[]int32 → %v ok=%v", got, ok)
+	}
+	if _, ok := intSlice("not a slice"); ok {
+		t.Fatal("non-slice must be not-ok")
+	}
 }
 
 func TestEquippedItemFromBytes(t *testing.T) {
@@ -60,17 +74,6 @@ func TestEquippedItemFromBytes(t *testing.T) {
 	idx, q, ok := EquippedItem(params)
 	if !ok || idx != 6977 || q != 2 {
 		t.Fatalf("equipped → idx=%d q=%d ok=%v", idx, q, ok)
-	}
-}
-
-func TestMasteryLevelsFromBytes(t *testing.T) {
-	params := decodeResponse(t, 0, []photon.Field{
-		{Key: 55, Type: photon.TypeArray | photon.TypeInteger, Val: []int32{8, 0, 86, 170}},
-		{Key: 253, Type: photon.TypeShort, Val: int16(2)},
-	})
-	levels, ok := MasteryLevels(params)
-	if !ok || len(levels) != 4 || levels[2] != 86 {
-		t.Fatalf("masteries = %v ok=%v", levels, ok)
 	}
 }
 
@@ -108,6 +111,47 @@ func TestCurrentCityRejectsNonCity(t *testing.T) {
 	}
 }
 
+func TestPutItemFromBytes(t *testing.T) {
+	guid := []byte{1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16}
+	params := decodeEvent(t, []photon.Field{
+		{Key: 0, Type: photon.TypeInteger, Val: int32(1633639)},
+		{Key: 1, Type: photon.TypeInteger, Val: int32(66)},
+		{Key: 2, Type: photon.TypeArray | photon.TypeByte, Val: guid},
+		{Key: 252, Type: photon.TypeShort, Val: int16(26)},
+	})
+	obj, cg, ok := PutItem(params)
+	if !ok || obj != 1633639 || cg != "0102030405060708090a0b0c0d0e0f10" {
+		t.Fatalf("PutItem → obj=%d cg=%q ok=%v", obj, cg, ok)
+	}
+}
+
+func TestDeleteItemFromBytes(t *testing.T) {
+	params := decodeEvent(t, []photon.Field{
+		{Key: 0, Type: photon.TypeInteger, Val: int32(1439513)},
+		{Key: 1, Type: photon.TypeInteger, Val: int32(15)},
+		{Key: 252, Type: photon.TypeShort, Val: int16(27)},
+	})
+	obj, ok := DeleteItem(params)
+	if !ok || obj != 1439513 {
+		t.Fatalf("DeleteItem → obj=%d ok=%v", obj, ok)
+	}
+}
+
+func TestOwnInventoryFromBytes(t *testing.T) {
+	// Own-state response (op-2): key 55 = bag slot object ids (0 = empty slot).
+	params := decodeResponse(t, 0, []photon.Field{
+		{Key: 55, Type: photon.TypeArray | photon.TypeInteger, Val: []int32{1651108, 0, 1651104, 1651109}},
+		{Key: 253, Type: photon.TypeShort, Val: int16(2)},
+	})
+	ids, ok := OwnInventory(params)
+	if !ok || len(ids) != 3 || ids[0] != 1651108 || ids[2] != 1651109 {
+		t.Fatalf("OwnInventory → %v ok=%v, want [1651108 1651104 1651109]", ids, ok)
+	}
+	if _, ok := OwnInventory(map[byte]interface{}{}); ok {
+		t.Fatal("missing key 52 must be not-ok")
+	}
+}
+
 func TestExtractorsTolerateMissing(t *testing.T) {
 	if _, _, _, ok := ContainerItems(map[byte]interface{}{}); ok {
 		t.Fatal("empty container params must be not-ok")
@@ -115,7 +159,7 @@ func TestExtractorsTolerateMissing(t *testing.T) {
 	if _, _, ok := EquippedItem(map[byte]interface{}{}); ok {
 		t.Fatal("empty equipped params must be not-ok")
 	}
-	if _, ok := MasteryLevels(map[byte]interface{}{}); ok {
-		t.Fatal("empty mastery params must be not-ok")
+	if _, ok := OwnInventory(map[byte]interface{}{}); ok {
+		t.Fatal("empty own-inventory params must be not-ok")
 	}
 }

@@ -60,6 +60,7 @@ type CaptureStatusView struct {
 	Interface     string  `json:"interface"`
 	GameServer    string  `json:"gameServer,omitempty"`
 	EncryptedRate float64 `json:"encryptedRate"`
+	Decoded       uint64  `json:"decoded"` // decoded Photon packets so far (is capture actually flowing?)
 	DriftAlert    string  `json:"driftAlert,omitempty"`
 }
 

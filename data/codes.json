@@ -1,6 +1,8 @@
 {
   "_comment": "Message code -> category map. Data-driven so a game patch that shifts codes is a JSON edit + reload, no recompile (FR-012). kind: event|response|request. guardKey: optional discriminator parameter that must be present. Codes NOT listed are unhandled (this is how position/radar codes stay excluded, ToS-safe).",
   "entries": [
+    { "kind": "event", "code": 26,  "category": "inventory_put" },
+    { "kind": "event", "code": 27,  "category": "inventory_delete" },
     { "kind": "event", "code": 30,  "category": "equipment" },
     { "kind": "event", "code": 38,  "category": "gather_fishing" },
     { "kind": "event", "code": 61,  "category": "gather_fishing" },

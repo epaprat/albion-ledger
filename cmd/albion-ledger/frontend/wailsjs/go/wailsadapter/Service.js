@@ -14,6 +14,10 @@ export function IngestContainer(arg1, arg2, arg3) {
   return window['go']['wailsadapter']['Service']['IngestContainer'](arg1, arg2, arg3);
 }
 
+export function IngestDeleteItem(arg1) {
+  return window['go']['wailsadapter']['Service']['IngestDeleteItem'](arg1);
+}
+
 export function IngestEMV(arg1, arg2, arg3, arg4) {
   return window['go']['wailsadapter']['Service']['IngestEMV'](arg1, arg2, arg3, arg4);
 }
@@ -24,6 +28,14 @@ export function IngestEquipment(arg1) {
 
 export function IngestMarket(arg1, arg2, arg3, arg4) {
   return window['go']['wailsadapter']['Service']['IngestMarket'](arg1, arg2, arg3, arg4);
+}
+
+export function IngestPutItem(arg1, arg2, arg3) {
+  return window['go']['wailsadapter']['Service']['IngestPutItem'](arg1, arg2, arg3);
+}
+
+export function IngestSelfContainer(arg1, arg2, arg3) {
+  return window['go']['wailsadapter']['Service']['IngestSelfContainer'](arg1, arg2, arg3);
 }
 
 export function ListHoldings() {

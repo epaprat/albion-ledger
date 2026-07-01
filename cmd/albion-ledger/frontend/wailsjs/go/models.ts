@@ -3,6 +3,7 @@ export namespace holdings {
 	export class ItemRef {
 	    Index: number;
 	    Quality: number;
+	    Count: number;
 	
 	    static createFrom(source: any = {}) {
 	        return new ItemRef(source);
@@ -12,7 +13,40 @@ export namespace holdings {
 	        if ('string' === typeof source) source = JSON.parse(source);
 	        this.Index = source["Index"];
 	        this.Quality = source["Quality"];
+	        this.Count = source["Count"];
 	    }
+	}
+	export class SlotItem {
+	    ObjID: number;
+	    Ref: ItemRef;
+	
+	    static createFrom(source: any = {}) {
+	        return new SlotItem(source);
+	    }
+	
+	    constructor(source: any = {}) {
+	        if ('string' === typeof source) source = JSON.parse(source);
+	        this.ObjID = source["ObjID"];
+	        this.Ref = this.convertValues(source["Ref"], ItemRef);
+	    }
+	
+		convertValues(a: any, classs: any, asMap: boolean = false): any {
+		    if (!a) {
+		        return a;
+		    }
+		    if (a.slice && a.map) {
+		        return (a as any[]).map(elem => this.convertValues(elem, classs));
+		    } else if ("object" === typeof a) {
+		        if (asMap) {
+		            for (const key of Object.keys(a)) {
+		                a[key] = new classs(a[key]);
+		            }
+		            return a;
+		        }
+		        return new classs(a);
+		    }
+		    return a;
+		}
 	}
 
 }
@@ -24,6 +58,7 @@ export namespace model {
 	    interface: string;
 	    gameServer?: string;
 	    encryptedRate: number;
+	    decoded: number;
 	    driftAlert?: string;
 	
 	    static createFrom(source: any = {}) {
@@ -36,6 +71,7 @@ export namespace model {
 	        this.interface = source["interface"];
 	        this.gameServer = source["gameServer"];
 	        this.encryptedRate = source["encryptedRate"];
+	        this.decoded = source["decoded"];
 	        this.driftAlert = source["driftAlert"];
 	    }
 	}
@@ -224,6 +260,7 @@ export namespace model {
 	    }
 	}
 	export class HoldingItem {
+	    objId: number;
 	    item: Item;
 	    valuation: Valuation;
 	    location: string;
@@ -238,6 +275,7 @@ export namespace model {
 	
 	    constructor(source: any = {}) {
 	        if ('string' === typeof source) source = JSON.parse(source);
+	        this.objId = source["objId"];
 	        this.item = this.convertValues(source["item"], Item);
 	        this.valuation = this.convertValues(source["valuation"], Valuation);
 	        this.location = source["location"];
