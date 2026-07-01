@@ -217,6 +217,74 @@ export namespace model {
 		    return a;
 		}
 	}
+	export class FlowEventView {
+	    kind: string;
+	    ts: number;
+	    itemDisplayName?: string;
+	    uniqueName?: string;
+	    tier: number;
+	    enchant: number;
+	    quality: number;
+	    count: number;
+	    silver: number;
+	    fame: number;
+	    valued: boolean;
+	    source?: string;
+	    zone?: string;
+	
+	    static createFrom(source: any = {}) {
+	        return new FlowEventView(source);
+	    }
+	
+	    constructor(source: any = {}) {
+	        if ('string' === typeof source) source = JSON.parse(source);
+	        this.kind = source["kind"];
+	        this.ts = source["ts"];
+	        this.itemDisplayName = source["itemDisplayName"];
+	        this.uniqueName = source["uniqueName"];
+	        this.tier = source["tier"];
+	        this.enchant = source["enchant"];
+	        this.quality = source["quality"];
+	        this.count = source["count"];
+	        this.silver = source["silver"];
+	        this.fame = source["fame"];
+	        this.valued = source["valued"];
+	        this.source = source["source"];
+	        this.zone = source["zone"];
+	    }
+	}
+	export class FlowItemStatView {
+	    kind: string;
+	    itemDisplayName: string;
+	    uniqueName?: string;
+	    tier: number;
+	    enchant: number;
+	    quality: number;
+	    qty: number;
+	    unitValue: number;
+	    totalValue: number;
+	    valued: boolean;
+	    lastSeen: number;
+	
+	    static createFrom(source: any = {}) {
+	        return new FlowItemStatView(source);
+	    }
+	
+	    constructor(source: any = {}) {
+	        if ('string' === typeof source) source = JSON.parse(source);
+	        this.kind = source["kind"];
+	        this.itemDisplayName = source["itemDisplayName"];
+	        this.uniqueName = source["uniqueName"];
+	        this.tier = source["tier"];
+	        this.enchant = source["enchant"];
+	        this.quality = source["quality"];
+	        this.qty = source["qty"];
+	        this.unitValue = source["unitValue"];
+	        this.totalValue = source["totalValue"];
+	        this.valued = source["valued"];
+	        this.lastSeen = source["lastSeen"];
+	    }
+	}
 	export class Valuation {
 	    amount: number;
 	    source: string;
@@ -376,6 +444,42 @@ export namespace model {
 	}
 	
 	
+	export class SessionSummary {
+	    selfKnown: boolean;
+	    active: boolean;
+	    startedMs: number;
+	    elapsedMs: number;
+	    netSilver: number;
+	    silverPerHour: number;
+	    lootValue: number;
+	    gatherValue: number;
+	    fame: number;
+	    famePerHour: number;
+	    rateReady: boolean;
+	    unvaluedCount: number;
+	    eventCount: number;
+	
+	    static createFrom(source: any = {}) {
+	        return new SessionSummary(source);
+	    }
+	
+	    constructor(source: any = {}) {
+	        if ('string' === typeof source) source = JSON.parse(source);
+	        this.selfKnown = source["selfKnown"];
+	        this.active = source["active"];
+	        this.startedMs = source["startedMs"];
+	        this.elapsedMs = source["elapsedMs"];
+	        this.netSilver = source["netSilver"];
+	        this.silverPerHour = source["silverPerHour"];
+	        this.lootValue = source["lootValue"];
+	        this.gatherValue = source["gatherValue"];
+	        this.fame = source["fame"];
+	        this.famePerHour = source["famePerHour"];
+	        this.rateReady = source["rateReady"];
+	        this.unvaluedCount = source["unvaluedCount"];
+	        this.eventCount = source["eventCount"];
+	    }
+	}
 	
 
 }

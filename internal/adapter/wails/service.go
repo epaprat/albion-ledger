@@ -4,10 +4,13 @@
 package wailsadapter
 
 import (
+	"context"
 	"strconv"
 	"sync"
+	"time"
 
 	"github.com/epaprat/albion-ledger/internal/domain/model"
+	"github.com/epaprat/albion-ledger/internal/flow"
 	"github.com/epaprat/albion-ledger/internal/holdings"
 	"github.com/epaprat/albion-ledger/internal/port"
 	"github.com/epaprat/albion-ledger/internal/valuation"
@@ -25,6 +28,7 @@ const (
 	EventDriftAlert      = "drift:alert"
 	EventHoldingsChanged = "holdings:changed"
 	EventSpecChanged     = "spec:changed"
+	EventFlowChanged     = "flow:changed"
 )
 
 // Service holds the bounded live-view state and the bound methods.
@@ -37,7 +41,12 @@ type Service struct {
 	nowMS func() int64
 
 	agg  *holdings.Aggregator
+	flow *flow.Ledger
 	spec model.CharacterSpec
+
+	flowStore FlowStore          // local-first persistence sink (Principle VIII); nil = no store
+	sessionID string            // current capture session id (for flow_events rows)
+	flowCh    chan model.FlowEvent // bounded buffer to the background writer (Principle XI)
 
 	mu     sync.Mutex
 	items  map[int]*model.LiveViewItem // by item index
@@ -54,13 +63,20 @@ func NewService(cat port.Catalog, book *valuation.Book, val port.Valuer, emit Em
 		cat: cat, book: book, val: val, emit: emit, cap: cap, nowMS: nowMS,
 		items: map[int]*model.LiveViewItem{},
 		agg:   holdings.New(cat, val, model.DefaultStaleAfterMS),
+		flow:  flow.New(val, flow.DefaultIdleMS, flow.DefaultCap),
 	}
 }
 
-// IngestEMV records an item's estimated value and refreshes its view row.
+// IngestEMV records an item's estimated value and refreshes its view row. A newly
+// known value also back-fills any flow loot/gather rows that were unvalued (FR-009).
 func (s *Service) IngestEMV(index, quality int, value, asOf int64) {
 	s.book.SetEMV(index, quality, value, asOf)
 	s.upsert(index, quality, asOf)
+	for _, e := range s.flow.RevalueItem(index, quality) {
+		ev := e
+		s.persist(&ev)
+	}
+	s.emitFlow()
 }
 
 // IngestMarket records a live market price and refreshes its view row.
@@ -176,6 +192,152 @@ func (s *Service) emitHoldings() {
 	if s.emit != nil {
 		s.emit.Emit(EventHoldingsChanged, s.agg.Summary(s.nowMS()))
 	}
+}
+
+// ── Flow (earnings) ingestion ────────────────────────────────────────────────
+
+// SetSelf records the local player's own object id + name (Join own-state), so the
+// flow ledger can attribute own earnings (silver/harvest by id, loot by name).
+func (s *Service) SetSelf(objID int, name string) { s.flow.SetSelf(objID, name) }
+
+// Self returns the known local player object id + name (for capture-side filtering).
+func (s *Service) Self() (int, string) { return s.flow.Self() }
+
+// SetZone records the current zone/cluster label for stamping flow events (006).
+func (s *Service) SetZone(zone string) { s.flow.SetZone(zone) }
+
+// IngestSilver records a net-silver earning and broadcasts the flow summary.
+func (s *Service) IngestSilver(id string, net int64, ts int64, source string) {
+	s.persist(s.flow.IngestSilver(id, net, ts, source))
+	s.emitFlow()
+}
+
+// IngestLoot records a looted item (valued via the valuer) and broadcasts.
+func (s *Service) IngestLoot(id string, index, quality, count int, ts int64, source string) {
+	s.persist(s.flow.IngestLoot(id, s.cat.Resolve(index, quality), count, ts, source))
+	s.emitFlow()
+}
+
+// IngestGather records a gathered/reward item and broadcasts.
+func (s *Service) IngestGather(id string, index, quality, count int, ts int64, source string) {
+	s.persist(s.flow.IngestGather(id, s.cat.Resolve(index, quality), count, ts, source))
+	s.emitFlow()
+}
+
+// IngestFame records fame gained (separate metric) and broadcasts.
+func (s *Service) IngestFame(id string, fame int64, ts int64) {
+	s.persist(s.flow.IngestFame(id, fame, ts))
+	s.emitFlow()
+}
+
+func (s *Service) emitFlow() {
+	if s.emit != nil {
+		s.emit.Emit(EventFlowChanged, s.flow.Summary(s.nowMS()))
+	}
+}
+
+// FlowStore is the local-first persistence sink for earnings events (Principle VIII):
+// every flow event is written to the durable store, the in-memory ledger stays bounded.
+type FlowStore interface {
+	AppendFlowEvents(ctx context.Context, sessionID string, batch []model.FlowEvent) error
+}
+
+// StartFlowPersistence wires a store + session id and launches a single background
+// writer that batches flow events to the store (size- or time-triggered). The
+// goroutine's lifecycle is tied to ctx and drains on shutdown (Principle XI). Safe to
+// skip entirely — with no store the ledger is purely in-memory.
+func (s *Service) StartFlowPersistence(ctx context.Context, store FlowStore, sessionID string) {
+	if store == nil {
+		return
+	}
+	s.mu.Lock()
+	s.flowStore = store
+	s.sessionID = sessionID
+	s.flowCh = make(chan model.FlowEvent, 1024)
+	ch := s.flowCh
+	s.mu.Unlock()
+
+	go func() {
+		t := time.NewTicker(2 * time.Second)
+		defer t.Stop()
+		buf := make([]model.FlowEvent, 0, 64)
+		flush := func() {
+			if len(buf) == 0 {
+				return
+			}
+			_ = store.AppendFlowEvents(ctx, sessionID, buf)
+			buf = buf[:0]
+		}
+		for {
+			select {
+			case <-ctx.Done():
+				// drain what's already queued, then flush and exit.
+				for {
+					select {
+					case e := <-ch:
+						buf = append(buf, e)
+					default:
+						flush()
+						return
+					}
+				}
+			case e := <-ch:
+				buf = append(buf, e)
+				if len(buf) >= 64 {
+					flush()
+				}
+			case <-t.C:
+				flush()
+			}
+		}
+	}()
+}
+
+// persist enqueues a newly-stored event for the background writer (non-blocking; a
+// full buffer drops rather than stalling capture — bounded, Principle XI).
+func (s *Service) persist(e *model.FlowEvent) {
+	if e == nil || s.flowCh == nil {
+		return
+	}
+	select {
+	case s.flowCh <- *e:
+	default: // writer briefly behind; drop to avoid stalling the capture path
+	}
+}
+
+// ListFlow returns the current flow events, newest first (bounded), as UI DTOs.
+func (s *Service) ListFlow() []model.FlowEventView {
+	events := s.flow.List()
+	out := make([]model.FlowEventView, 0, len(events))
+	for _, e := range events {
+		out = append(out, model.FlowEventView{
+			Kind: e.Kind, TS: e.TS,
+			ItemDisplayName: e.Item.DisplayName, UniqueName: e.Item.UniqueName,
+			Tier: e.Item.Tier, Enchant: e.Item.Enchant, Quality: e.Item.Quality,
+			Count: e.Count, Silver: e.Silver, Fame: e.Fame, Valued: e.Valued, Source: e.Source, Zone: e.Zone,
+		})
+	}
+	return out
+}
+
+// FlowSummary returns the current activity-session rollup.
+func (s *Service) FlowSummary() model.SessionSummary { return s.flow.Summary(s.nowMS()) }
+
+// FlowBreakdown returns the per-item session totals for a loot/gather kind
+// ("loot"|"gather"): quantity + per-item EMV + stack (total) value, resolved to item
+// names, valued at the current price (AFM-style gathering/loot summary).
+func (s *Service) FlowBreakdown(kind string) []model.FlowItemStatView {
+	stats := s.flow.Breakdown(model.FlowKind(kind), s.nowMS())
+	out := make([]model.FlowItemStatView, 0, len(stats))
+	for _, st := range stats {
+		it := s.cat.Resolve(st.Index, st.Quality)
+		out = append(out, model.FlowItemStatView{
+			Kind: st.Kind, ItemDisplayName: it.DisplayName, UniqueName: it.UniqueName,
+			Tier: it.Tier, Enchant: it.Enchant, Quality: st.Quality, Qty: st.Qty,
+			UnitValue: st.UnitValue, TotalValue: st.TotalValue, Valued: st.Valued, LastSeen: st.LastSeen,
+		})
+	}
+	return out
 }
 
 func masteryName(index int) string {
