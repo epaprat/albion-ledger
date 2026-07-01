@@ -7,7 +7,11 @@ import (
 	"context"
 	"embed"
 	"flag"
+	"fmt"
 	"log"
+	"os"
+	"path/filepath"
+	"sort"
 	"sync"
 	"time"
 
@@ -18,12 +22,14 @@ import (
 
 	"github.com/epaprat/albion-ledger/data"
 	"github.com/epaprat/albion-ledger/internal/adapter/capture"
+	"github.com/epaprat/albion-ledger/internal/adapter/store"
 	wailsadapter "github.com/epaprat/albion-ledger/internal/adapter/wails"
 	"github.com/epaprat/albion-ledger/internal/catalog"
 	"github.com/epaprat/albion-ledger/internal/codes"
 	"github.com/epaprat/albion-ledger/internal/domain/model"
 	"github.com/epaprat/albion-ledger/internal/domain/probe"
 	"github.com/epaprat/albion-ledger/internal/holdings"
+	"github.com/epaprat/albion-ledger/internal/locations"
 	"github.com/epaprat/albion-ledger/internal/photon"
 	"github.com/epaprat/albion-ledger/internal/port"
 	"github.com/epaprat/albion-ledger/internal/valuation"
@@ -35,6 +41,15 @@ var assets embed.FS
 const emvEventCode = 466
 
 func nowMS() int64 { return time.Now().UnixMilli() }
+
+// defaultStorePath is the local ledger DB location — OS config dir when available
+// (e.g. ~/Library/Application Support/albion-ledger on macOS), else ./captures.
+func defaultStorePath() string {
+	if dir, err := os.UserConfigDir(); err == nil && dir != "" {
+		return filepath.Join(dir, "albion-ledger", "ledger.db")
+	}
+	return filepath.Join("captures", "ledger.db")
+}
 
 // wailsEmitter bridges the service's Emitter to the Wails event runtime.
 type wailsEmitter struct{ ctx context.Context }
@@ -50,7 +65,9 @@ func main() {
 	replay := flag.String("replay", "", "replay a recorded pcap instead of live capture")
 	catalogPath := flag.String("catalog", "", "override item catalog file (data/items.json format)")
 	codesPath := flag.String("codes", "", "override code map file (data/codes.json format)")
+	debugFlowFlag := flag.Bool("debugflow", false, "log flow (silver/loot/gather/fame) attribution to stderr")
 	flag.Parse()
+	debugFlow = *debugFlowFlag
 
 	cat, err := catalog.New(data.ItemsJSON)
 	if err != nil {
@@ -65,6 +82,11 @@ func main() {
 	if err != nil {
 		log.Fatal(err)
 	}
+	if l, err := locations.New(data.ClustersJSON); err != nil {
+		log.Printf("cluster map unavailable, zones show raw ids: %v", err)
+	} else {
+		locs = l
+	}
 	if *codesPath != "" {
 		_ = reg.Reload(*codesPath)
 	}
@@ -76,6 +98,21 @@ func main() {
 
 	clf := probe.New(reg)
 
+	// Local-first store (Principle VIII): earnings events are persisted to SQLite as
+	// they arrive; the in-memory ledger stays bounded (Principle XI). Best-effort — if
+	// the store can't open, the app still runs (in-memory only).
+	var flowStore *store.SQLite
+	sessionID := fmt.Sprintf("app-%d", nowMS())
+	if db, err := store.Open(defaultStorePath()); err != nil {
+		log.Printf("local store unavailable, running in-memory only: %v", err)
+	} else {
+		flowStore = db
+	}
+	srcKind := model.SourceLive
+	if *replay != "" {
+		srcKind = model.SourceReplay
+	}
+
 	app := wails.Run(&options.App{
 		Title:  "Albion Ledger",
 		Width:  1100,
@@ -85,7 +122,21 @@ func main() {
 		},
 		OnStartup: func(ctx context.Context) {
 			emitter.ctx = ctx
+			if flowStore != nil {
+				if err := flowStore.StartSession(ctx, model.CaptureSession{
+					ID: sessionID, StartedAt: nowMS(), SourceKind: srcKind, Interface: *iface,
+				}); err != nil {
+					log.Printf("store StartSession: %v", err)
+				}
+				svc.StartFlowPersistence(ctx, flowStore, sessionID)
+			}
 			go runCapture(ctx, *iface, *replay, clf, svc)
+		},
+		OnShutdown: func(context.Context) {
+			if flowStore != nil {
+				_ = flowStore.EndSession(context.Background(), sessionID, nowMS(), model.SessionTotals{})
+				_ = flowStore.Close()
+			}
 		},
 		Bind: []interface{}{svc},
 	})
@@ -115,7 +166,15 @@ func runCapture(ctx context.Context, iface, replay string, clf *probe.Classifier
 			// The operation code lives in param 253 for responses (opByte is the raw
 			// Photon opcode); own-state Join carries 253=2. Without this, op-2 responses
 			// (masteries + login inventory) never classify.
-			ingest(clf, svc, probe.KindResponse, codeFrom(params, 253, int(opByte)), params)
+			rc := codeFrom(params, 253, int(opByte))
+			// Self-identity (own objId + name) rides on EVERY Join op-2 — the login Join
+			// AND every zone-change Join (where userObjectId changes per map). Read it here,
+			// independent of the key-55 (bag) guard that gates own-state/character_spec, so
+			// self stays fresh across zones and is set even when the app starts mid-session.
+			if rc == 2 {
+				updateSelf(svc, params)
+			}
+			ingest(clf, svc, probe.KindResponse, rc, params)
 		},
 		func(evByte byte, params map[byte]interface{}) {
 			code := codeFrom(params, 252, int(evByte))
@@ -175,9 +234,11 @@ func ingest(clf *probe.Classifier, svc *wailsadapter.Service, kind probe.Kind, c
 		if owners, tabNames, ok := capture.BankVault(params); ok {
 			svc.IngestBankVault(owners, tabNames)
 		}
-	case model.CatCharacterSpec: // own-state (op-2): the login bag (key 55) + equipped (key 52)
+	case model.CatCharacterSpec: // own-state (op-2 with key 55): the login bag (key 55) + equipped (key 52)
 		// NOTE: key 55 is the bag and key 52 the worn set — neither is masteries (the
 		// earlier reading was wrong); the real spec source is TBD, so Spec stays empty.
+		// Self-identity is handled in the response callback (updateSelf) for EVERY op-2,
+		// not here, so it is not gated by the key-55 guard (login-only) — see runCapture.
 		if objIDs, ok := capture.OwnInventory(params); ok {
 			ingestSelf(svc, selfBagGUID, "Bag", objIDs)
 		}
@@ -187,6 +248,7 @@ func ingest(clf *probe.Classifier, svc *wailsadapter.Service, kind probe.Kind, c
 	case model.CatCurrentLocation: // notification event 163 — "you entered <city>"
 		if city, ok := capture.CurrentCity(params); ok {
 			svc.SetCurrentCity(city)
+			svc.SetZone(city) // readable city name overrides the raw cluster id for flow zone
 		}
 	case model.CatInventoryPut: // event 26 — item added/moved into a container (live)
 		if objID, cGUID, ok := capture.PutItem(params); ok {
@@ -198,7 +260,136 @@ func ingest(clf *probe.Classifier, svc *wailsadapter.Service, kind probe.Kind, c
 		if objID, ok := capture.DeleteItem(params); ok {
 			svc.IngestDeleteItem(objID)
 		}
+	case model.CatSilver: // TakeSilver (62) — own net silver (US1)
+		if target, obj, net, ok := capture.SilverEvent(params); ok {
+			if debugFlow {
+				log.Printf("[flow] silver evt: obj=%d target=%d net=%d self=%d match=%v", obj, target, net, selfObjID, isSelfObj(obj))
+			}
+			// key0 (obj) is the RECEIVING player (self); key2 is the mob/target entity.
+			// Live-verified 2026-07-01: obj==self across a session, target varies per mob.
+			if isSelfObj(obj) && net != 0 {
+				ts, _ := capture.IntParam(params, 1) // wire timestamp → stable dedup id
+				id := fmt.Sprintf("sv:%d:%d", ts, net)
+				svc.IngestSilver(id, net, nowMS(), "")
+			}
+		}
+	case model.CatLoot: // OtherGrabbedLoot (279) — own looted items (US2); 98 has no items
+		if debugFlow {
+			log.Printf("[flow] loot category: code=%d keys=%v", code, paramKeys(params))
+		}
+		if looter, isSilver, itemID, amount, ok := capture.LootGrab(params); ok {
+			if debugFlow {
+				log.Printf("[flow] loot evt: looter=%q item=%d amt=%d isSilver=%v self=%q match=%v", looter, itemID, amount, isSilver, selfName, isSelfName(looter))
+			}
+			if !isSilver && isSelfName(looter) {
+				container, _ := capture.IntParam(params, 0)
+				id := fmt.Sprintf("lt:%d:%d:%d", container, itemID, amount)
+				// OtherGrabbedLoot carries no quality → normal (0); resources are unquality anyway.
+				svc.IngestLoot(id, itemID, 0, amount, nowMS(), looter)
+			}
+		}
+	case model.CatGatherFishing: // HarvestFinished (61) + RewardGranted (267) — own gathers (US3)
+		switch code {
+		case 61:
+			if gatherer, itemID, amount, ok := capture.HarvestEvent(params); ok && isSelfObj(gatherer) {
+				// Each harvest tick on the SAME node is a distinct gain (a node yields
+				// several charges), so the dedup id must be per-tick unique — keying by
+				// node+item collapsed multiple charges into one (~3× undercount). Photon
+				// transport already drops re-delivered packets, so a monotonic seq is safe.
+				node, _ := capture.IntParam(params, 3)
+				id := fmt.Sprintf("hv:%d:%d:%d", node, itemID, nextFlowSeq())
+				if debugFlow {
+					std, _ := capture.IntParam(params, 5)
+					bonus, _ := capture.IntParam(params, 6)
+					prem, _ := capture.IntParam(params, 7)
+					log.Printf("[flow] harvest: node=%d item=%d std=%d bonus=%d prem=%d total=%d", node, itemID, std, bonus, prem, amount)
+				}
+				svc.IngestGather(id, itemID, 0, amount, nowMS(), "")
+			}
+		case 267:
+			if itemID, qty, ok := capture.RewardEvent(params); ok {
+				id := fmt.Sprintf("rw:%d:%d:%d", itemID, qty, nextFlowSeq())
+				if debugFlow {
+					log.Printf("[flow] reward: item=%d qty=%d", itemID, qty)
+				}
+				svc.IngestGather(id, itemID, 0, qty, nowMS(), "")
+			}
+			// code 38 is unverified (see codes.json / tasks T031) — intentionally ignored.
+		}
+	case model.CatFame: // UpdateFame (82 event) — fame is inherently own (US4)
+		if fame, ok := capture.FameEvent(params); ok && fame > 0 {
+			total, _ := capture.IntParam(params, 1) // running total → stable dedup id
+			id := fmt.Sprintf("fm:%d", total)
+			svc.IngestFame(id, fame, nowMS())
+		}
 	}
+}
+
+// self identity for own-earning attribution (005). Set from the Join own-state
+// response; touched only on the single capture goroutine, so no lock needed.
+var (
+	selfObjID int
+	selfName  string
+	debugFlow bool  // -debugflow: log flow attribution to stderr
+	flowSeq   int64 // monotonic nonce for flow events lacking a natural unique wire id
+	locs      *locations.Locations // cluster-id → zone-name resolver (nil = raw ids)
+)
+
+// zoneName resolves a raw cluster id to a readable zone name when the map is loaded.
+func zoneName(clusterID string) string {
+	if locs != nil {
+		return locs.Resolve(clusterID)
+	}
+	return clusterID
+}
+
+// nextFlowSeq returns a per-event unique nonce (capture runs on one goroutine, so a
+// plain increment is race-free) for building dedup ids of events like harvest ticks
+// that legitimately repeat with identical field values.
+func nextFlowSeq() int64 { flowSeq++; return flowSeq }
+
+// updateSelf refreshes the local player's own object id + name from a Join op-2
+// response (key 0 objId, key 2 name). Called for every op-2 so self stays correct
+// across zone changes (objId changes per map) and is set even mid-session.
+func updateSelf(svc *wailsadapter.Service, params map[byte]interface{}) {
+	objID, name, ok := capture.SelfIdentity(params)
+	if !ok {
+		return
+	}
+	if objID > 0 {
+		selfObjID = objID
+	}
+	if name != "" {
+		selfName = name
+	}
+	svc.SetSelf(objID, name)
+	// The Join also carries the current location/cluster (key 8) — stamp it as the zone
+	// so flow events know where they happened (per-zone analytics, 006). Open-world zones
+	// only surface here (event 163 covers cities); raw cluster id is fine, named later.
+	if zone, zok := params[8].(string); zok && zone != "" {
+		svc.SetZone(zoneName(zone)) // raw cluster id → readable zone name
+	}
+	if debugFlow {
+		log.Printf("[flow] self set: objID=%d name=%q (op-2)", selfObjID, selfName)
+	}
+}
+
+// isSelfObj reports whether an object id is the local player. Until self is known
+// (selfObjID==0) it returns false so we never count another player's earnings.
+func isSelfObj(objID int) bool { return selfObjID != 0 && objID == selfObjID }
+
+// isSelfName reports whether a looter name is the local player (case-sensitive as
+// the wire delivers it). Empty self name → false (don't count until known).
+func isSelfName(name string) bool { return selfName != "" && name == selfName }
+
+// paramKeys returns the sorted parameter keys of a message (debug aid).
+func paramKeys(params map[byte]interface{}) []int {
+	ks := make([]int, 0, len(params))
+	for k := range params {
+		ks = append(ks, int(k))
+	}
+	sort.Ints(ks)
+	return ks
 }
 
 // objReg maps in-world object ids to their item type+quality. Container slots
