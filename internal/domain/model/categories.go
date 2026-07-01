@@ -49,10 +49,10 @@ var ExpectedFields = map[Category][]byte{
 	CatEquipment:        {0, 1},    // object id + item id
 	CatBank:             {0, 1, 5}, // vault id + container ids/names + counts
 	CatCharacterSpec:    {55},      // own-state discriminator (key 55 present = op-2 own-state; it holds the bag object ids, not masteries)
-	CatLoot:             {0, 3},    // object id + source name
-	CatGatherFishing:    {0, 1},    // harvestable/reward fields
-	CatSilver:           {0, 2, 3}, // object id + target + yield (key 5 guild-tax often absent)
-	CatFame:             {1, 2, 3}, // total/zone fame + multiplier
+	CatLoot:             {2, 4, 5},       // OtherGrabbedLoot(279): looter name + itemId + amount (98 NewLoot has no items)
+	CatGatherFishing:    {4, 5, 6, 7},    // HarvestFinished(61): itemId + standard/bonus/premium amounts
+	CatSilver:           {0, 3, 5, 6, 8}, // TakeSilver(62): picker(self) + yield + guild/cluster tax + multiplier
+	CatFame:             {2, 5, 10, 17},  // UpdateFame(82): zone-mult fame + premium flag + satchel + bonus factor
 	CatItemValueEMV:     {0, 1},    // item id array + estimated value array
 }
 
