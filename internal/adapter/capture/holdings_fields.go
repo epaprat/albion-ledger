@@ -10,24 +10,48 @@ import (
 // tolerate missing/odd keys (return ok=false) and never panic (Principle IV).
 // Field positions are from live capture (see specs/003 research-fields.md).
 
+// intSlice reads an integer array param regardless of its Photon element width.
+// Photon sizes int arrays by value magnitude, so the SAME field is []int16 when the
+// values are small (e.g. object ids early in a session) and []int32 when large — both
+// must be accepted or the field silently drops.
+func intSlice(v interface{}) ([]int, bool) {
+	switch a := v.(type) {
+	case []int32:
+		out := make([]int, len(a))
+		for i, x := range a {
+			out[i] = int(x)
+		}
+		return out, true
+	case []int16:
+		out := make([]int, len(a))
+		for i, x := range a {
+			out[i] = int(x)
+		}
+		return out, true
+	case []int64:
+		out := make([]int, len(a))
+		for i, x := range a {
+			out[i] = int(x)
+		}
+		return out, true
+	}
+	return nil, false
+}
+
 // ContainerItems pulls a container's id, its owner id, and its non-empty slot
 // in-world OBJECT IDS from an AttachItemContainer event: key 1 = container GUID,
-// key 2 = owner GUID (distinguishes bank vault vs player inventory), key 3 = []i32
-// object ids (one per slot, -1/0 = empty). These are object ids, not item type
-// indices — the caller resolves them via the New*Item object registry (real capture
-// 2026-07-01; the "item indices" reading was a misdiagnosis, since reverted).
+// key 2 = owner GUID (distinguishes bank vault vs player inventory), key 3 = slot
+// object ids (one per slot, -1/0 = empty). The caller resolves them via the New*Item
+// object registry. (Real capture 2026-07-01: slots are object ids; small ones arrive
+// as []int16 in a fresh session, larger ones as []int32 — both handled.)
 func ContainerItems(params map[byte]interface{}) (containerGUID, ownerGUID string, objIDs []int, ok bool) {
-	raw, has := params[3]
-	if !has {
-		return "", "", nil, false
-	}
-	arr, isArr := raw.([]int32)
+	arr, isArr := intSlice(params[3])
 	if !isArr {
 		return "", "", nil, false
 	}
 	for _, v := range arr {
 		if v > 0 { // empty slots are 0 or -1
-			objIDs = append(objIDs, int(v))
+			objIDs = append(objIDs, v)
 		}
 	}
 	if g, gok := params[1].([]byte); gok {
@@ -130,14 +154,14 @@ func OwnEquipped(params map[byte]interface{}) ([]int, bool) {
 }
 
 func slotObjIDs(params map[byte]interface{}, key byte) ([]int, bool) {
-	arr, ok := params[key].([]int32)
+	arr, ok := intSlice(params[key])
 	if !ok {
 		return nil, false
 	}
 	out := make([]int, 0, len(arr))
 	for _, v := range arr {
 		if v > 0 {
-			out = append(out, int(v))
+			out = append(out, v)
 		}
 	}
 	return out, len(out) > 0

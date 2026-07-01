@@ -65,6 +65,8 @@ onMounted(async () => {
       <span class="dot" :class="status.capturing ? 'on' : 'off'" aria-hidden="true"></span>
       <strong>{{ status.capturing ? 'Capturing' : 'Idle' }}</strong>
       <span class="muted" v-if="status.interface">· {{ status.interface }}</span>
+      <span class="muted">· {{ fmt(status.decoded || 0) }} pkts</span>
+      <span class="muted" v-if="status.gameServer">· {{ status.gameServer }}</span>
       <span class="muted">· encrypted {{ Math.round((status.encryptedRate || 0) * 100) }}%</span>
       <nav class="tabs" role="tablist" aria-label="Views">
         <button :class="{ active: tab === 'holdings' }" @click="tab = 'holdings'" role="tab" :aria-selected="tab === 'holdings'">Holdings</button>

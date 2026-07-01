@@ -138,6 +138,7 @@ func runCapture(ctx context.Context, iface, replay string, clf *probe.Classifier
 				svc.SetStatus(model.CaptureStatusView{
 					Capturing: st.Capturing, Interface: st.Interface,
 					GameServer: st.GameServer, EncryptedRate: st.EncryptedRate,
+					Decoded: st.Decoded,
 				})
 			}
 		}

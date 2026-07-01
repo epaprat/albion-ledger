@@ -58,6 +58,7 @@ export namespace model {
 	    interface: string;
 	    gameServer?: string;
 	    encryptedRate: number;
+	    decoded: number;
 	    driftAlert?: string;
 	
 	    static createFrom(source: any = {}) {
@@ -70,6 +71,7 @@ export namespace model {
 	        this.interface = source["interface"];
 	        this.gameServer = source["gameServer"];
 	        this.encryptedRate = source["encryptedRate"];
+	        this.decoded = source["decoded"];
 	        this.driftAlert = source["driftAlert"];
 	    }
 	}

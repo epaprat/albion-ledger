@@ -51,6 +51,20 @@ func TestContainerItemsFromBytes(t *testing.T) {
 	_ = owner
 }
 
+// A fresh session's small object ids arrive as []int16, not []int32 (Photon sizes
+// int arrays by magnitude). intSlice must read both widths, else the field drops.
+func TestIntSliceWidths(t *testing.T) {
+	if got, ok := intSlice([]int16{1278, 0, 1325}); !ok || len(got) != 3 || got[0] != 1278 || got[2] != 1325 {
+		t.Fatalf("[]int16 → %v ok=%v", got, ok)
+	}
+	if got, ok := intSlice([]int32{1063460, 0, 1063465}); !ok || got[2] != 1063465 {
+		t.Fatalf("[]int32 → %v ok=%v", got, ok)
+	}
+	if _, ok := intSlice("not a slice"); ok {
+		t.Fatal("non-slice must be not-ok")
+	}
+}
+
 func TestEquippedItemFromBytes(t *testing.T) {
 	params := decodeEvent(t, []photon.Field{
 		{Key: 1, Type: photon.TypeShort, Val: int16(6977)},
