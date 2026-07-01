@@ -114,6 +114,25 @@ func CurrentCity(params map[byte]interface{}) (city string, ok bool) {
 	return p.City, true
 }
 
+// OwnInventory pulls the player's inventory slot object ids from the Join own-state
+// response (op-2): key 52 = []i32 slot object ids (0/-1 = empty). This is the login
+// baseline inventory — it is NOT re-sent as an AttachItemContainer on bank/bag open,
+// so it must be read here. The objects are declared by New*Item events (resolved via
+// the object registry). Live capture 2026-07-01.
+func OwnInventory(params map[byte]interface{}) ([]int, bool) {
+	arr, ok := params[52].([]int32)
+	if !ok {
+		return nil, false
+	}
+	out := make([]int, 0, len(arr))
+	for _, v := range arr {
+		if v > 0 {
+			out = append(out, int(v))
+		}
+	}
+	return out, len(out) > 0
+}
+
 // MasteryLevels pulls the mastery level array from an own-state response: key 55.
 func MasteryLevels(params map[byte]interface{}) ([]int, bool) {
 	arr, ok := params[55].([]int32)

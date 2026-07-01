@@ -134,6 +134,21 @@ func TestDeleteItemFromBytes(t *testing.T) {
 	}
 }
 
+func TestOwnInventoryFromBytes(t *testing.T) {
+	// Own-state response (op-2): key 52 = inventory slot object ids (0 = empty slot).
+	params := decodeResponse(t, 0, []photon.Field{
+		{Key: 52, Type: photon.TypeArray | photon.TypeInteger, Val: []int32{1651108, 0, 1651104, 1651109}},
+		{Key: 253, Type: photon.TypeShort, Val: int16(2)},
+	})
+	ids, ok := OwnInventory(params)
+	if !ok || len(ids) != 3 || ids[0] != 1651108 || ids[2] != 1651109 {
+		t.Fatalf("OwnInventory → %v ok=%v, want [1651108 1651104 1651109]", ids, ok)
+	}
+	if _, ok := OwnInventory(map[byte]interface{}{}); ok {
+		t.Fatal("missing key 52 must be not-ok")
+	}
+}
+
 func TestExtractorsTolerateMissing(t *testing.T) {
 	if _, _, _, ok := ContainerItems(map[byte]interface{}{}); ok {
 		t.Fatal("empty container params must be not-ok")

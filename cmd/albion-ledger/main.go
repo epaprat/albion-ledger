@@ -112,7 +112,10 @@ func runCapture(ctx context.Context, iface, replay string, clf *probe.Classifier
 	parser := photon.NewPhotonParser(
 		nil,
 		func(opByte byte, _ int16, _ string, params map[byte]interface{}) {
-			ingest(clf, svc, probe.KindResponse, int(opByte), params)
+			// The operation code lives in param 253 for responses (opByte is the raw
+			// Photon opcode); own-state Join carries 253=2. Without this, op-2 responses
+			// (masteries + login inventory) never classify.
+			ingest(clf, svc, probe.KindResponse, codeFrom(params, 253, int(opByte)), params)
 		},
 		func(evByte byte, params map[byte]interface{}) {
 			code := codeFrom(params, 252, int(evByte))
@@ -174,9 +177,12 @@ func ingest(clf *probe.Classifier, svc *wailsadapter.Service, kind probe.Kind, c
 	// NewEquipmentItem(30) is an equipment-item DECLARATION (handled by the object
 	// registry), not the player's worn loadout — so it does not populate "equipped".
 	// The real equipped source is the equipment container; identifying it is future work.
-	case model.CatCharacterSpec: // own-state masteries
+	case model.CatCharacterSpec: // own-state (op-2): masteries + the login inventory baseline
 		if levels, ok := capture.MasteryLevels(params); ok {
 			svc.SetSpec(levels)
+		}
+		if objIDs, ok := capture.OwnInventory(params); ok {
+			ingestSelfInventory(svc, objIDs)
 		}
 	case model.CatCurrentLocation: // notification event 163 — "you entered <city>"
 		if city, ok := capture.CurrentCity(params); ok {
@@ -235,8 +241,17 @@ func registerNewItem(svc *wailsadapter.Service, code int, params map[byte]interf
 		}
 		objOrder = append(objOrder, objID)
 	}
-	objReg[objID] = holdings.ItemRef{Index: idx, Quality: quality, Count: count}
+	ref := holdings.ItemRef{Index: idx, Quality: quality, Count: count}
+	objReg[objID] = ref
+	wasPending := pendingInv[objID] // login-inventory slot awaiting its declaration
+	delete(pendingInv, objID)
 	objMu.Unlock()
+
+	// A login-inventory object (from own-state key 52) declared after the fact: place
+	// it into the inventory now that it resolves.
+	if wasPending {
+		svc.IngestPutItem(selfInvGUID, objID, ref)
+	}
 
 	// The item's own EstimatedMarketValue (key 4, a scalar int64) is the value the game
 	// shows when you open it — feed it to valuation so held items are valued without a
@@ -244,6 +259,37 @@ func registerNewItem(svc *wailsadapter.Service, code int, params map[byte]interf
 	if emv, ok := capture.IntParam(params, 4); ok && emv > 0 {
 		svc.IngestEMV(idx, quality, int64(emv)/emvScale, nowMS())
 	}
+}
+
+// selfInvGUID/selfInvOwner identify the player's own inventory container. Its baseline
+// comes from own-state key 52 (Join), which carries no container GUID, so we use a
+// fixed one; selfInvOwner is deliberately not a bank owner so it groups as inventory.
+const selfInvGUID = "self-inventory"
+const selfInvOwner = "self"
+
+// pendingInv holds inventory object ids seen in own-state but not yet declared by a
+// New*Item; each is placed into the inventory when its declaration arrives.
+var pendingInv = map[int]bool{}
+
+// ingestSelfInventory sets the player inventory from own-state slot object ids: the
+// already-declared ones are placed now, the rest are queued in pendingInv.
+func ingestSelfInventory(svc *wailsadapter.Service, objIDs []int) {
+	slots := resolveObjects(objIDs)
+	svc.IngestContainer(selfInvGUID, selfInvOwner, slots)
+	resolved := make(map[int]bool, len(slots))
+	for _, s := range slots {
+		resolved[s.ObjID] = true
+	}
+	objMu.Lock()
+	for k := range pendingInv {
+		delete(pendingInv, k)
+	}
+	for _, id := range objIDs {
+		if !resolved[id] {
+			pendingInv[id] = true
+		}
+	}
+	objMu.Unlock()
 }
 
 // resolveObjects maps container object ids to slot items (objId + ref), skipping
