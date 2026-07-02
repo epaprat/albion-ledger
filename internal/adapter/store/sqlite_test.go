@@ -67,6 +67,68 @@ func TestStoreRoundTrip(t *testing.T) {
 	}
 }
 
+func TestLoadFlowEvents(t *testing.T) {
+	ctx := context.Background()
+	db, err := Open(filepath.Join(t.TempDir(), "load.db"))
+	if err != nil {
+		t.Fatalf("open: %v", err)
+	}
+	defer db.Close()
+
+	batchA := []model.FlowEvent{
+		{ID: "a1", Kind: model.FlowSilver, TS: 100, Silver: 10, Count: 1, Zone: "Z1", Valued: true},
+		{ID: "a2", Kind: model.FlowFame, TS: 300, Fame: 50, Count: 1, Zone: "Z1", Valued: true},
+	}
+	batchB := []model.FlowEvent{
+		{ID: "b1", Kind: model.FlowGather, TS: 200, Silver: 20, Count: 2, Zone: "Z2", Valued: true},
+	}
+	if err := db.AppendFlowEvents(ctx, "sA", batchA); err != nil {
+		t.Fatal(err)
+	}
+	if err := db.AppendFlowEvents(ctx, "sB", batchB); err != nil {
+		t.Fatal(err)
+	}
+
+	// All sessions, since 0 → 3 rows, ts ASC, fields round-tripped.
+	all, err := db.LoadFlowEvents(ctx, "", 0, 0)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if len(all) != 3 || all[0].TS != 100 || all[1].TS != 200 || all[2].TS != 300 {
+		t.Fatalf("all = %+v, want 3 rows ts ASC", all)
+	}
+	if all[1].SessionID != "sB" || all[1].Kind != model.FlowGather || all[1].Zone != "Z2" || all[1].Silver != 20 {
+		t.Fatalf("row fields wrong: %+v", all[1])
+	}
+
+	// Session filter.
+	onlyA, err := db.LoadFlowEvents(ctx, "sA", 0, 0)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if len(onlyA) != 2 {
+		t.Fatalf("session filter → %d rows, want 2", len(onlyA))
+	}
+
+	// since filter.
+	since, err := db.LoadFlowEvents(ctx, "", 150, 0)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if len(since) != 2 || since[0].TS != 200 {
+		t.Fatalf("since filter → %+v, want ts 200,300", since)
+	}
+
+	// Limit keeps the NEWEST rows (then re-sorted ASC).
+	lim, err := db.LoadFlowEvents(ctx, "", 0, 2)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if len(lim) != 2 || lim[0].TS != 200 || lim[1].TS != 300 {
+		t.Fatalf("limit → %+v, want newest two (200,300) ASC", lim)
+	}
+}
+
 func TestAppendFlowEventsIdempotent(t *testing.T) {
 	ctx := context.Background()
 	db, err := Open(filepath.Join(t.TempDir(), "flow.db"))

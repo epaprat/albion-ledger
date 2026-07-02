@@ -6,12 +6,14 @@ import (
 	"context"
 	"database/sql"
 	"fmt"
+	"log"
 	"os"
 	"path/filepath"
 
 	_ "modernc.org/sqlite"
 
 	"github.com/epaprat/albion-ledger/internal/domain/model"
+	"github.com/epaprat/albion-ledger/internal/zonestats"
 )
 
 const schema = `
@@ -160,6 +162,52 @@ func (s *SQLite) AppendFlowEvents(ctx context.Context, sessionID string, batch [
 		}
 	}
 	return tx.Commit()
+}
+
+// LoadFlowEvents reads flow events for zone analytics (006): ts >= sinceMS, optionally
+// scoped to one capture session, ordered ts ASC, with only the columns the compute
+// needs. On overflow the NEWEST `limit` rows are kept and the truncation is logged —
+// never a silent cap (spec FR-006). limit <= 0 falls back to a 500k guard.
+func (s *SQLite) LoadFlowEvents(ctx context.Context, sessionID string, sinceMS int64, limit int) ([]zonestats.StoredEvent, error) {
+	if limit <= 0 {
+		limit = 500_000
+	}
+	q := `SELECT session_id, kind, ts, silver, fame, count, zone FROM flow_events WHERE ts >= ?`
+	args := []interface{}{sinceMS}
+	if sessionID != "" {
+		q += ` AND session_id = ?`
+		args = append(args, sessionID)
+	}
+	// DESC+LIMIT keeps the newest rows when the window exceeds the guard; reversed below.
+	q += ` ORDER BY ts DESC LIMIT ?`
+	args = append(args, limit)
+
+	rows, err := s.db.QueryContext(ctx, q, args...)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	var out []zonestats.StoredEvent
+	for rows.Next() {
+		var e zonestats.StoredEvent
+		var kind string
+		if err := rows.Scan(&e.SessionID, &kind, &e.TS, &e.Silver, &e.Fame, &e.Count, &e.Zone); err != nil {
+			return nil, err
+		}
+		e.Kind = model.FlowKind(kind)
+		out = append(out, e)
+	}
+	if err := rows.Err(); err != nil {
+		return nil, err
+	}
+	if len(out) == limit {
+		log.Printf("flow query hit the %d-row guard — oldest rows in the window were truncated", limit)
+	}
+	// Reverse DESC → ASC (compute sorts internally, but keep the documented order).
+	for i, j := 0, len(out)-1; i < j; i, j = i+1, j-1 {
+		out[i], out[j] = out[j], out[i]
+	}
+	return out, nil
 }
 
 // UpsertCoverage replaces the coverage rows for the session's categories.
