@@ -76,7 +76,43 @@ func Open(path string) (*SQLite, error) {
 		db.Close()
 		return nil, err
 	}
+	if err := migrate(db); err != nil {
+		db.Close()
+		return nil, err
+	}
 	return &SQLite{db: db}, nil
+}
+
+// migrate applies additive schema upgrades to databases created by older builds.
+// CREATE TABLE IF NOT EXISTS never alters an existing table, so any column added to
+// the schema later must ALSO be added here — otherwise inserts fail on old DBs
+// ("no column named ..."), silently stalling persistence (live-hit 2026-07-02: the
+// flow_events table predated the zone column; every write errored and zone analytics
+// read nothing).
+func migrate(db *sql.DB) error {
+	addColumnIfMissing := func(table, column, decl string) error {
+		rows, err := db.Query(`SELECT name FROM pragma_table_info(?)`, table)
+		if err != nil {
+			return err
+		}
+		defer rows.Close()
+		for rows.Next() {
+			var name string
+			if err := rows.Scan(&name); err != nil {
+				return err
+			}
+			if name == column {
+				return rows.Err()
+			}
+		}
+		if err := rows.Err(); err != nil {
+			return err
+		}
+		log.Printf("store migration: adding %s.%s", table, column)
+		_, err = db.Exec(fmt.Sprintf(`ALTER TABLE %s ADD COLUMN %s %s`, table, column, decl))
+		return err
+	}
+	return addColumnIfMissing("flow_events", "zone", `TEXT DEFAULT ''`)
 }
 
 // Close closes the database.

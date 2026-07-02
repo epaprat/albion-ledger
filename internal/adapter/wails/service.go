@@ -397,6 +397,13 @@ func (s *Service) StartFlowPersistence(ctx context.Context, store FlowStore, ses
 				if len(buf) >= 64 {
 					flush()
 				}
+				// A persistently failing store must not balloon the retry buffer
+				// (Principle XI): keep the newest 4096 and count the sacrifice.
+				if len(buf) > 4096 {
+					drop := len(buf) - 4096
+					buf = append(buf[:0], buf[drop:]...)
+					log.Printf("flow store still failing — dropped %d oldest buffered events", drop)
+				}
 			case <-t.C:
 				flush()
 			}
