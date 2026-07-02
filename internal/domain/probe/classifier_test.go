@@ -87,9 +87,9 @@ func TestEMVVariants(t *testing.T) {
 
 func TestPartialCompleteness(t *testing.T) {
 	c := newClassifier(t)
-	// Silver (TakeSilver 62) expects 5 fields {0,3,5,6,8}; provide 2 (keys 0,3).
-	got, _ := c.Classify(KindEvent, 62, map[byte]interface{}{0: 1, 3: 2})
-	if got.FieldsPresent != 2 || got.FieldsExpected != 5 {
-		t.Fatalf("got %d/%d, want 2/5", got.FieldsPresent, got.FieldsExpected)
+	// Silver (TakeSilver 62) expects the always-present pair {0,3}; provide only key 0.
+	got, _ := c.Classify(KindEvent, 62, map[byte]interface{}{0: 1})
+	if got.FieldsPresent != 1 || got.FieldsExpected != 2 {
+		t.Fatalf("got %d/%d, want 1/2", got.FieldsPresent, got.FieldsExpected)
 	}
 }

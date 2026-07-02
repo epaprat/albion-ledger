@@ -26,12 +26,14 @@ type FlowEvent struct {
 }
 
 // SessionSummary is the derived rollup for the current activity session (AFM-style:
-// lazy start on first earning, idle auto-close, pause-aware elapsed).
+// lazy start on first earning, 30-min idle auto-close with the idle tail excluded).
+// NOTE: in-session gaps shorter than the idle timeout DO count into ElapsedMS —
+// there is no per-gap pause accounting (a possible later refinement).
 type SessionSummary struct {
 	SelfKnown     bool  `json:"selfKnown"`     // local player identified yet (needs a Join/zone) — else silver/loot/gather can't be attributed
 	Active        bool  `json:"active"`        // session open (false after idle auto-close)
 	StartedMS     int64 `json:"startedMs"`     // first-earning time (0 = no session yet)
-	ElapsedMS     int64 `json:"elapsedMs"`     // pause-aware active elapsed
+	ElapsedMS     int64 `json:"elapsedMs"`     // active elapsed (idle tail after auto-close excluded)
 	NetSilver     int64 `json:"netSilver"`     // Σ silver-net + loot value + gather value
 	SilverPerHour int64 `json:"silverPerHour"` // NetSilver / activeHours (0 until RateReady)
 	LootValue     int64 `json:"lootValue"`     // Σ loot value

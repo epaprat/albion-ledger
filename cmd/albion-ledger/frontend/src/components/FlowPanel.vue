@@ -19,16 +19,12 @@ const filter = ref('all')
 // webview stays responsive (Principle XI — bounded UI).
 const RENDER_CAP = 500
 
-const rows = computed(() => {
+const filtered = computed(() => {
   const f = filter.value
-  const src = f === 'all' ? props.events : props.events.filter(e => e.kind === f)
-  return src.slice(0, RENDER_CAP)
+  return f === 'all' ? props.events : props.events.filter(e => e.kind === f)
 })
-const hiddenCount = computed(() => {
-  const f = filter.value
-  const total = f === 'all' ? props.events.length : props.events.filter(e => e.kind === f).length
-  return Math.max(0, total - RENDER_CAP)
-})
+const rows = computed(() => filtered.value.slice(0, RENDER_CAP))
+const hiddenCount = computed(() => Math.max(0, filtered.value.length - RENDER_CAP))
 
 const gatherTotal = computed(() => props.gather.reduce((s, r) => s + (r.totalValue || 0), 0))
 const lootTotal = computed(() => props.loot.reduce((s, r) => s + (r.totalValue || 0), 0))

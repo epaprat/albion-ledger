@@ -110,13 +110,6 @@ func (l *Ledger) SetSelf(objID int, name string) {
 	}
 }
 
-// Self returns the known local player object id + name (for filtering upstream).
-func (l *Ledger) Self() (objID int, name string) {
-	l.mu.Lock()
-	defer l.mu.Unlock()
-	return l.selfObjID, l.selfName
-}
-
 // SetZone records the current zone/cluster label; subsequent events are stamped with
 // it so per-zone rate analytics (feature 006) can group by where earnings happened.
 func (l *Ledger) SetZone(zone string) {
@@ -354,7 +347,7 @@ func (l *Ledger) dup(id string) bool {
 	}
 	l.dedup[id] = struct{}{}
 	l.dedupOrder = append(l.dedupOrder, id)
-	for max := l.maxEvents * 4; len(l.dedupOrder) > max; {
+	if len(l.dedupOrder) > l.maxEvents*4 { // one append per call → at most one over
 		old := l.dedupOrder[0]
 		l.dedupOrder = l.dedupOrder[1:]
 		delete(l.dedup, old)

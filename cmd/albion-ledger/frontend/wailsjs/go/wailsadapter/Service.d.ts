@@ -5,6 +5,8 @@ import {holdings} from '../models';
 import {context} from '../models';
 import {wailsadapter} from '../models';
 
+export function EmitFlowNow():Promise<void>;
+
 export function FlowBreakdown(arg1:string):Promise<Array<model.FlowItemStatView>>;
 
 export function FlowSummary():Promise<model.SessionSummary>;
@@ -41,8 +43,6 @@ export function ListHoldings():Promise<Array<model.HoldingItem>>;
 
 export function ListItems():Promise<Array<model.LiveViewItem>>;
 
-export function Self():Promise<number|string>;
-
 export function SetCurrentCity(arg1:string):Promise<void>;
 
 export function SetSelf(arg1:number,arg2:string):Promise<void>;
@@ -58,3 +58,5 @@ export function Spec():Promise<model.CharacterSpec>;
 export function StartFlowPersistence(arg1:context.Context,arg2:wailsadapter.FlowStore,arg3:string):Promise<void>;
 
 export function Status():Promise<model.CaptureStatusView>;
+
+export function StopFlowPersistence():Promise<void>;

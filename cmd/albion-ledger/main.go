@@ -134,6 +134,7 @@ func main() {
 		},
 		OnShutdown: func(context.Context) {
 			if flowStore != nil {
+				svc.StopFlowPersistence() // drain the final batch before the DB closes
 				_ = flowStore.EndSession(context.Background(), sessionID, nowMS(), model.SessionTotals{})
 				_ = flowStore.Close()
 			}
@@ -171,7 +172,10 @@ func runCapture(ctx context.Context, iface, replay string, clf *probe.Classifier
 			// AND every zone-change Join (where userObjectId changes per map). Read it here,
 			// independent of the key-55 (bag) guard that gates own-state/character_spec, so
 			// self stays fresh across zones and is set even when the app starts mid-session.
-			if rc == 2 {
+			// Require the REAL response op code (key 253 == 2): the raw-opByte fallback can
+			// collide on unrelated/partially-decoded responses, and a foreign message whose
+			// key 0 parses as an int would silently corrupt selfObjID and all attribution.
+			if fromKey, ok := capture.IntParam(params, 253); ok && fromKey == 2 {
 				updateSelf(svc, params)
 			}
 			ingest(clf, svc, probe.KindResponse, rc, params)
@@ -184,10 +188,12 @@ func runCapture(ctx context.Context, iface, replay string, clf *probe.Classifier
 	)
 	parser.OnEncrypted = func() {}
 
-	// Status ticker.
+	// Status ticker. Every 30th tick it also re-broadcasts the flow summary so the
+	// session's idle auto-close and live elapsed/rate stay visible between earnings.
 	go func() {
 		t := time.NewTicker(time.Second)
 		defer t.Stop()
+		ticks := 0
 		for {
 			select {
 			case <-ctx.Done():
@@ -199,6 +205,9 @@ func runCapture(ctx context.Context, iface, replay string, clf *probe.Classifier
 					GameServer: st.GameServer, EncryptedRate: st.EncryptedRate,
 					Decoded: st.Decoded,
 				})
+				if ticks++; ticks%30 == 0 {
+					svc.EmitFlowNow()
+				}
 			}
 		}
 	}()
@@ -268,8 +277,12 @@ func ingest(clf *probe.Classifier, svc *wailsadapter.Service, kind probe.Kind, c
 			// key0 (obj) is the RECEIVING player (self); key2 is the mob/target entity.
 			// Live-verified 2026-07-01: obj==self across a session, target varies per mob.
 			if isSelfObj(obj) && net != 0 {
-				ts, _ := capture.IntParam(params, 1) // wire timestamp → stable dedup id
-				id := fmt.Sprintf("sv:%d:%d", ts, net)
+				// Per-event nonce: identical yields are common (same mob type, AoE kills in
+				// one wire tick) and key 1 (timestamp) is not guaranteed — without the seq,
+				// equal-net pickups collapse into one id and undercount. Wire-level
+				// retransmits are already deduped by the Photon reliable layer.
+				ts, _ := capture.IntParam(params, 1)
+				id := fmt.Sprintf("sv:%d:%d:%d", ts, net, nextFlowSeq())
 				svc.IngestSilver(id, net, nowMS(), "")
 			}
 		}
@@ -277,15 +290,20 @@ func ingest(clf *probe.Classifier, svc *wailsadapter.Service, kind probe.Kind, c
 		if debugFlow {
 			log.Printf("[flow] loot category: code=%d keys=%v", code, paramKeys(params))
 		}
+		if code != 279 { // NewLoot(98) shares the category but has a different key layout —
+			return // feeding it to LootGrab could fabricate a phantom loot event.
+		}
 		if looter, isSilver, itemID, amount, ok := capture.LootGrab(params); ok {
 			if debugFlow {
 				log.Printf("[flow] loot evt: looter=%q item=%d amt=%d isSilver=%v self=%q match=%v", looter, itemID, amount, isSilver, selfName, isSelfName(looter))
 			}
 			if !isSilver && isSelfName(looter) {
+				// Per-event nonce: two identical stacks from one container are distinct
+				// grabs — without the seq they collapse into one id (same fix as harvest).
 				container, _ := capture.IntParam(params, 0)
-				id := fmt.Sprintf("lt:%d:%d:%d", container, itemID, amount)
+				id := fmt.Sprintf("lt:%d:%d:%d:%d", container, itemID, amount, nextFlowSeq())
 				// OtherGrabbedLoot carries no quality → normal (0); resources are unquality anyway.
-				svc.IngestLoot(id, itemID, 0, amount, nowMS(), looter)
+				svc.IngestLoot(id, itemID, 0, amount, nowMS(), "")
 			}
 		}
 	case model.CatGatherFishing: // HarvestFinished (61) + RewardGranted (267) — own gathers (US3)
@@ -318,8 +336,10 @@ func ingest(clf *probe.Classifier, svc *wailsadapter.Service, kind probe.Kind, c
 		}
 	case model.CatFame: // UpdateFame (82 event) — fame is inherently own (US4)
 		if fame, ok := capture.FameEvent(params); ok && fame > 0 {
-			total, _ := capture.IntParam(params, 1) // running total → stable dedup id
-			id := fmt.Sprintf("fm:%d", total)
+			// Per-event nonce: key 1 (running total) is unverified — if absent, every
+			// id would be "fm:0" and all fame after the first tick would be dropped.
+			total, _ := capture.IntParam(params, 1)
+			id := fmt.Sprintf("fm:%d:%d", total, nextFlowSeq())
 			svc.IngestFame(id, fame, nowMS())
 		}
 	}
@@ -350,18 +370,16 @@ func nextFlowSeq() int64 { flowSeq++; return flowSeq }
 
 // updateSelf refreshes the local player's own object id + name from a Join op-2
 // response (key 0 objId, key 2 name). Called for every op-2 so self stays correct
-// across zone changes (objId changes per map) and is set even mid-session.
+// across zone changes (objId changes per map) and is set even mid-session. Requires
+// BOTH fields — a partial match (e.g. a stray int at key 0 of a non-Join op-2 variant)
+// must never overwrite a good identity with garbage.
 func updateSelf(svc *wailsadapter.Service, params map[byte]interface{}) {
 	objID, name, ok := capture.SelfIdentity(params)
-	if !ok {
+	if !ok || objID <= 0 || name == "" {
 		return
 	}
-	if objID > 0 {
-		selfObjID = objID
-	}
-	if name != "" {
-		selfName = name
-	}
+	selfObjID = objID
+	selfName = name
 	svc.SetSelf(objID, name)
 	// The Join also carries the current location/cluster (key 8) — stamp it as the zone
 	// so flow events know where they happened (per-zone analytics, 006). Open-world zones

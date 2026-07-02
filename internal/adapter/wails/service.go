@@ -5,8 +5,10 @@ package wailsadapter
 
 import (
 	"context"
+	"log"
 	"strconv"
 	"sync"
+	"sync/atomic"
 	"time"
 
 	"github.com/epaprat/albion-ledger/internal/domain/model"
@@ -44,9 +46,11 @@ type Service struct {
 	flow *flow.Ledger
 	spec model.CharacterSpec
 
-	flowStore FlowStore          // local-first persistence sink (Principle VIII); nil = no store
-	sessionID string            // current capture session id (for flow_events rows)
-	flowCh    chan model.FlowEvent // bounded buffer to the background writer (Principle XI)
+	flowCh      chan model.FlowEvent // bounded buffer to the background writer (Principle XI)
+	flowStop    chan struct{}        // closed by StopFlowPersistence to trigger the final flush
+	flowDone    chan struct{}        // closed by the writer after its final flush completes
+	flowStopped bool                 // guards double-close of flowStop
+	flowDropped atomic.Int64         // events dropped on a full buffer (observability, VIII)
 
 	mu     sync.Mutex
 	items  map[int]*model.LiveViewItem // by item index
@@ -72,11 +76,17 @@ func NewService(cat port.Catalog, book *valuation.Book, val port.Valuer, emit Em
 func (s *Service) IngestEMV(index, quality int, value, asOf int64) {
 	s.book.SetEMV(index, quality, value, asOf)
 	s.upsert(index, quality, asOf)
-	for _, e := range s.flow.RevalueItem(index, quality) {
+	// Emit only when something was actually revalued: EMV traffic is high-frequency
+	// (event 466 arrays + every New*Item), and an unconditional emit would drive a
+	// permanent flow-refresh loop in the webview with zero flow activity (Principle XI).
+	revalued := s.flow.RevalueItem(index, quality)
+	for _, e := range revalued {
 		ev := e
 		s.persist(&ev)
 	}
-	s.emitFlow()
+	if len(revalued) > 0 {
+		s.emitFlow()
+	}
 }
 
 // IngestMarket records a live market price and refreshes its view row.
@@ -200,34 +210,46 @@ func (s *Service) emitHoldings() {
 // flow ledger can attribute own earnings (silver/harvest by id, loot by name).
 func (s *Service) SetSelf(objID int, name string) { s.flow.SetSelf(objID, name) }
 
-// Self returns the known local player object id + name (for capture-side filtering).
-func (s *Service) Self() (int, string) { return s.flow.Self() }
-
 // SetZone records the current zone/cluster label for stamping flow events (006).
 func (s *Service) SetZone(zone string) { s.flow.SetZone(zone) }
 
+// EmitFlowNow re-broadcasts the current session summary. The capture status ticker
+// calls this periodically so idle auto-close and the live elapsed/rate stay observable
+// between earnings — the summary is otherwise only pushed on ingest, which would leave
+// the UI frozen on "Active" after the last earning.
+func (s *Service) EmitFlowNow() { s.emitFlow() }
+
 // IngestSilver records a net-silver earning and broadcasts the flow summary.
+// A deduped (nil) event changes nothing, so it neither persists nor emits.
 func (s *Service) IngestSilver(id string, net int64, ts int64, source string) {
-	s.persist(s.flow.IngestSilver(id, net, ts, source))
-	s.emitFlow()
+	if e := s.flow.IngestSilver(id, net, ts, source); e != nil {
+		s.persist(e)
+		s.emitFlow()
+	}
 }
 
 // IngestLoot records a looted item (valued via the valuer) and broadcasts.
 func (s *Service) IngestLoot(id string, index, quality, count int, ts int64, source string) {
-	s.persist(s.flow.IngestLoot(id, s.cat.Resolve(index, quality), count, ts, source))
-	s.emitFlow()
+	if e := s.flow.IngestLoot(id, s.cat.Resolve(index, quality), count, ts, source); e != nil {
+		s.persist(e)
+		s.emitFlow()
+	}
 }
 
 // IngestGather records a gathered/reward item and broadcasts.
 func (s *Service) IngestGather(id string, index, quality, count int, ts int64, source string) {
-	s.persist(s.flow.IngestGather(id, s.cat.Resolve(index, quality), count, ts, source))
-	s.emitFlow()
+	if e := s.flow.IngestGather(id, s.cat.Resolve(index, quality), count, ts, source); e != nil {
+		s.persist(e)
+		s.emitFlow()
+	}
 }
 
 // IngestFame records fame gained (separate metric) and broadcasts.
 func (s *Service) IngestFame(id string, fame int64, ts int64) {
-	s.persist(s.flow.IngestFame(id, fame, ts))
-	s.emitFlow()
+	if e := s.flow.IngestFame(id, fame, ts); e != nil {
+		s.persist(e)
+		s.emitFlow()
+	}
 }
 
 func (s *Service) emitFlow() {
@@ -243,21 +265,23 @@ type FlowStore interface {
 }
 
 // StartFlowPersistence wires a store + session id and launches a single background
-// writer that batches flow events to the store (size- or time-triggered). The
-// goroutine's lifecycle is tied to ctx and drains on shutdown (Principle XI). Safe to
-// skip entirely — with no store the ledger is purely in-memory.
+// writer that batches flow events to the store (size- or time-triggered). Writes use
+// context.Background() so the final flush still lands after the app context is
+// cancelled; call StopFlowPersistence from shutdown to drain before closing the store.
+// Safe to skip entirely — with no store the ledger is purely in-memory.
 func (s *Service) StartFlowPersistence(ctx context.Context, store FlowStore, sessionID string) {
 	if store == nil {
 		return
 	}
 	s.mu.Lock()
-	s.flowStore = store
-	s.sessionID = sessionID
 	s.flowCh = make(chan model.FlowEvent, 1024)
-	ch := s.flowCh
+	s.flowStop = make(chan struct{})
+	s.flowDone = make(chan struct{})
+	ch, stop, done := s.flowCh, s.flowStop, s.flowDone
 	s.mu.Unlock()
 
 	go func() {
+		defer close(done)
 		t := time.NewTicker(2 * time.Second)
 		defer t.Stop()
 		buf := make([]model.FlowEvent, 0, 64)
@@ -265,22 +289,33 @@ func (s *Service) StartFlowPersistence(ctx context.Context, store FlowStore, ses
 			if len(buf) == 0 {
 				return
 			}
-			_ = store.AppendFlowEvents(ctx, sessionID, buf)
+			// A failed local write must be visible, never silent (Principles VII/VIII).
+			// The upsert is idempotent, so the buffered batch is retried on the next flush.
+			if err := store.AppendFlowEvents(context.Background(), sessionID, buf); err != nil {
+				log.Printf("flow store write failed (%d events, will retry): %v", len(buf), err)
+				return
+			}
 			buf = buf[:0]
+		}
+		drainAndExit := func() {
+			for {
+				select {
+				case e := <-ch:
+					buf = append(buf, e)
+				default:
+					flush()
+					return
+				}
+			}
 		}
 		for {
 			select {
 			case <-ctx.Done():
-				// drain what's already queued, then flush and exit.
-				for {
-					select {
-					case e := <-ch:
-						buf = append(buf, e)
-					default:
-						flush()
-						return
-					}
-				}
+				drainAndExit()
+				return
+			case <-stop:
+				drainAndExit()
+				return
 			case e := <-ch:
 				buf = append(buf, e)
 				if len(buf) >= 64 {
@@ -293,15 +328,40 @@ func (s *Service) StartFlowPersistence(ctx context.Context, store FlowStore, ses
 	}()
 }
 
+// StopFlowPersistence triggers the writer's final drain+flush and waits (bounded) for
+// it, so the caller can close the store without racing an in-flight write. Safe to
+// call when persistence was never started, and safe to call more than once.
+func (s *Service) StopFlowPersistence() {
+	s.mu.Lock()
+	if s.flowStop != nil && !s.flowStopped {
+		s.flowStopped = true
+		close(s.flowStop)
+	}
+	done := s.flowDone
+	s.mu.Unlock()
+	if done == nil {
+		return
+	}
+	select {
+	case <-done:
+	case <-time.After(2 * time.Second):
+		log.Printf("flow store writer did not drain within 2s; closing anyway")
+	}
+}
+
 // persist enqueues a newly-stored event for the background writer (non-blocking; a
-// full buffer drops rather than stalling capture — bounded, Principle XI).
+// full buffer drops rather than stalling capture — bounded, Principle XI). Drops are
+// counted and logged so durable-history loss is never silent (Principle VIII).
 func (s *Service) persist(e *model.FlowEvent) {
 	if e == nil || s.flowCh == nil {
 		return
 	}
 	select {
 	case s.flowCh <- *e:
-	default: // writer briefly behind; drop to avoid stalling the capture path
+	default:
+		if n := s.flowDropped.Add(1); n == 1 || n%100 == 0 {
+			log.Printf("flow persist buffer full — %d events dropped so far", n)
+		}
 	}
 }
 
