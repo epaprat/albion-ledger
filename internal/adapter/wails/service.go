@@ -14,6 +14,7 @@ import (
 	"github.com/epaprat/albion-ledger/internal/domain/model"
 	"github.com/epaprat/albion-ledger/internal/flow"
 	"github.com/epaprat/albion-ledger/internal/holdings"
+	"github.com/epaprat/albion-ledger/internal/locations"
 	"github.com/epaprat/albion-ledger/internal/port"
 	"github.com/epaprat/albion-ledger/internal/valuation"
 	"github.com/epaprat/albion-ledger/internal/zonestats"
@@ -313,6 +314,12 @@ func (s *Service) ZoneStats(window string) []model.ZoneStatView {
 	if err != nil {
 		log.Printf("zone stats load failed: %v", err)
 		return []model.ZoneStatView{}
+	}
+	// Normalize generated-instance labels BEFORE grouping so every corrupted-dungeon/
+	// mists/hellgate run (each a unique per-instance id, incl. rows persisted raw before
+	// the token fallback existed) rolls up into ONE analytics row per instance type.
+	for i := range events {
+		events[i].Zone = locations.Friendly(events[i].Zone)
 	}
 	stats := zonestats.Compute(events)
 

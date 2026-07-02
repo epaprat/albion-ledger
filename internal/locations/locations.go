@@ -1,9 +1,44 @@
 // Package locations resolves a raw Photon cluster id (Join key 8, e.g. "4207") to a
-// readable zone name (e.g. "Pen Gent") from the bundled cluster map. Pure domain, no
-// infrastructure deps (Principle I). Overridable/regeneratable via scripts/gen-clusters.
+// readable zone name (e.g. "Pen Gent") from the bundled cluster map, with a token
+// fallback for GENERATED instance ids (corrupted dungeons, mists, hellgates … carry a
+// per-instance GUID like "@CORRUPTEDDUNGEON@4d5f…" that no catalog can list — mirror
+// of the reference client's GeneratedLocationTypes). Pure domain (Principle I).
 package locations
 
-import "encoding/json"
+import (
+	"encoding/json"
+	"strings"
+)
+
+// generatedTypes maps instance-id tokens to friendly names. ORDER MATTERS: more
+// specific tokens first (MISTSDUNGEON before MISTS).
+var generatedTypes = []struct{ token, friendly string }{
+	{"HELLCLUSTER", "Hellgate"},
+	{"RANDOMDUNGEON", "Dungeon"},
+	{"CORRUPTEDDUNGEON", "Corrupted Dungeon"},
+	{"EXPEDITION", "Expedition"},
+	{"ARENA", "Arena"},
+	{"MISTSDUNGEON", "Mists Dungeon"},
+	{"MISTS", "Mists"},
+	{"HELLDUNGEON", "Abyssal Depths"},
+	{"ISLAND", "Island"},
+}
+
+// Friendly maps a generated instance id (contains '@') to its readable type name
+// ("Corrupted Dungeon"); anything else returns unchanged. Also cleans labels that
+// were persisted raw before this fallback existed, so it is safe at display time.
+func Friendly(id string) string {
+	if !strings.Contains(id, "@") {
+		return id
+	}
+	upper := strings.ToUpper(id)
+	for _, g := range generatedTypes {
+		if strings.Contains(upper, g.token) {
+			return g.friendly
+		}
+	}
+	return id
+}
 
 // Locations is a bundled cluster-id → zone-name map.
 type Locations struct {
@@ -24,11 +59,11 @@ func New(data []byte) (*Locations, error) {
 	return &Locations{clusters: doc.Clusters}, nil
 }
 
-// Resolve returns the zone name for a cluster id. Unknown ids return the raw id (so a
-// missing mapping still yields a stable, groupable label — named later via a patch).
+// Resolve returns the zone name for a cluster id: exact catalog hit first, then the
+// generated-instance token fallback (Friendly), else the raw id (stable, groupable).
 func (l *Locations) Resolve(clusterID string) string {
 	if name, ok := l.clusters[clusterID]; ok && name != "" {
 		return name
 	}
-	return clusterID
+	return Friendly(clusterID)
 }
