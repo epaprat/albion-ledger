@@ -14,6 +14,9 @@ data, and turns it into a clear earnings (profit/loss) ledger.
 - **Valuation (EMV)** — every item priced from live market data (server estimate as fallback).
 - **Earnings / P&L** — net +/- silver per session / hour / 24h / day, with rate breakdowns
   (silver/hr, loot value/hr, gather value/hr).
+- **Zone analytics** — every earning is stamped with the zone it happened in; the Flow panel's
+  *By zone* view ranks zones by silver/hr, gather value/hr and fame/hr over your active time
+  there (session / today / 7 days / all-time windows) — data-driven "where should I farm".
 
 ### Not in scope
 
