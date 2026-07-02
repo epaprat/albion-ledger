@@ -170,6 +170,20 @@ func slotObjIDs(params map[byte]interface{}, key byte) ([]int, bool) {
 // (Removed MasteryLevels: own-state key 55 is the BAG, not mastery levels — the real
 // spec/mastery source is not yet identified. See protocol-findings.md open follow-ups.)
 
+// SelfIdentity pulls the local player's own object id + name from the Join own-state
+// response (op-2): key 0 = userObjectId, key 2 = playerName. Same response that carries
+// the login bag (key 55) and city (key 8). Used to attribute own earnings — silver/
+// harvest by object id, loot by name (feature 005). Own-state only, ToS-safe.
+func SelfIdentity(params map[byte]interface{}) (objID int, name string, ok bool) {
+	objID, iok := toIntVal(params[0])
+	name, nok := params[2].(string)
+	name = strings.TrimSpace(name)
+	if !iok && !nok {
+		return 0, "", false
+	}
+	return objID, name, true
+}
+
 // IntParam reads an integer-valued param by key.
 func IntParam(params map[byte]interface{}, key byte) (int, bool) {
 	return toIntVal(params[key])

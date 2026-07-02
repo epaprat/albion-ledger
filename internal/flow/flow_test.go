@@ -1,0 +1,238 @@
+package flow
+
+import (
+	"strconv"
+	"testing"
+
+	"github.com/epaprat/albion-ledger/internal/domain/model"
+	"github.com/epaprat/albion-ledger/internal/valuation"
+)
+
+const hourMS = 3_600_000
+
+func newLedger() (*Ledger, *valuation.Book) {
+	book := valuation.NewBook()
+	val := valuation.NewValuer(book, model.DefaultStaleAfterMS)
+	return New(val, DefaultIdleMS, 100), book
+}
+
+func item(index, quality int) model.Item { return model.Item{Index: index, Quality: quality} }
+
+func TestSilverAccumulatesAndRate(t *testing.T) {
+	l, _ := newLedger()
+	// Two silver earnings 30 min apart → net 300, elapsed 30 min → 600/hr.
+	l.IngestSilver("s1", 100, 1000, "mob")
+	l.IngestSilver("s2", 200, 1000+30*60*1000, "mob")
+	now := int64(1000 + 30*60*1000)
+	s := l.Summary(now)
+	if s.NetSilver != 300 {
+		t.Fatalf("net silver = %d, want 300", s.NetSilver)
+	}
+	if !s.RateReady {
+		t.Fatal("rate should be ready after 30 min")
+	}
+	if s.SilverPerHour != 600 {
+		t.Fatalf("silver/hr = %d, want 600", s.SilverPerHour)
+	}
+	if s.Fame != 0 {
+		t.Fatalf("fame should be 0, got %d", s.Fame)
+	}
+}
+
+func TestRateNotReadyUnderOneMinute(t *testing.T) {
+	l, _ := newLedger()
+	l.IngestSilver("s1", 500, 1000, "mob")
+	s := l.Summary(1000 + 30*1000) // 30s elapsed
+	if s.RateReady {
+		t.Fatal("rate must not be ready under 60s")
+	}
+	if s.SilverPerHour != 0 {
+		t.Fatalf("silver/hr must be 0 when not ready, got %d", s.SilverPerHour)
+	}
+}
+
+func TestDedup(t *testing.T) {
+	l, _ := newLedger()
+	l.IngestSilver("dup", 100, 1000, "mob")
+	l.IngestSilver("dup", 100, 1000, "mob") // retry/echo
+	s := l.Summary(1000 + 2*60*1000)
+	if s.NetSilver != 100 {
+		t.Fatalf("dedup failed: net = %d, want 100", s.NetSilver)
+	}
+	if s.EventCount != 1 {
+		t.Fatalf("dedup failed: eventCount = %d, want 1", s.EventCount)
+	}
+}
+
+func TestRingCapEviction(t *testing.T) {
+	book := valuation.NewBook()
+	val := valuation.NewValuer(book, model.DefaultStaleAfterMS)
+	l := New(val, DefaultIdleMS, 10) // cap 10
+	for i := 0; i < 25; i++ {
+		l.IngestSilver("e"+strconv.Itoa(i), 1, 1000+int64(i), "mob")
+	}
+	if n := len(l.List()); n != 10 {
+		t.Fatalf("list length = %d, want 10 (cap)", n)
+	}
+	s := l.Summary(1000 + 2*60*1000)
+	if s.EventCount != 25 {
+		t.Fatalf("eventCount = %d, want 25 (cumulative survives eviction)", s.EventCount)
+	}
+	if s.NetSilver != 25 {
+		t.Fatalf("net = %d, want 25 (totals survive eviction)", s.NetSilver)
+	}
+}
+
+func TestIdleAutoClose(t *testing.T) {
+	l, _ := newLedger()
+	l.IngestSilver("s1", 100, 1000, "mob")
+	// 40 min later, no new earning → session idle-closed.
+	now := int64(1000 + 40*60*1000)
+	s := l.Summary(now)
+	if s.Active {
+		t.Fatal("session should be idle-closed after 40 min")
+	}
+	// Elapsed frozen at last activity (idle tail not counted) → ~0 here (single event).
+	if s.ElapsedMS != 0 {
+		t.Fatalf("elapsed = %d, want 0 (single event, idle tail excluded)", s.ElapsedMS)
+	}
+}
+
+func TestNewSessionAfterIdleResets(t *testing.T) {
+	l, _ := newLedger()
+	l.IngestSilver("s1", 1000, 1000, "mob")
+	// Earning 40 min later → new session, totals reset.
+	l.IngestSilver("s2", 50, 1000+40*60*1000, "mob")
+	s := l.Summary(1000 + 40*60*1000)
+	if s.NetSilver != 50 {
+		t.Fatalf("new session net = %d, want 50 (reset)", s.NetSilver)
+	}
+	if s.EventCount != 1 {
+		t.Fatalf("new session eventCount = %d, want 1", s.EventCount)
+	}
+}
+
+func TestLootValuedAndUnvalued(t *testing.T) {
+	l, book := newLedger()
+	book.SetEMV(920, 0, 1000, 500) // item 920 worth 1000
+	l.IngestLoot("l1", item(920, 0), 3, 1000, "chest")
+	l.IngestLoot("l2", item(999, 0), 1, 1000, "chest") // no value
+	s := l.Summary(1000 + 2*60*1000)
+	if s.LootValue != 3000 {
+		t.Fatalf("loot value = %d, want 3000 (1000×3)", s.LootValue)
+	}
+	if s.NetSilver != 3000 {
+		t.Fatalf("net silver = %d, want 3000", s.NetSilver)
+	}
+	if s.UnvaluedCount != 1 {
+		t.Fatalf("unvalued = %d, want 1", s.UnvaluedCount)
+	}
+}
+
+func TestRevalueDeferred(t *testing.T) {
+	l, book := newLedger()
+	l.IngestLoot("l1", item(920, 0), 2, 1000, "chest") // unvalued at capture
+	if s := l.Summary(1000 + 2*60*1000); s.NetSilver != 0 || s.UnvaluedCount != 1 {
+		t.Fatalf("before revalue: net=%d unvalued=%d, want 0/1", s.NetSilver, s.UnvaluedCount)
+	}
+	book.SetEMV(920, 0, 500, 1500) // value arrives later
+	l.RevalueItem(920, 0)
+	s := l.Summary(1000 + 2*60*1000)
+	if s.NetSilver != 1000 { // 500×2
+		t.Fatalf("after revalue: net = %d, want 1000", s.NetSilver)
+	}
+	if s.LootValue != 1000 {
+		t.Fatalf("after revalue: loot = %d, want 1000", s.LootValue)
+	}
+	if s.UnvaluedCount != 0 {
+		t.Fatalf("after revalue: unvalued = %d, want 0", s.UnvaluedCount)
+	}
+	if n := len(l.List()); n != 1 {
+		t.Fatalf("revalue must not duplicate rows: %d, want 1", n)
+	}
+}
+
+// TestSoakBounded drives a large synthetic flow load and asserts the in-memory
+// structures stay bounded (Principle XI / SC-004): the event ring never exceeds the
+// cap and the dedup set stays within its 4×cap bound.
+func TestSoakBounded(t *testing.T) {
+	book := valuation.NewBook()
+	val := valuation.NewValuer(book, model.DefaultStaleAfterMS)
+	const capN = 1000
+	l := New(val, DefaultIdleMS, capN)
+	base := int64(1000)
+	for i := 0; i < 200_000; i++ {
+		// keep within one session (small time steps, never exceeding idle window)
+		l.IngestSilver("e"+strconv.Itoa(i), 1, base+int64(i), "mob")
+	}
+	if n := len(l.events); n > capN {
+		t.Fatalf("event ring = %d, want ≤ %d", n, capN)
+	}
+	if n := len(l.order); n > capN {
+		t.Fatalf("order ring = %d, want ≤ %d", n, capN)
+	}
+	if n := len(l.dedup); n > capN*4 {
+		t.Fatalf("dedup set = %d, want ≤ %d", n, capN*4)
+	}
+	if n := len(l.List()); n != capN {
+		t.Fatalf("list = %d, want %d", n, capN)
+	}
+}
+
+func TestGatherValue(t *testing.T) {
+	l, book := newLedger()
+	book.SetEMV(700, 0, 250, 500) // resource worth 250
+	l.IngestGather("g1", item(700, 0), 4, 1000, "node")
+	s := l.Summary(1000 + 2*60*1000)
+	if s.GatherValue != 1000 { // 250×4
+		t.Fatalf("gather value = %d, want 1000", s.GatherValue)
+	}
+	if s.NetSilver != 1000 {
+		t.Fatalf("net silver = %d, want 1000", s.NetSilver)
+	}
+	if s.LootValue != 0 {
+		t.Fatalf("loot value must stay 0, got %d", s.LootValue)
+	}
+}
+
+func TestBreakdownPerItem(t *testing.T) {
+	l, book := newLedger()
+	book.SetEMV(920, 0, 100, 500) // wood worth 100/ea
+	book.SetEMV(837, 0, 50, 500)  // other worth 50/ea
+	l.IngestGather("g1", item(920, 0), 3, 1000, "node")
+	l.IngestGather("g2", item(920, 0), 2, 1100, "node") // same item again → qty 5
+	l.IngestGather("g3", item(837, 0), 4, 1200, "node")
+	l.IngestSilver("s1", 999, 1300, "mob") // silver must not appear in gather breakdown
+
+	b := l.Breakdown(model.FlowGather, 1300+2*60*1000)
+	if len(b) != 2 {
+		t.Fatalf("gather breakdown rows = %d, want 2", len(b))
+	}
+	// Sorted by total value desc → 920 (5×100=500) before 837 (4×50=200).
+	if b[0].Index != 920 || b[0].Qty != 5 || b[0].UnitValue != 100 || b[0].TotalValue != 500 {
+		t.Fatalf("row0 = %+v, want idx920 qty5 unit100 total500", b[0])
+	}
+	if b[1].Index != 837 || b[1].Qty != 4 || b[1].TotalValue != 200 {
+		t.Fatalf("row1 = %+v, want idx837 qty4 total200", b[1])
+	}
+	if n := len(l.Breakdown(model.FlowSilver, 1300)); n != 0 {
+		t.Fatalf("silver breakdown must be empty, got %d", n)
+	}
+}
+
+func TestFameSeparateFromSilver(t *testing.T) {
+	l, _ := newLedger()
+	l.IngestSilver("s1", 100, 1000, "mob")
+	l.IngestFame("f1", 5000, 1000+5*60*1000) // 5 min later, same session
+	now := int64(1000 + 5*60*1000)           // elapsed 5 min
+	s := l.Summary(now)
+	if s.Fame != 5000 {
+		t.Fatalf("fame = %d, want 5000", s.Fame)
+	}
+	if s.NetSilver != 100 {
+		t.Fatalf("fame must not touch silver: net = %d, want 100", s.NetSilver)
+	}
+	if s.FamePerHour != 60000 { // 5000 over 5 min → 60000/hr
+		t.Fatalf("fame/hr = %d, want 60000", s.FamePerHour)
+	}
+}

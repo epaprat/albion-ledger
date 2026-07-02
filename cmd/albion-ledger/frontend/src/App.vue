@@ -1,12 +1,18 @@
 <script setup>
 import { ref, computed, onMounted } from 'vue'
 import HoldingsPanel from './components/HoldingsPanel.vue'
+import FlowPanel from './components/FlowPanel.vue'
+import SessionSummaryBar from './components/SessionSummaryBar.vue'
 import { fmt, tierLabel, qLabel, srcText } from './format.js'
 
-const tab = ref('holdings')
+const tab = ref('flow')
 const market = ref(new Map())        // index -> LiveViewItem
 const holdings = ref([])             // HoldingItem[]
 const summary = ref({ totalValue: 0, unvaluedCount: 0, cities: [] })
+const flowEvents = ref([])           // FlowEventView[]
+const flowGather = ref([])           // FlowItemStatView[] (gather breakdown)
+const flowLoot = ref([])             // FlowItemStatView[] (loot breakdown)
+const flowSummary = ref({ active: false, netSilver: 0, silverPerHour: 0, lootValue: 0, gatherValue: 0, fame: 0, famePerHour: 0, rateReady: false, unvaluedCount: 0, eventCount: 0 })
 const spec = ref({ masteries: [] })
 const status = ref({ capturing: false, interface: '', encryptedRate: 0, driftAlert: '' })
 const ready = ref(false)
@@ -37,12 +43,28 @@ function scheduleHoldingsRefresh() {
   setTimeout(() => { refreshQueued = false; refreshHoldings() }, 80)
 }
 
+async function refreshFlow() {
+  const s = svc(); if (!s) return
+  flowEvents.value = (await s.ListFlow()) || []
+  flowSummary.value = await s.FlowSummary()
+  flowGather.value = (await s.FlowBreakdown('gather')) || []
+  flowLoot.value = (await s.FlowBreakdown('loot')) || []
+}
+// Coalesce flow:changed bursts into one refresh (Principle XI — bounded UI).
+let flowQueued = false
+function scheduleFlowRefresh() {
+  if (flowQueued) return
+  flowQueued = true
+  setTimeout(() => { flowQueued = false; refreshFlow() }, 80)
+}
+
 onMounted(async () => {
   const s = svc()
   if (!s) { ready.value = true; return }
   try {
     for (const it of (await s.ListItems()) || []) upsertMarket(it)
     await refreshHoldings()
+    await refreshFlow()
     spec.value = await s.Spec()
     status.value = await s.Status()
   } catch (_) {}
@@ -53,6 +75,7 @@ onMounted(async () => {
     window.runtime.EventsOn('status:changed', (st) => { status.value = st })
     window.runtime.EventsOn('drift:alert', (m) => { status.value = { ...status.value, driftAlert: m } })
     window.runtime.EventsOn('holdings:changed', scheduleHoldingsRefresh)
+    window.runtime.EventsOn('flow:changed', scheduleFlowRefresh)
     window.runtime.EventsOn('spec:changed', (sp) => { spec.value = sp })
   }
 })
@@ -69,6 +92,7 @@ onMounted(async () => {
       <span class="muted" v-if="status.gameServer">· {{ status.gameServer }}</span>
       <span class="muted">· encrypted {{ Math.round((status.encryptedRate || 0) * 100) }}%</span>
       <nav class="tabs" role="tablist" aria-label="Views">
+        <button :class="{ active: tab === 'flow' }" @click="tab = 'flow'" role="tab" :aria-selected="tab === 'flow'">Flow</button>
         <button :class="{ active: tab === 'holdings' }" @click="tab = 'holdings'" role="tab" :aria-selected="tab === 'holdings'">Holdings</button>
         <button :class="{ active: tab === 'market' }" @click="tab = 'market'" role="tab" :aria-selected="tab === 'market'">Market</button>
         <button :class="{ active: tab === 'spec' }" @click="tab = 'spec'" role="tab" :aria-selected="tab === 'spec'">Spec</button>
@@ -78,9 +102,15 @@ onMounted(async () => {
     <div class="drift" v-if="status.driftAlert" role="alert">⚠ {{ status.driftAlert }}</div>
 
     <main>
+      <!-- FLOW (earnings) -->
+      <template v-if="tab === 'flow'">
+        <SessionSummaryBar :summary="flowSummary" />
+        <FlowPanel :events="flowEvents" :gather="flowGather" :loot="flowLoot" :encrypted="encrypted" />
+      </template>
+
       <!-- HOLDINGS -->
       <HoldingsPanel
-        v-if="tab === 'holdings'"
+        v-else-if="tab === 'holdings'"
         :summary="summary"
         :holdings="holdings"
         :encrypted="encrypted"

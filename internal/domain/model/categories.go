@@ -49,10 +49,12 @@ var ExpectedFields = map[Category][]byte{
 	CatEquipment:        {0, 1},    // object id + item id
 	CatBank:             {0, 1, 5}, // vault id + container ids/names + counts
 	CatCharacterSpec:    {55},      // own-state discriminator (key 55 present = op-2 own-state; it holds the bag object ids, not masteries)
-	CatLoot:             {0, 3},    // object id + source name
-	CatGatherFishing:    {0, 1},    // harvestable/reward fields
-	CatSilver:           {0, 2, 3}, // object id + target + yield (key 5 guild-tax often absent)
-	CatFame:             {1, 2, 3}, // total/zone fame + multiplier
+	// Flow categories list only ALWAYS-PRESENT keys (live-verified 2026-07-01) — optional
+	// keys (taxes, premium, satchel) would crater completeness and raise false drift alarms.
+	CatLoot:             {0, 3}, // common to NewLoot(98: objId+srcName) and OtherGrabbedLoot(279: objId+isSilver)
+	CatGatherFishing:    {3},    // only key present in BOTH layouts: 61 (node objId) and 267 (quantity)
+	CatSilver:           {0, 3}, // TakeSilver(62): receiving player + yield (taxes 5/6 often absent)
+	CatFame:             {2},    // UpdateFame(82): zone-mult fame gain (premium/satchel/bonus optional)
 	CatItemValueEMV:     {0, 1},    // item id array + estimated value array
 }
 

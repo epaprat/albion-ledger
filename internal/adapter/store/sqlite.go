@@ -43,6 +43,13 @@ CREATE TABLE IF NOT EXISTS reconciliation_notes (
   session_id TEXT, category TEXT, captured_value TEXT, ingame_value TEXT,
   result TEXT, notes TEXT, created_at INTEGER
 );
+CREATE TABLE IF NOT EXISTS flow_events (
+  session_id TEXT, event_id TEXT, kind TEXT, ts INTEGER,
+  item_index INTEGER, quality INTEGER, count INTEGER,
+  silver INTEGER, fame INTEGER, valued INTEGER, source TEXT, zone TEXT,
+  PRIMARY KEY (session_id, event_id)
+);
+CREATE INDEX IF NOT EXISTS idx_flow_session_ts ON flow_events(session_id, ts);
 `
 
 // SQLite is a Store backed by a local SQLite database.
@@ -111,6 +118,43 @@ func (s *SQLite) AppendObservations(ctx context.Context, batch []model.Observati
 	for _, o := range batch {
 		if _, err := stmt.ExecContext(ctx, o.SessionID, o.TS, string(o.Category),
 			o.MessageCode, o.FieldsPresent, o.FieldsExpected); err != nil {
+			tx.Rollback()
+			return err
+		}
+	}
+	return tx.Commit()
+}
+
+// AppendFlowEvents inserts a batch of earnings events within one transaction. It is
+// idempotent on (session_id, event_id): a re-sent event upserts, never duplicating
+// (Principle VIII at-least-once + stable id; FR-008). Flow rows are the durable
+// history behind the bounded in-memory ledger (Principle XI).
+func (s *SQLite) AppendFlowEvents(ctx context.Context, sessionID string, batch []model.FlowEvent) error {
+	if len(batch) == 0 {
+		return nil
+	}
+	tx, err := s.db.BeginTx(ctx, nil)
+	if err != nil {
+		return err
+	}
+	stmt, err := tx.PrepareContext(ctx,
+		`INSERT INTO flow_events
+		 (session_id, event_id, kind, ts, item_index, quality, count, silver, fame, valued, source, zone)
+		 VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+		 ON CONFLICT(session_id, event_id) DO UPDATE SET
+		   silver=excluded.silver, valued=excluded.valued`)
+	if err != nil {
+		tx.Rollback()
+		return err
+	}
+	defer stmt.Close()
+	for _, e := range batch {
+		valued := 0
+		if e.Valued {
+			valued = 1
+		}
+		if _, err := stmt.ExecContext(ctx, sessionID, e.ID, string(e.Kind), e.TS,
+			e.Item.Index, e.Item.Quality, e.Count, e.Silver, e.Fame, valued, e.Source, e.Zone); err != nil {
 			tx.Rollback()
 			return err
 		}
