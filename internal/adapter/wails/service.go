@@ -16,6 +16,7 @@ import (
 	"github.com/epaprat/albion-ledger/internal/holdings"
 	"github.com/epaprat/albion-ledger/internal/port"
 	"github.com/epaprat/albion-ledger/internal/valuation"
+	"github.com/epaprat/albion-ledger/internal/zonestats"
 )
 
 // Emitter abstracts the Wails event runtime so the service is testable without it.
@@ -46,6 +47,8 @@ type Service struct {
 	flow *flow.Ledger
 	spec model.CharacterSpec
 
+	flowReader  FlowReader           // zone-analytics read side (006); nil = no store
+	sessionID   string               // active capture session id (window "session")
 	flowCh      chan model.FlowEvent // bounded buffer to the background writer (Principle XI)
 	flowStop    chan struct{}        // closed by StopFlowPersistence to trigger the final flush
 	flowDone    chan struct{}        // closed by the writer after its final flush completes
@@ -262,6 +265,79 @@ func (s *Service) emitFlow() {
 // every flow event is written to the durable store, the in-memory ledger stays bounded.
 type FlowStore interface {
 	AppendFlowEvents(ctx context.Context, sessionID string, batch []model.FlowEvent) error
+}
+
+// FlowReader is the zone-analytics read side (006): windowed, ordered, bounded reads
+// of the persisted flow history.
+type FlowReader interface {
+	LoadFlowEvents(ctx context.Context, sessionID string, sinceMS int64, limit int) ([]zonestats.StoredEvent, error)
+}
+
+// SetFlowReader wires the analytics read side (kept separate from the writer so a
+// read-only build or a failed store degrades independently).
+func (s *Service) SetFlowReader(r FlowReader, sessionID string) {
+	s.mu.Lock()
+	s.flowReader = r
+	s.sessionID = sessionID
+	s.mu.Unlock()
+}
+
+// ZoneStats returns per-zone earning rollups for a time window: "session" (current
+// capture session), "today" (local midnight), "7d", or "all". Unknown windows fall
+// back to "session" (safe default). Sorted by silver/hr desc; zone label never empty.
+func (s *Service) ZoneStats(window string) []model.ZoneStatView {
+	s.mu.Lock()
+	reader, sessionID := s.flowReader, s.sessionID
+	s.mu.Unlock()
+	if reader == nil {
+		return []model.ZoneStatView{}
+	}
+
+	now := s.nowMS()
+	sessionFilter := ""
+	var since int64
+	switch window {
+	case "today":
+		t := time.UnixMilli(now)
+		y, m, d := t.Local().Date()
+		since = time.Date(y, m, d, 0, 0, 0, 0, time.Local).UnixMilli()
+	case "7d":
+		since = now - 7*24*3_600_000
+	case "all":
+		since = 0
+	default: // "session" and anything unknown
+		sessionFilter = sessionID
+	}
+
+	events, err := reader.LoadFlowEvents(context.Background(), sessionFilter, since, 0)
+	if err != nil {
+		log.Printf("zone stats load failed: %v", err)
+		return []model.ZoneStatView{}
+	}
+	stats := zonestats.Compute(events)
+
+	out := make([]model.ZoneStatView, 0, len(stats))
+	for _, z := range stats {
+		name := z.Zone
+		if name == "" {
+			name = "Unknown zone"
+		}
+		acts := make([]model.ZoneActivityStatView, 0, len(z.Activities))
+		for _, a := range z.Activities {
+			acts = append(acts, model.ZoneActivityStatView{
+				Kind: a.Kind, Total: a.Total, PerHour: a.PerHour, EventCount: a.EventCount,
+			})
+		}
+		out = append(out, model.ZoneStatView{
+			Zone: name, ActiveMS: z.ActiveMS,
+			NetSilver: z.NetSilver, SilverPerHour: z.SilverPerHour,
+			GatherValue: z.GatherValue, GatherPerHour: z.GatherPerHour,
+			Fame: z.Fame, FamePerHour: z.FamePerHour,
+			EventCount: z.EventCount, InsufficientData: z.InsufficientData,
+			Activities: acts,
+		})
+	}
+	return out
 }
 
 // StartFlowPersistence wires a store + session id and launches a single background
