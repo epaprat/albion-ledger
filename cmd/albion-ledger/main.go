@@ -473,6 +473,13 @@ const pendingInvCap = 1024
 // this container. Re-runs replace the container wholesale (own-state is a full list).
 func ingestSelf(svc *wailsadapter.Service, guid, tab string, objIDs []int) {
 	slots := resolveObjects(objIDs)
+	if debugFlow {
+		idxs := make([]int, len(slots))
+		for i, s := range slots {
+			idxs[i] = s.Ref.Index
+		}
+		log.Printf("[self] %s objIDs=%v resolvedItemIdx=%v (%d/%d resolved)", tab, objIDs, idxs, len(slots), len(objIDs))
+	}
 	svc.IngestSelfContainer(guid, tab, slots)
 	resolved := make(map[int]bool, len(slots))
 	for _, s := range slots {
