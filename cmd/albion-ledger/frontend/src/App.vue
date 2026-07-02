@@ -12,6 +12,9 @@ const summary = ref({ totalValue: 0, unvaluedCount: 0, cities: [] })
 const flowEvents = ref([])           // FlowEventView[]
 const flowGather = ref([])           // FlowItemStatView[] (gather breakdown)
 const flowLoot = ref([])             // FlowItemStatView[] (loot breakdown)
+const flowZones = ref([])            // ZoneStatView[] (006 — per-zone rates)
+const flowView = ref('items')        // active FlowPanel view ('zones' gates the fetch)
+const zoneWindow = ref('session')    // time window for zone stats
 const flowSummary = ref({ active: false, netSilver: 0, silverPerHour: 0, lootValue: 0, gatherValue: 0, fame: 0, famePerHour: 0, rateReady: false, unvaluedCount: 0, eventCount: 0 })
 const spec = ref({ masteries: [] })
 const status = ref({ capturing: false, interface: '', encryptedRate: 0, driftAlert: '' })
@@ -49,7 +52,13 @@ async function refreshFlow() {
   flowSummary.value = await s.FlowSummary()
   flowGather.value = (await s.FlowBreakdown('gather')) || []
   flowLoot.value = (await s.FlowBreakdown('loot')) || []
+  // Zone stats hit the store — fetch only while the By zone view is actually visible.
+  if (tab.value === 'flow' && flowView.value === 'zones') {
+    flowZones.value = (await s.ZoneStats(zoneWindow.value)) || []
+  }
 }
+function setFlowView(v) { flowView.value = v; if (v === 'zones') refreshFlow() }
+function setZoneWindow(w) { zoneWindow.value = w; refreshFlow() }
 // Coalesce flow:changed bursts into one refresh (Principle XI — bounded UI).
 let flowQueued = false
 function scheduleFlowRefresh() {
@@ -105,7 +114,11 @@ onMounted(async () => {
       <!-- FLOW (earnings) -->
       <template v-if="tab === 'flow'">
         <SessionSummaryBar :summary="flowSummary" />
-        <FlowPanel :events="flowEvents" :gather="flowGather" :loot="flowLoot" :encrypted="encrypted" />
+        <FlowPanel
+          :events="flowEvents" :gather="flowGather" :loot="flowLoot"
+          :zones="flowZones" :zone-window="zoneWindow" :encrypted="encrypted"
+          @update:view="setFlowView" @update:zone-window="setZoneWindow"
+        />
       </template>
 
       <!-- HOLDINGS -->

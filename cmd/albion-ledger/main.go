@@ -129,6 +129,7 @@ func main() {
 					log.Printf("store StartSession: %v", err)
 				}
 				svc.StartFlowPersistence(ctx, flowStore, sessionID)
+				svc.SetFlowReader(flowStore, sessionID) // zone analytics read side (006)
 			}
 			go runCapture(ctx, *iface, *replay, clf, svc)
 		},

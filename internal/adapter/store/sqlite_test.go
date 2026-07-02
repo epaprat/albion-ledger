@@ -2,6 +2,7 @@ package store
 
 import (
 	"context"
+	"database/sql"
 	"path/filepath"
 	"testing"
 
@@ -64,6 +65,117 @@ func TestStoreRoundTrip(t *testing.T) {
 	notes, err := db.LoadReconciliations(ctx, "s1")
 	if err != nil || len(notes) != 1 || notes[0].Result != "pass" {
 		t.Fatalf("recon load: %v notes=%v", err, notes)
+	}
+}
+
+// TestMigrateOldFlowEventsTable reproduces the live 2026-07-02 failure: a DB whose
+// flow_events predates the zone column. Open must ALTER it in, after which writes and
+// zone reads work (old rows read back with zone "").
+func TestMigrateOldFlowEventsTable(t *testing.T) {
+	ctx := context.Background()
+	path := filepath.Join(t.TempDir(), "old.db")
+
+	// Build the pre-zone table exactly as the old schema did, with one legacy row.
+	raw, err := sql.Open("sqlite", "file:"+path)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if _, err := raw.Exec(`CREATE TABLE flow_events (
+		session_id TEXT, event_id TEXT, kind TEXT, ts INTEGER,
+		item_index INTEGER, quality INTEGER, count INTEGER,
+		silver INTEGER, fame INTEGER, valued INTEGER, source TEXT,
+		PRIMARY KEY (session_id, event_id));
+		INSERT INTO flow_events VALUES ('old','e1','silver',100,0,0,1,42,0,1,'');`); err != nil {
+		t.Fatal(err)
+	}
+	raw.Close()
+
+	db, err := Open(path)
+	if err != nil {
+		t.Fatalf("open must migrate, got: %v", err)
+	}
+	defer db.Close()
+
+	// New-schema write succeeds against the migrated table.
+	if err := db.AppendFlowEvents(ctx, "new", []model.FlowEvent{
+		{ID: "e2", Kind: model.FlowGather, TS: 200, Silver: 10, Count: 1, Zone: "Pen Gent", Valued: true},
+	}); err != nil {
+		t.Fatalf("write after migration: %v", err)
+	}
+	rows, err := db.LoadFlowEvents(ctx, "", 0, 0)
+	if err != nil {
+		t.Fatalf("read after migration: %v", err)
+	}
+	if len(rows) != 2 {
+		t.Fatalf("rows = %d, want 2 (legacy + new)", len(rows))
+	}
+	if rows[0].Zone != "" || rows[0].Silver != 42 {
+		t.Fatalf("legacy row = %+v, want zone \"\" silver 42", rows[0])
+	}
+	if rows[1].Zone != "Pen Gent" {
+		t.Fatalf("new row zone = %q, want Pen Gent", rows[1].Zone)
+	}
+}
+
+func TestLoadFlowEvents(t *testing.T) {
+	ctx := context.Background()
+	db, err := Open(filepath.Join(t.TempDir(), "load.db"))
+	if err != nil {
+		t.Fatalf("open: %v", err)
+	}
+	defer db.Close()
+
+	batchA := []model.FlowEvent{
+		{ID: "a1", Kind: model.FlowSilver, TS: 100, Silver: 10, Count: 1, Zone: "Z1", Valued: true},
+		{ID: "a2", Kind: model.FlowFame, TS: 300, Fame: 50, Count: 1, Zone: "Z1", Valued: true},
+	}
+	batchB := []model.FlowEvent{
+		{ID: "b1", Kind: model.FlowGather, TS: 200, Silver: 20, Count: 2, Zone: "Z2", Valued: true},
+	}
+	if err := db.AppendFlowEvents(ctx, "sA", batchA); err != nil {
+		t.Fatal(err)
+	}
+	if err := db.AppendFlowEvents(ctx, "sB", batchB); err != nil {
+		t.Fatal(err)
+	}
+
+	// All sessions, since 0 → 3 rows, ts ASC, fields round-tripped.
+	all, err := db.LoadFlowEvents(ctx, "", 0, 0)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if len(all) != 3 || all[0].TS != 100 || all[1].TS != 200 || all[2].TS != 300 {
+		t.Fatalf("all = %+v, want 3 rows ts ASC", all)
+	}
+	if all[1].SessionID != "sB" || all[1].Kind != model.FlowGather || all[1].Zone != "Z2" || all[1].Silver != 20 {
+		t.Fatalf("row fields wrong: %+v", all[1])
+	}
+
+	// Session filter.
+	onlyA, err := db.LoadFlowEvents(ctx, "sA", 0, 0)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if len(onlyA) != 2 {
+		t.Fatalf("session filter → %d rows, want 2", len(onlyA))
+	}
+
+	// since filter.
+	since, err := db.LoadFlowEvents(ctx, "", 150, 0)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if len(since) != 2 || since[0].TS != 200 {
+		t.Fatalf("since filter → %+v, want ts 200,300", since)
+	}
+
+	// Limit keeps the NEWEST rows (then re-sorted ASC).
+	lim, err := db.LoadFlowEvents(ctx, "", 0, 2)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if len(lim) != 2 || lim[0].TS != 200 || lim[1].TS != 300 {
+		t.Fatalf("limit → %+v, want newest two (200,300) ASC", lim)
 	}
 }
 

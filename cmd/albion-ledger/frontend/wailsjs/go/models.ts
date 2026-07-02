@@ -481,6 +481,75 @@ export namespace model {
 	    }
 	}
 	
+	
+	export class ZoneActivityStatView {
+	    kind: string;
+	    total: number;
+	    perHour: number;
+	    eventCount: number;
+	
+	    static createFrom(source: any = {}) {
+	        return new ZoneActivityStatView(source);
+	    }
+	
+	    constructor(source: any = {}) {
+	        if ('string' === typeof source) source = JSON.parse(source);
+	        this.kind = source["kind"];
+	        this.total = source["total"];
+	        this.perHour = source["perHour"];
+	        this.eventCount = source["eventCount"];
+	    }
+	}
+	export class ZoneStatView {
+	    zone: string;
+	    activeMs: number;
+	    netSilver: number;
+	    silverPerHour: number;
+	    gatherValue: number;
+	    gatherPerHour: number;
+	    fame: number;
+	    famePerHour: number;
+	    eventCount: number;
+	    insufficientData: boolean;
+	    activities: ZoneActivityStatView[];
+	
+	    static createFrom(source: any = {}) {
+	        return new ZoneStatView(source);
+	    }
+	
+	    constructor(source: any = {}) {
+	        if ('string' === typeof source) source = JSON.parse(source);
+	        this.zone = source["zone"];
+	        this.activeMs = source["activeMs"];
+	        this.netSilver = source["netSilver"];
+	        this.silverPerHour = source["silverPerHour"];
+	        this.gatherValue = source["gatherValue"];
+	        this.gatherPerHour = source["gatherPerHour"];
+	        this.fame = source["fame"];
+	        this.famePerHour = source["famePerHour"];
+	        this.eventCount = source["eventCount"];
+	        this.insufficientData = source["insufficientData"];
+	        this.activities = this.convertValues(source["activities"], ZoneActivityStatView);
+	    }
+	
+		convertValues(a: any, classs: any, asMap: boolean = false): any {
+		    if (!a) {
+		        return a;
+		    }
+		    if (a.slice && a.map) {
+		        return (a as any[]).map(elem => this.convertValues(elem, classs));
+		    } else if ("object" === typeof a) {
+		        if (asMap) {
+		            for (const key of Object.keys(a)) {
+		                a[key] = new classs(a[key]);
+		            }
+		            return a;
+		        }
+		        return new classs(a);
+		    }
+		    return a;
+		}
+	}
 
 }
 

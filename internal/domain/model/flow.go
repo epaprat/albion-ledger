@@ -45,6 +45,32 @@ type SessionSummary struct {
 	EventCount    int   `json:"eventCount"`    // total flow events this session
 }
 
+// ZoneActivityStatView is one activity-kind row of a zone's breakdown (006). PerHour
+// shares the zone's active-time denominator (one time pool per zone).
+type ZoneActivityStatView struct {
+	Kind       FlowKind `json:"kind"`
+	Total      int64    `json:"total"`   // silver-denominated total; fame amount for kind=fame
+	PerHour    int64    `json:"perHour"` // Total / zone active hours (0 when insufficient)
+	EventCount int      `json:"eventCount"`
+}
+
+// ZoneStatView is one zone's earnings rollup for a time window (006 — "nerede
+// kasayım"): totals + per-hour rates over gap-capped active time. Zone is never
+// empty — unlabeled events group under "Unknown zone" (no silent drops).
+type ZoneStatView struct {
+	Zone             string                 `json:"zone"`
+	ActiveMS         int64                  `json:"activeMs"` // gap-capped active time in the window
+	NetSilver        int64                  `json:"netSilver"`
+	SilverPerHour    int64                  `json:"silverPerHour"`
+	GatherValue      int64                  `json:"gatherValue"`
+	GatherPerHour    int64                  `json:"gatherPerHour"`
+	Fame             int64                  `json:"fame"` // separate metric — never in silver fields
+	FamePerHour      int64                  `json:"famePerHour"`
+	EventCount       int                    `json:"eventCount"`
+	InsufficientData bool                   `json:"insufficientData"` // activeMs < 60s → rates are 0
+	Activities       []ZoneActivityStatView `json:"activities"`
+}
+
 // FlowItemStatView is one row of the per-item loot/gather breakdown (AFM-style):
 // total quantity this session with the current per-item + stack (total) value.
 type FlowItemStatView struct {

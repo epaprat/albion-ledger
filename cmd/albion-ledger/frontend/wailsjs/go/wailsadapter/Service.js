@@ -82,6 +82,10 @@ export function SetCurrentCity(arg1) {
   return window['go']['wailsadapter']['Service']['SetCurrentCity'](arg1);
 }
 
+export function SetFlowReader(arg1, arg2) {
+  return window['go']['wailsadapter']['Service']['SetFlowReader'](arg1, arg2);
+}
+
 export function SetSelf(arg1, arg2) {
   return window['go']['wailsadapter']['Service']['SetSelf'](arg1, arg2);
 }
@@ -112,4 +116,8 @@ export function Status() {
 
 export function StopFlowPersistence() {
   return window['go']['wailsadapter']['Service']['StopFlowPersistence']();
+}
+
+export function ZoneStats(arg1) {
+  return window['go']['wailsadapter']['Service']['ZoneStats'](arg1);
 }
