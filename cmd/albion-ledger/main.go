@@ -30,6 +30,7 @@ import (
 	"github.com/epaprat/albion-ledger/internal/domain/probe"
 	"github.com/epaprat/albion-ledger/internal/holdings"
 	"github.com/epaprat/albion-ledger/internal/locations"
+	"github.com/epaprat/albion-ledger/internal/loot"
 	"github.com/epaprat/albion-ledger/internal/photon"
 	"github.com/epaprat/albion-ledger/internal/port"
 	"github.com/epaprat/albion-ledger/internal/valuation"
@@ -163,7 +164,18 @@ func runCapture(ctx context.Context, iface, replay string, clf *probe.Classifier
 	}
 
 	parser := photon.NewPhotonParser(
-		nil,
+		func(opByte byte, params map[byte]interface{}) {
+			// The player's own OUTGOING operation requests (passively observed). The op
+			// code lives in param 253 like responses; loot correlation needs the item-move
+			// requests (feature 007).
+			code := codeFrom(params, 253, int(opByte))
+			if debugFlow {
+				if _, ok := params[0]; ok && (code == 30 || code == 39) {
+					log.Printf("[flow] request: code=%d keys=%v", code, paramKeys(params))
+				}
+			}
+			ingest(clf, svc, probe.KindRequest, code, params)
+		},
 		func(opByte byte, _ int16, _ string, params map[byte]interface{}) {
 			// The operation code lives in param 253 for responses (opByte is the raw
 			// Photon opcode); own-state Join carries 253=2. Without this, op-2 responses
@@ -239,6 +251,11 @@ func ingest(clf *probe.Classifier, svc *wailsadapter.Service, kind probe.Kind, c
 		// resolved to item type+quality via the object registry (New*Item declarations).
 		if cGUID, ownerGUID, objIDs, ok := capture.ContainerItems(params); ok {
 			svc.IngestContainer(cGUID, ownerGUID, resolveObjects(objIDs))
+		}
+		// Loot correlation also needs this container: source link + SLOT-INDEXED map
+		// (empties preserved), and attaching may resolve moves that arrived early.
+		if guid, srcObjID, slots, ok := capture.ContainerSlots(params); ok {
+			emitLootHits(svc, lootTracker.AttachContainer(guid, srcObjID, slots, nowMS()))
 		}
 	case model.CatBank: // BankVaultInfo — declares the bank tabs (owner GUIDs + names)
 		if owners, tabNames, ok := capture.BankVault(params); ok {
@@ -335,6 +352,24 @@ func ingest(clf *probe.Classifier, svc *wailsadapter.Service, kind probe.Kind, c
 			}
 			// code 38 is unverified (see codes.json / tasks T031) — intentionally ignored.
 		}
+	case model.CatLootSource: // NewLoot(98) / NewLootChest(393) / LootChestOpened(395)
+		if objID, name, ok := capture.LootSource(params, code); ok {
+			lootTracker.RegisterSource(objID, name, nowMS())
+			if debugFlow {
+				log.Printf("[flow] loot source: code=%d obj=%d name=%q", code, objID, name)
+			}
+		}
+	case model.CatLootMove: // own item-move requests (op-30 single, op-39 take-all)
+		switch code {
+		case 30:
+			if guid, slot, ok := capture.MoveItem(params); ok {
+				emitLootHits(svc, lootTracker.ResolveMove(guid, slot, nowMS()))
+			}
+		case 39:
+			if guid, ids, ok := capture.MoveGivenItems(params); ok {
+				emitLootHits(svc, lootTracker.ResolveMoveGiven(guid, ids, nowMS()))
+			}
+		}
 	case model.CatFame: // UpdateFame (82 event) — fame is inherently own (US4)
 		if fame, ok := capture.FameEvent(params); ok && fame > 0 {
 			// Per-event nonce: key 1 (running total) is unverified — if absent, every
@@ -401,6 +436,39 @@ func isSelfObj(objID int) bool { return selfObjID != 0 && objID == selfObjID }
 // the wire delivers it). Empty self name → false (don't count until known).
 func isSelfName(name string) bool { return selfName != "" && name == selfName }
 
+// lootTracker correlates own move requests with loot sources (feature 007). Touched
+// only on the capture goroutine (its own mutex guards the internals anyway).
+var lootTracker = loot.New()
+
+// pendingLootResolve holds loot hits whose New*Item declaration hasn't arrived yet
+// (itemObjID → source label); drained in registerNewItem like pendingInv. Bounded.
+var pendingLootResolve = map[int]string{}
+
+const pendingLootResolveCap = 256
+
+// emitLootHits turns tracker hits into flow loot events: the item identity, quality
+// and stack count come from the object registry (New*Item declaration) — quality-keyed
+// valuation works (closes the ADR-022 quality-0 gap for loot). Undeclared objects wait
+// in pendingLootResolve until their declaration arrives.
+func emitLootHits(svc *wailsadapter.Service, hits []loot.Hit) {
+	for _, h := range hits {
+		if debugFlow {
+			log.Printf("[flow] loot hit: itemObj=%d source=%q", h.ItemObjID, h.Source)
+		}
+		if ref, ok := resolveObj(h.ItemObjID); ok {
+			svc.IngestLoot(fmt.Sprintf("lt:%d", h.ItemObjID), ref.Index, ref.Quality, ref.Count, nowMS(), h.Source)
+			continue
+		}
+		objMu.Lock()
+		if len(pendingLootResolve) < pendingLootResolveCap {
+			pendingLootResolve[h.ItemObjID] = h.Source
+		} else if debugFlow {
+			log.Printf("[flow] loot hit dropped (pending resolve full): itemObj=%d", h.ItemObjID)
+		}
+		objMu.Unlock()
+	}
+}
+
 // paramKeys returns the sorted parameter keys of a message (debug aid).
 func paramKeys(params map[byte]interface{}) []int {
 	ks := make([]int, 0, len(params))
@@ -455,12 +523,18 @@ func registerNewItem(svc *wailsadapter.Service, code int, params map[byte]interf
 	objReg[objID] = ref
 	pendGUID := pendingInv[objID] // own-state slot awaiting its declaration ("" = none)
 	delete(pendingInv, objID)
+	lootSrc, lootPending := pendingLootResolve[objID] // loot hit awaiting this declaration
+	delete(pendingLootResolve, objID)
 	objMu.Unlock()
 
 	// An own-state bag/equipped object declared after the fact: place it into its
 	// self-container now that it resolves.
 	if pendGUID != "" {
 		svc.IngestPutItem(pendGUID, objID, ref)
+	}
+	// A loot pickup whose declaration arrived after the move: emit it now (007).
+	if lootPending {
+		svc.IngestLoot(fmt.Sprintf("lt:%d", objID), ref.Index, ref.Quality, ref.Count, nowMS(), lootSrc)
 	}
 
 	// The item's own EstimatedMarketValue (key 4, a scalar int64) is the value the game
