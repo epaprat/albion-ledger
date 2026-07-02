@@ -137,6 +137,52 @@ func TestZoneStatsPerformance(t *testing.T) {
 	t.Logf("10k events → %v", elapsed)
 }
 
+// TestLootConsistencyAcrossViews (007 SC-004): loot ingested through the service shows
+// the SAME total in the session summary, the per-zone activity breakdown, and the
+// persisted flow_events rows.
+func TestLootConsistencyAcrossViews(t *testing.T) {
+	now := int64(50_000_000)
+	s, db := newZoneSvc(t, now)
+	s.SetZone("Pen Gent")
+	s.book.SetEMV(1, 2, 40_000, now) // catalog item 1 (Adept's Bag), quality 2
+	s.StartFlowPersistence(context.Background(), db, "sesNow")
+
+	s.IngestLoot("lt:910", 1, 2, 1, now-2*60_000, "corpse")
+	s.IngestSilver("sv:x", 500, now-60_000, "")
+	s.StopFlowPersistence() // flush to the store
+
+	sum := s.FlowSummary()
+	if sum.LootValue != 40_000 {
+		t.Fatalf("summary loot = %d, want 40000", sum.LootValue)
+	}
+	// By-zone activity breakdown carries the same loot total.
+	var zoneLoot int64
+	for _, z := range s.ZoneStats("session") {
+		for _, a := range z.Activities {
+			if a.Kind == model.FlowLoot {
+				zoneLoot += a.Total
+			}
+		}
+	}
+	if zoneLoot != 40_000 {
+		t.Fatalf("zone loot activity = %d, want 40000", zoneLoot)
+	}
+	// Persisted row carries the same value.
+	rows, err := db.LoadFlowEvents(context.Background(), "sesNow", 0, 0)
+	if err != nil {
+		t.Fatal(err)
+	}
+	var storedLoot int64
+	for _, r := range rows {
+		if r.Kind == model.FlowLoot {
+			storedLoot += r.Silver
+		}
+	}
+	if storedLoot != 40_000 {
+		t.Fatalf("persisted loot = %d, want 40000", storedLoot)
+	}
+}
+
 func TestZoneStatsNoReader(t *testing.T) {
 	c, _ := catalog.New([]byte(cat))
 	book := valuation.NewBook()

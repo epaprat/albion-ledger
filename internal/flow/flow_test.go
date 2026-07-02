@@ -220,6 +220,34 @@ func TestBreakdownPerItem(t *testing.T) {
 	}
 }
 
+// TestLootQualityKeyedValuation guards the ADR-022 quality-0 fix for loot (007):
+// equipment EMV is booked under its wire quality (1-5); a loot event carrying that
+// same quality must value immediately, and a deferred value at that quality must
+// back-fill via RevalueItem — neither works if loot hardcodes quality 0.
+func TestLootQualityKeyedValuation(t *testing.T) {
+	l, book := newLedger()
+	book.SetEMV(6977, 2, 50_000, 500) // quality-2 gear worth 50k
+	l.IngestLoot("lt:910", item(6977, 2), 1, 1000, "corpse")
+	s := l.Summary(1000 + 2*60*1000)
+	if s.LootValue != 50_000 || s.UnvaluedCount != 0 {
+		t.Fatalf("quality-2 loot must value: loot=%d unvalued=%d", s.LootValue, s.UnvaluedCount)
+	}
+
+	// Deferred: quality-3 loot unvalued at capture, valued when the quality-3 EMV lands.
+	l.IngestLoot("lt:911", item(6977, 3), 1, 1100, "corpse")
+	if s := l.Summary(1100 + 60*1000); s.UnvaluedCount != 1 {
+		t.Fatalf("quality-3 loot should be unvalued yet: %+v", s)
+	}
+	book.SetEMV(6977, 3, 80_000, 1200)
+	if updated := l.RevalueItem(6977, 3); len(updated) != 1 {
+		t.Fatalf("RevalueItem(q3) must back-fill 1 event, got %d", len(updated))
+	}
+	s = l.Summary(1200 + 60*1000)
+	if s.LootValue != 130_000 || s.UnvaluedCount != 0 {
+		t.Fatalf("after back-fill: loot=%d unvalued=%d, want 130000/0", s.LootValue, s.UnvaluedCount)
+	}
+}
+
 func TestFameSeparateFromSilver(t *testing.T) {
 	l, _ := newLedger()
 	l.IngestSilver("s1", 100, 1000, "mob")
