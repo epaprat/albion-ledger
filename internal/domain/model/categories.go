@@ -27,6 +27,12 @@ const (
 	// that keep holdings live without a full re-snapshot. Not probe coverage targets.
 	CatInventoryPut    Category = "inventory_put"
 	CatInventoryDelete Category = "inventory_delete"
+	// CatLootSource marks lootable-object announcements (NewLoot 98, NewLootChest 393,
+	// LootChestOpened 395) and CatLootMove the player's own outgoing item-move requests
+	// (ops 30/39) — together they drive item-loot correlation (feature 007). Not probe
+	// coverage targets.
+	CatLootSource Category = "loot_source"
+	CatLootMove   Category = "loot_move"
 )
 
 // AllCategories is the full ordered set of target categories (13). The coverage
@@ -55,6 +61,8 @@ var ExpectedFields = map[Category][]byte{
 	CatGatherFishing:    {3},    // only key present in BOTH layouts: 61 (node objId) and 267 (quantity)
 	CatSilver:           {0, 3}, // TakeSilver(62): receiving player + yield (taxes 5/6 often absent)
 	CatFame:             {2},    // UpdateFame(82): zone-mult fame gain (premium/satchel/bonus optional)
+	CatLootSource:       {0},    // lootable object id (98/393/395 all carry key 0)
+	CatLootMove:         {0},    // key 0 present in both layouts (op-30: src slot, op-39: src guid)
 	CatItemValueEMV:     {0, 1},    // item id array + estimated value array
 }
 
