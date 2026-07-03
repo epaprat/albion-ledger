@@ -12,11 +12,19 @@ const (
 	sourceTTLMS    = 10 * 60 * 1000 // lootable announcements stay valid this long
 	containerTTLMS = 10 * 60 * 1000
 	pendingTTLMS   = 10 * 1000 // a move waits this long for its container
-	dedupWindowMS  = 3 * 1000  // re-sightings of the same pickup inside this window
-	sourceCap      = 4096
-	containerCap   = 512
-	pendingCap     = 256
-	dedupCap       = 4096
+	// dedupWindowMS suppresses re-sightings of the same pickup (retransmit, double
+	// view). It must stay SHORT: item object ids are per-zone counters that restart
+	// small, so a reused id in a later zone is a DIFFERENT item and must count again.
+	dedupWindowMS = 3 * 1000
+	sourceCap     = 4096
+	containerCap  = 512
+	pendingCap    = 256
+	dedupCap      = 4096
+	// maxLootSlots rejects containers too big to be a corpse/chest (largest real loot
+	// containers are ≤64 slots; banks are 128). Guards against the srcObjID-collision
+	// hazard (bank containers link to a small constant id that a lootable could reuse)
+	// and keeps ordinary storage moves structurally unable to count as loot.
+	maxLootSlots = 64
 )
 
 type source struct {
@@ -164,12 +172,30 @@ func (t *Tracker) Stats() (pending, droppedExpired, droppedCap int) {
 
 // ── locked internals ─────────────────────────────────────────────────────────
 
+// lootSourceLocked returns the container's loot source when — and only when — the
+// container plausibly IS a loot container: source registered AND fresh (resolve-time
+// TTL check; the FIFO sweep alone can be blocked by a refreshed head), container
+// fresh, and small enough to be a corpse/chest (banks are structurally excluded).
+// A known container failing any of these is a normal storage move (contract rule 3).
+func (t *Tracker) lootSourceLocked(c *container, now int64) (*source, bool) {
+	src, ok := t.sources[c.srcObjID]
+	if !ok {
+		return nil, false
+	}
+	if now-src.seenMS > sourceTTLMS || now-c.seenMS > containerTTLMS {
+		return nil, false
+	}
+	if len(c.slots) > maxLootSlots {
+		return nil, false
+	}
+	return src, true
+}
+
 // resolveSlotLocked emits a Hit when guid is a loot-sourced container and the slot
-// holds an unrecorded item. A known container WITHOUT a loot source is a normal
-// (bank/bag) move: never a Hit, never pending (contract rule 3).
+// holds an unrecorded item.
 func (t *Tracker) resolveSlotLocked(guid string, slot int, ts int64) []Hit {
 	c := t.containers[guid]
-	src, isLoot := t.sources[c.srcObjID]
+	src, isLoot := t.lootSourceLocked(c, ts)
 	if !isLoot {
 		return nil
 	}
@@ -177,26 +203,31 @@ func (t *Tracker) resolveSlotLocked(guid string, slot int, ts int64) []Hit {
 		return nil
 	}
 	itemObj := c.slots[slot]
-	if itemObj <= 0 || t.isRecordedLocked(itemObj, ts) {
+	if itemObj <= 0 {
 		return nil
 	}
-	t.recordLocked(itemObj, ts)
-	return []Hit{{ItemObjID: itemObj, Source: src.name}}
+	return t.recordHitsLocked([]int{itemObj}, src.name, ts)
 }
 
 func (t *Tracker) resolveIDsLocked(guid string, itemObjIDs []int, ts int64) []Hit {
 	c := t.containers[guid]
-	src, isLoot := t.sources[c.srcObjID]
+	src, isLoot := t.lootSourceLocked(c, ts)
 	if !isLoot {
 		return nil
 	}
+	return t.recordHitsLocked(itemObjIDs, src.name, ts)
+}
+
+// recordHitsLocked turns unrecorded item objects into Hits (shared match tail of the
+// slot and id-list paths — one body so dedup semantics cannot drift between op codes).
+func (t *Tracker) recordHitsLocked(itemObjIDs []int, sourceName string, ts int64) []Hit {
 	var hits []Hit
 	for _, id := range itemObjIDs {
 		if id <= 0 || t.isRecordedLocked(id, ts) {
 			continue
 		}
 		t.recordLocked(id, ts)
-		hits = append(hits, Hit{ItemObjID: id, Source: src.name})
+		hits = append(hits, Hit{ItemObjID: id, Source: sourceName})
 	}
 	return hits
 }
@@ -209,12 +240,12 @@ func (t *Tracker) queuePendingLocked(p pendingMove) {
 	t.pending = append(t.pending, p)
 }
 
-// isRecordedLocked reports whether this item object was already counted. Recorded
-// entries older than the dedup window still block re-counting (an item object is
-// looted once, ever); the window matters only for map hygiene via the LRU cap.
-func (t *Tracker) isRecordedLocked(itemObjID int, _ int64) bool {
-	_, ok := t.recorded[itemObjID]
-	return ok
+// isRecordedLocked reports whether this item object was counted within the dedup
+// window. Older recordings do NOT block: per-zone object-id reuse means a stale id
+// can be a different, legitimately lootable item (the map entry is just overwritten).
+func (t *Tracker) isRecordedLocked(itemObjID int, now int64) bool {
+	ts, ok := t.recorded[itemObjID]
+	return ok && now-ts <= dedupWindowMS
 }
 
 func (t *Tracker) recordLocked(itemObjID int, ts int64) {

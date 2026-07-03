@@ -29,6 +29,28 @@ func TestLootSourceFromBytes(t *testing.T) {
 		t.Fatalf("393 → id=%d name=%q ok=%v", id, name, ok)
 	}
 
+	// NewLootChest(393) with BOTH name keys: key3 must win over key4.
+	p = decodeEvent(t, []photon.Field{
+		{Key: 0, Type: photon.TypeInteger, Val: int32(556)},
+		{Key: 3, Type: photon.TypeString, Val: "GREEN_CHEST"},
+		{Key: 4, Type: photon.TypeString, Val: "GREEN_CHEST@Somewhere"},
+		{Key: 252, Type: photon.TypeShort, Val: int16(393)},
+	})
+	if _, name, ok := LootSource(p, 393); !ok || name != "GREEN_CHEST" {
+		t.Fatalf("393 both keys → name=%q, want key3 precedence GREEN_CHEST", name)
+	}
+
+	// Hostile: oversized slot array rejected (memory-balloon guard).
+	huge := make([]int32, maxWireSlots+1)
+	p = decodeEvent(t, []photon.Field{
+		{Key: 1, Type: photon.TypeArray | photon.TypeByte, Val: make([]byte, 16)},
+		{Key: 3, Type: photon.TypeArray | photon.TypeInteger, Val: huge},
+		{Key: 252, Type: photon.TypeShort, Val: int16(99)},
+	})
+	if _, _, _, ok := ContainerSlots(p); ok {
+		t.Fatal("oversized slot array must be rejected")
+	}
+
 	// LootChestOpened(395): objId only.
 	p = decodeEvent(t, []photon.Field{
 		{Key: 0, Type: photon.TypeInteger, Val: int32(777)},

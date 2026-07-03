@@ -132,6 +132,56 @@ func TestReattachReplacesSlots(t *testing.T) {
 	}
 }
 
+// Dedup window: a reused object id AFTER the window is a different item (per-zone id
+// reuse) and must count again; inside the window it is a re-sighting and must not.
+func TestDedupWindowAllowsIdReuse(t *testing.T) {
+	tr := New()
+	tr.RegisterSource(500, "A", 1000)
+	tr.AttachContainer("c1", 500, []int{777}, 1001)
+	if hits := tr.ResolveMove("c1", 0, 1002); len(hits) != 1 {
+		t.Fatalf("first pickup must hit: %v", hits)
+	}
+	if hits := tr.ResolveMove("c1", 0, 1002+dedupWindowMS); len(hits) != 0 {
+		t.Fatalf("re-sighting inside window must dedup: %v", hits)
+	}
+	// Later zone: same objID on a fresh loot container = different item → counts.
+	later := int64(1002 + dedupWindowMS + 1)
+	tr.RegisterSource(900, "B", later)
+	tr.AttachContainer("c2", 900, []int{777}, later)
+	if hits := tr.ResolveMove("c2", 0, later+1); len(hits) != 1 {
+		t.Fatalf("reused objID past the window must count again: %v", hits)
+	}
+}
+
+// Resolve-time TTL: an expired source must not match even if the FIFO sweep hasn't
+// evicted it yet (a refreshed head can block the sweep indefinitely).
+func TestExpiredSourceDoesNotMatchAtResolve(t *testing.T) {
+	tr := New()
+	tr.RegisterSource(500, "Old", 1000)
+	// Keep a refreshed head in front so the sweep can't reach entry 500.
+	tr.RegisterSource(1, "Head", 1000)
+	tr.RegisterSource(1, "Head", 1000+sourceTTLMS) // refresh in place
+	tr.AttachContainer("c1", 500, []int{777}, 1000+sourceTTLMS+1)
+	if hits := tr.ResolveMove("c1", 0, 1000+sourceTTLMS+2); len(hits) != 0 {
+		t.Fatalf("expired source must not produce hits: %v", hits)
+	}
+}
+
+// Bank-sized containers never loot-resolve, even if their source id collides with a
+// registered lootable (small per-zone ids make that collision possible).
+func TestBankSizedContainerNeverLoots(t *testing.T) {
+	tr := New()
+	tr.RegisterSource(6, "collision", 1000) // a lootable announced with a tiny id
+	slots := make([]int, 128)               // bank tab
+	for i := range slots {
+		slots[i] = 10_000 + i
+	}
+	tr.AttachContainer("bank", 6, slots, 1001)
+	if hits := tr.ResolveMove("bank", 3, 1002); len(hits) != 0 {
+		t.Fatalf("bank-sized container must never loot: %v", hits)
+	}
+}
+
 // Bounded-state soak (T015): heavy mixed load keeps every structure within caps.
 func TestSoakBoundedState(t *testing.T) {
 	tr := New()

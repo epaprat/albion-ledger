@@ -59,11 +59,14 @@ func New(data []byte) (*Locations, error) {
 	return &Locations{clusters: doc.Clusters}, nil
 }
 
-// Resolve returns the zone name for a cluster id: exact catalog hit first, then the
-// generated-instance token fallback (Friendly), else the raw id (stable, groupable).
+// Resolve returns the zone name for a cluster id: exact catalog hit, else the raw id
+// UNCHANGED. Generated instance ids ("@CORRUPTEDDUNGEON@<guid>") deliberately stay raw
+// here — the raw id is what gets PERSISTED, and coarsening at write time would
+// irreversibly merge distinct instance runs. Display/analytics layers apply Friendly
+// at read time instead (lossless grouping).
 func (l *Locations) Resolve(clusterID string) string {
 	if name, ok := l.clusters[clusterID]; ok && name != "" {
 		return name
 	}
-	return Friendly(clusterID)
+	return clusterID
 }
