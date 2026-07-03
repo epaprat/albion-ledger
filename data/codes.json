@@ -1,5 +1,5 @@
 {
-  "_comment": "Message code -> category map. Data-driven so a game patch that shifts codes is a JSON edit + reload, no recompile (FR-012). kind: event|response|request. guardKey: optional discriminator parameter that must be present. Codes NOT listed are unhandled (this is how position/radar codes stay excluded, ToS-safe). Flow (005): silver=62, fame=82(event), loot=279 (OtherGrabbedLoot, item-bearing; 98=NewLoot only announces a lootable object, no items), gather=61(HarvestFinished)+267(RewardGranted). NOTE: gather code 38 is UNVERIFIED (kept from probe; confirm or remove via real capture — tasks T031).",
+  "_comment": "Message code -> category map. Data-driven so a game patch that shifts codes is a JSON edit + reload, no recompile (FR-012). kind: event|response|request. guardKey: optional discriminator parameter that must be present. Codes NOT listed are unhandled (this is how position/radar codes stay excluded, ToS-safe). Flow (005): silver=62, fame=82(event), loot=279 (OtherGrabbedLoot, item-bearing; 98=NewLoot only announces a lootable object, no items), gather=61(HarvestFinished)+267(RewardGranted). NOTE: gather code 38 is UNVERIFIED (kept from probe; confirm or remove via real capture — tasks T031). Loot correlation (007): loot_source=98/393/395 (lootable announcements), loot_move=REQUEST ops 30 (InventoryMoveItem) + 39 (InventoryMoveGivenItems) — request op codes are enum-skew-suspect until live-confirmed (fix here if the -debugflow log shows different codes).",
   "entries": [
     { "kind": "event", "code": 26,  "category": "inventory_put" },
     { "kind": "event", "code": 27,  "category": "inventory_delete" },
@@ -9,8 +9,12 @@
     { "kind": "event", "code": 267, "category": "gather_fishing" },
     { "kind": "event", "code": 62,  "category": "silver" },
     { "kind": "event", "code": 82,  "category": "fame" },
-    { "kind": "event", "code": 98,  "category": "loot" },
+    { "kind": "event", "code": 98,  "category": "loot_source" },
+    { "kind": "event", "code": 393, "category": "loot_source" },
+    { "kind": "event", "code": 395, "category": "loot_source" },
     { "kind": "event", "code": 279, "category": "loot" },
+    { "kind": "request", "code": 30, "category": "loot_move" },
+    { "kind": "request", "code": 39, "category": "loot_move" },
     { "kind": "event", "code": 99,  "category": "inventory" },
     { "kind": "event", "code": 143, "category": "character_spec" },
     { "kind": "event", "code": 163, "category": "current_location", "guardKey": 0 },

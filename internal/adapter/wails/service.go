@@ -14,6 +14,7 @@ import (
 	"github.com/epaprat/albion-ledger/internal/domain/model"
 	"github.com/epaprat/albion-ledger/internal/flow"
 	"github.com/epaprat/albion-ledger/internal/holdings"
+	"github.com/epaprat/albion-ledger/internal/locations"
 	"github.com/epaprat/albion-ledger/internal/port"
 	"github.com/epaprat/albion-ledger/internal/valuation"
 	"github.com/epaprat/albion-ledger/internal/zonestats"
@@ -314,6 +315,20 @@ func (s *Service) ZoneStats(window string) []model.ZoneStatView {
 		log.Printf("zone stats load failed: %v", err)
 		return []model.ZoneStatView{}
 	}
+	// Normalize generated-instance labels BEFORE grouping so every corrupted-dungeon/
+	// mists/hellgate run (each a unique per-instance id in the store — kept raw there
+	// on purpose) rolls up into ONE analytics row per instance type. Memoized per call:
+	// a 500k-row window has only ~hundreds of distinct labels.
+	friendly := make(map[string]string, 64)
+	for i := range events {
+		z := events[i].Zone
+		f, ok := friendly[z]
+		if !ok {
+			f = locations.Friendly(z)
+			friendly[z] = f
+		}
+		events[i].Zone = f
+	}
 	stats := zonestats.Compute(events)
 
 	out := make([]model.ZoneStatView, 0, len(stats))
@@ -457,7 +472,8 @@ func (s *Service) ListFlow() []model.FlowEventView {
 			Kind: e.Kind, TS: e.TS,
 			ItemDisplayName: e.Item.DisplayName, UniqueName: e.Item.UniqueName,
 			Tier: e.Item.Tier, Enchant: e.Item.Enchant, Quality: e.Item.Quality,
-			Count: e.Count, Silver: e.Silver, Fame: e.Fame, Valued: e.Valued, Source: e.Source, Zone: e.Zone,
+			Count: e.Count, Silver: e.Silver, Fame: e.Fame, Valued: e.Valued, Source: e.Source,
+			Zone: locations.Friendly(e.Zone), // display-time: raw instance ids stay in the store
 		})
 	}
 	return out
