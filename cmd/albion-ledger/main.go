@@ -255,6 +255,17 @@ func ingest(clf *probe.Classifier, svc *wailsadapter.Service, kind probe.Kind, c
 		// Loot correlation also needs this container: source link + SLOT-INDEXED map
 		// (empties preserved), and attaching may resolve moves that arrived early.
 		if guid, srcObjID, slots, ok := capture.ContainerSlots(params); ok {
+			if debugFlow {
+				// Dump every scalar param: live key0 is a constant 6 (NOT the source obj
+				// id) — hunting the key that matches NewLoot object ids (version skew).
+				log.Printf("[flow] attach: guid=%s src=%d slots=%d keys=%v", guid, srcObjID, len(slots), paramKeys(params))
+				for _, k := range paramKeys(params) {
+					if k == 3 || k == 1 { // slot array + guid already shown
+						continue
+					}
+					log.Printf("[flow]   99[%d] = %#v", k, params[byte(k)])
+				}
+			}
 			emitLootHits(svc, lootTracker.AttachContainer(guid, srcObjID, slots, nowMS()))
 		}
 	case model.CatBank: // BankVaultInfo — declares the bank tabs (owner GUIDs + names)
@@ -363,11 +374,20 @@ func ingest(clf *probe.Classifier, svc *wailsadapter.Service, kind probe.Kind, c
 		switch code {
 		case 30:
 			if guid, slot, ok := capture.MoveItem(params); ok {
-				emitLootHits(svc, lootTracker.ResolveMove(guid, slot, nowMS()))
+				hits := lootTracker.ResolveMove(guid, slot, nowMS())
+				if debugFlow {
+					p, exp, cap := lootTracker.Stats()
+					log.Printf("[flow] move: guid=%s slot=%d hits=%d (pending=%d expired=%d capdrop=%d)", guid, slot, len(hits), p, exp, cap)
+				}
+				emitLootHits(svc, hits)
 			}
 		case 39:
 			if guid, ids, ok := capture.MoveGivenItems(params); ok {
-				emitLootHits(svc, lootTracker.ResolveMoveGiven(guid, ids, nowMS()))
+				hits := lootTracker.ResolveMoveGiven(guid, ids, nowMS())
+				if debugFlow {
+					log.Printf("[flow] move-given: guid=%s ids=%d hits=%d", guid, len(ids), len(hits))
+				}
+				emitLootHits(svc, hits)
 			}
 		}
 	case model.CatFame: // UpdateFame (82 event) — fame is inherently own (US4)
