@@ -31,8 +31,9 @@ func New[V any](capacity int, ttlMS int64) *Map[V] {
 
 // Queue inserts (or overwrites) an entry, sweeping expired ones first — the maps are
 // tiny (≤ cap), so the inline sweep is cheaper than bookkeeping a separate timer.
-// A full map drops the NEW entry (counted): matching the pre-009 behavior, the oldest
-// pendings win because their declarations are the most likely to still be in flight.
+// A FULL map drops the write (counted) even for an already-present id: the pre-009
+// copies behaved exactly this way, and refreshing an existing entry's TTL at cap
+// would let a hostile re-queue stream keep entries alive forever (009 review).
 func (m *Map[V]) Queue(id int, v V, nowMS int64) {
 	if m.ttlMS > 0 {
 		for k, e := range m.entries {
@@ -42,15 +43,17 @@ func (m *Map[V]) Queue(id int, v V, nowMS int64) {
 			}
 		}
 	}
-	if _, exists := m.entries[id]; !exists && len(m.entries) >= m.cap {
+	if len(m.entries) >= m.cap { // full: refuse ALL writes (even re-queues), counted
 		m.dropped++
 		return
 	}
 	m.entries[id] = entry[V]{val: v, seenMS: nowMS}
 }
 
-// Take removes and returns the entry for id. A past-TTL entry is a miss AND a counted
-// drop — draining a stale entry would fabricate an event from a reused object id.
+// Take removes and returns the entry for id. A past-TTL entry is a miss WITHOUT a
+// counted drop: expiry losses are counted once, on the Queue-path sweep — the pre-009
+// drain path never incremented the counter, and double-counting would drift the
+// rate-limited loss logs (FR-004 observability preserved bit-for-bit, 009 review).
 func (m *Map[V]) Take(id int, nowMS int64) (V, bool) {
 	e, ok := m.entries[id]
 	if !ok {
@@ -59,7 +62,6 @@ func (m *Map[V]) Take(id int, nowMS int64) (V, bool) {
 	}
 	delete(m.entries, id)
 	if m.ttlMS > 0 && nowMS-e.seenMS > m.ttlMS {
-		m.dropped++
 		var zero V
 		return zero, false
 	}

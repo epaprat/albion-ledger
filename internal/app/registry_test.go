@@ -5,6 +5,7 @@ package app
 // duplicate-registration guard (a silent shadow would be a startup-order bug).
 
 import (
+	"strings"
 	"testing"
 
 	"github.com/epaprat/albion-ledger/internal/domain/model"
@@ -43,6 +44,23 @@ func TestRegistryAcceptsNewCategoryWithoutCentralChanges(t *testing.T) {
 		if _, ok := registry[cat]; !ok {
 			t.Fatalf("category %q has no registered handler", cat)
 		}
+	}
+}
+
+// 009 review (XI): the GUID bridge is hard-bounded at one wire guid per virtual
+// container — a changing k54/k51 (character switch, hostile op-2 stream) prunes the
+// stale reverse mapping instead of growing the map, and the old guid stops bridging.
+func TestSelfContainerBridgeBounded(t *testing.T) {
+	_, p := newGlue(t)
+	for i := 0; i < 100; i++ {
+		p.setSelfContainerGUID(strings.Repeat("a", 30)+string(rune('0'+i%10))+string(rune('0'+i/10)), SelfBagGUID)
+	}
+	if len(p.selfContainerGUIDs) > 2 { // bag entry (last one) + preset equipped entry
+		t.Fatalf("bridge grew to %d entries (must stay ≤2)", len(p.selfContainerGUIDs))
+	}
+	// The stale previous bag guid no longer bridges.
+	if p.isSelfBag(tBagGUID) {
+		t.Fatal("previous character's bag guid must stop bridging after a rebind")
 	}
 }
 

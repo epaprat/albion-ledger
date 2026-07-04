@@ -176,14 +176,16 @@ func (p *Pipeline) updateSelf(params map[byte]interface{}) {
 	}
 	// Own-container GUID bridge (008): bag (key 54, confirmed) + equipped candidate
 	// (key 51). Entries update INDEPENDENTLY — a Join variant carrying only one of the
-	// keys must not skip (or wipe) the other's bridge, so the map is amended in place
-	// (the guids are per-character constants, so this stays bounded at 2 entries).
+	// keys must not skip (or wipe) the other's bridge. Each virtual id keeps exactly
+	// ONE wire guid: when a key's guid changes (character switch, hostile stream), the
+	// stale reverse mapping is pruned, so the map is hard-bounded at 2 entries and an
+	// old character's bag guid can't keep bridging to self-bag (XI, 009 review).
 	if bagGUID, eqGUID, _ := capture.SelfContainers(params); bagGUID != "" || eqGUID != "" {
 		if bagGUID != "" {
-			p.selfContainerGUIDs[bagGUID] = SelfBagGUID
+			p.setSelfContainerGUID(bagGUID, SelfBagGUID)
 		}
 		if eqGUID != "" {
-			p.selfContainerGUIDs[eqGUID] = SelfEquipGUID
+			p.setSelfContainerGUID(eqGUID, SelfEquipGUID)
 		}
 		if p.debug {
 			log.Printf("[hold] self containers: bag=%s equipped-candidate=%s", bagGUID, eqGUID)
@@ -307,6 +309,26 @@ func (p *Pipeline) virtualContainer(guid string) (string, bool) {
 	return v, ok
 }
 
+// isSelfBag reports whether a wire GUID is the player's own bag — the ONE predicate
+// behind the loot-suppression gate (a bag move is never a loot pickup, but the
+// unconfirmed-candidate equipped guid must never suppress loot resolution).
+func (p *Pipeline) isSelfBag(guid string) bool {
+	v, ok := p.selfContainerGUIDs[guid]
+	return ok && v == SelfBagGUID
+}
+
+// setSelfContainerGUID binds one wire guid to a virtual container id, pruning any
+// previous guid bound to the same virtual id — the map never exceeds one entry per
+// virtual container regardless of what the wire sends (XI).
+func (p *Pipeline) setSelfContainerGUID(guid, virtual string) {
+	for g, v := range p.selfContainerGUIDs {
+		if v == virtual && g != guid {
+			delete(p.selfContainerGUIDs, g)
+		}
+	}
+	p.selfContainerGUIDs[guid] = virtual
+}
+
 func (p *Pipeline) bagSlotItem(slot int) (int, bool) {
 	if slot < 0 || slot >= len(p.bagSlots) || p.bagSlots[slot] <= 0 {
 		return 0, false
@@ -333,16 +355,25 @@ func (p *Pipeline) bagSlotClear(objID int) {
 	}
 }
 
+// logDrops emits the rate-limited (1/min) counted-loss line — losses must be
+// observable without a debug flag (FR-004), shared by both logging consumers so the
+// guard can never drift between copies (009 review). NOTE: the cumulative-counter
+// guard re-logs a long-stable count once per minute — pre-009 behavior, preserved
+// verbatim; a since-last-report delta is recorded 010 polish.
+func (p *Pipeline) logDrops(dropped int, lastLogMS *int64, nowMS int64, format string) {
+	if dropped > 0 && nowMS-*lastLogMS > 60_000 {
+		*lastLogMS = nowMS
+		log.Printf(format, dropped)
+	}
+}
+
 func (p *Pipeline) queuePendingPut(objID int, target string) {
 	now := p.nowMS()
 	p.objMu.Lock()
 	p.pendingPuts.Queue(objID, target, now)
 	dropped := p.pendingPuts.Dropped()
 	p.objMu.Unlock()
-	if dropped > 0 && now-p.lastPendingPutDropLog > 60_000 {
-		p.lastPendingPutDropLog = now
-		log.Printf("holdings: %d pending puts dropped so far (declaration never arrived)", dropped)
-	}
+	p.logDrops(dropped, &p.lastPendingPutDropLog, now, "holdings: %d pending puts dropped so far (declaration never arrived)")
 }
 
 // clearSelfPendingPuts drops pending puts targeting the player's own containers —
@@ -445,11 +476,7 @@ func (p *Pipeline) emitLootHits(hits []loot.Hit) {
 		p.pendingLootResolve.Queue(h.ItemObjID, h.Source, now)
 		dropped := p.pendingLootResolve.Dropped()
 		p.objMu.Unlock()
-		// Loss must be observable without a debug flag (FR-004) — but at most 1 log/min.
-		if dropped > 0 && now-p.lastPendingLootDropLog > 60_000 {
-			p.lastPendingLootDropLog = now
-			log.Printf("loot: %d pending pickups dropped so far (declaration never arrived)", dropped)
-		}
+		p.logDrops(dropped, &p.lastPendingLootDropLog, now, "loot: %d pending pickups dropped so far (declaration never arrived)")
 	}
 }
 

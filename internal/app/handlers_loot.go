@@ -35,10 +35,10 @@ func handleLootMove(p *Pipeline, _ probe.Kind, code int, params map[byte]interfa
 		if guid, slot, ok := capture.MoveItem(params); ok {
 			// Moves OUT OF the player's own bag can never be loot pickups — feeding
 			// them to the tracker only pollutes its pending queue (live-seen
-			// 2026-07-04). Gated on the CONFIRMED bag guid only: the key-51 equipped
-			// CANDIDATE must not silently suppress loot resolution if it turns out
-			// to be some other container.
-			if v, own := p.virtualContainer(guid); !own || v != SelfBagGUID {
+			// 2026-07-04). isSelfBag gates on the CONFIRMED bag guid only: the key-51
+			// equipped CANDIDATE must not silently suppress loot resolution if it
+			// turns out to be some other container.
+			if !p.isSelfBag(guid) {
 				hits := p.lootTracker.ResolveMove(guid, slot, p.nowMS())
 				if p.debug {
 					pend, exp, capd := p.lootTracker.Stats()
@@ -52,7 +52,7 @@ func handleLootMove(p *Pipeline, _ probe.Kind, code int, params map[byte]interfa
 		}
 	case 39:
 		if guid, ids, ok := capture.MoveGivenItems(params); ok {
-			if v, own := p.virtualContainer(guid); !own || v != SelfBagGUID { // bag-only skip, see op-30
+			if !p.isSelfBag(guid) { // bag-only skip, see op-30
 				hits := p.lootTracker.ResolveMoveGiven(guid, ids, p.nowMS())
 				if p.debug {
 					log.Printf("[flow] move-given: guid=%s ids=%d hits=%d", guid, len(ids), len(hits))

@@ -14,8 +14,6 @@ package app
 //     pendingLootResolve → pendingPuts (the pre-009 order, pinned by golden tests).
 
 import (
-	"log"
-
 	"github.com/epaprat/albion-ledger/internal/domain/model"
 	"github.com/epaprat/albion-ledger/internal/domain/probe"
 )
@@ -45,12 +43,5 @@ func (p *Pipeline) dispatch(kind probe.Kind, code int, params map[byte]interface
 	}
 	if h, ok := registry[cl.Category]; ok {
 		h(p, kind, code, params)
-	}
-}
-
-// debugf logs only under -debugflow (helper for handlers).
-func (p *Pipeline) debugf(format string, args ...interface{}) {
-	if p.debug {
-		log.Printf(format, args...)
 	}
 }

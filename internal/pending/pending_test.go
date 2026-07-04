@@ -15,15 +15,20 @@ func TestQueueTake(t *testing.T) {
 	}
 }
 
-// Take past the TTL misses AND counts the drop (stale drains must not fire).
+// Take past the TTL misses WITHOUT counting — expiry is counted once, on the
+// Queue-path sweep (pre-009 drain semantics, pinned by the 009 review: a counted
+// stale Take would drift the rate-limited loss logs).
 func TestTakeTTLGuard(t *testing.T) {
 	m := New[string](4, 10_000)
 	m.Queue(1, "corpse", 1000)
 	if _, ok := m.Take(1, 11_001); ok {
 		t.Fatal("Take past TTL must miss")
 	}
-	if m.Dropped() != 1 {
-		t.Fatalf("expired take must count: dropped=%d", m.Dropped())
+	if m.Dropped() != 0 {
+		t.Fatalf("stale take must NOT count (queue sweep owns expiry): dropped=%d", m.Dropped())
+	}
+	if m.Len() != 0 {
+		t.Fatal("stale entry must still be removed")
 	}
 }
 
@@ -89,12 +94,25 @@ func TestClearPredicate(t *testing.T) {
 	}
 }
 
-// Re-queueing an existing id overwrites value and timestamp (current map semantics).
+// Re-queueing an existing id below cap overwrites value and timestamp; AT cap even a
+// re-queue is refused and counted (pre-009 semantics — a full map accepts nothing,
+// so a hostile re-queue stream cannot keep extending an entry's TTL).
 func TestRequeueOverwrites(t *testing.T) {
 	m := New[string](4, 10_000)
 	m.Queue(1, "old", 1000)
 	m.Queue(1, "new", 9000)
 	if v, ok := m.Take(1, 12_000); !ok || v != "new" {
 		t.Fatalf("re-queue must overwrite: %q/%v", v, ok)
+	}
+
+	full := New[string](2, 10_000)
+	full.Queue(1, "a", 1000)
+	full.Queue(2, "b", 1000)
+	full.Queue(1, "a2", 2000) // at cap: refused, counted
+	if v, _ := full.Take(1, 3000); v != "a" {
+		t.Fatalf("at-cap re-queue must not overwrite: got %q", v)
+	}
+	if full.Dropped() != 1 {
+		t.Fatalf("at-cap re-queue must count: dropped=%d", full.Dropped())
 	}
 }
