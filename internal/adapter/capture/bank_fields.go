@@ -100,15 +100,22 @@ func BankTabs(params map[byte]interface{}) (vaultGUID string, tabs []BankTab, ok
 	return hex.EncodeToString(vault), tabs, true
 }
 
-// BankTabRow is one type-based summary row of a tab (no object id).
+// BankTabRow is one type-based summary row of a tab (no object id). Quality and
+// UnitValue come from the parallel arrays k7/k5, decoded live 2026-07-05: k7 =
+// quality 1-5 (resources always 1), k5 = per-row UNIT value ×10000 (populated for
+// equipment; the game sends 0 for resources). Zero means "not reported".
 type BankTabRow struct {
 	ItemIndex int
 	Count     int
+	Quality   int
+	UnitValue int64 // silver ×10000; 0 = not reported
 }
 
 // BankTabContent pulls a tab content summary from R:1 (no key 253!) or R:518.
 // The strict shape gate — 16-byte GUID at k0 AND equal-length item/count arrays —
 // is what keeps unrelated op-1 responses out (the classification double-lock).
+// The count array is width-variable ([]int16 or []byte when all counts ≤255 —
+// live-seen both ways); quality (k7) and unit values (k5) are optional extras.
 func BankTabContent(params map[byte]interface{}) (tabGUID string, rows []BankTabRow, ok bool) {
 	guid, gok := params[0].([]byte)
 	if !gok || len(guid) != 16 {
@@ -116,12 +123,29 @@ func BankTabContent(params map[byte]interface{}) (tabGUID string, rows []BankTab
 	}
 	idx, iok := intSlice(params[2])
 	counts, cok := intSlice(params[4])
+	if !cok { // width-variable: small-count tabs arrive as a byte array
+		if b, bok := params[4].([]byte); bok {
+			counts = make([]int, len(b))
+			for i, v := range b {
+				counts[i] = int(v)
+			}
+			cok = true
+		}
+	}
 	if !iok || !cok || len(idx) != len(counts) || len(idx) == 0 || len(idx) > maxBankTabRows {
 		return "", nil, false
 	}
+	qualities, _ := params[7].([]byte)
+	values, _ := params[5].([]int64)
 	rows = make([]BankTabRow, len(idx))
 	for i := range idx {
 		rows[i] = BankTabRow{ItemIndex: idx[i], Count: counts[i]}
+		if i < len(qualities) && qualities[i] >= 1 && qualities[i] <= 5 {
+			rows[i].Quality = int(qualities[i])
+		}
+		if i < len(values) && values[i] > 0 {
+			rows[i].UnitValue = values[i]
+		}
 	}
 	return hex.EncodeToString(guid), rows, true
 }

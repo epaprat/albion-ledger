@@ -107,7 +107,14 @@ func handleBankTabContent(p *Pipeline, _ probe.Kind, _ int, params map[byte]inte
 	}
 	refs := make([]holdings.ItemRef, len(rows))
 	for i, r := range rows {
-		refs[i] = holdings.ItemRef{Index: r.ItemIndex, Count: r.Count} // quality 0: research D6
+		refs[i] = holdings.ItemRef{Index: r.ItemIndex, Count: r.Count, Quality: r.Quality}
+		// The overview carries per-row UNIT values for equipment (×10000, decoded
+		// live 2026-07-05) — feed them to valuation so summary rows price without
+		// any prior declaration. Resources arrive as 0 (not reported by the game);
+		// they price via the quality-0 EMV fallback once seen elsewhere.
+		if r.UnitValue > 0 {
+			p.sink.IngestEMV(r.ItemIndex, r.Quality, r.UnitValue/vaultValueScale, p.nowMS())
+		}
 	}
 	// STABLE synthetic container id: the wire guid changes on every K opening, so
 	// keying by it would grow one container per opening for the same tab (live-seen

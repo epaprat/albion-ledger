@@ -197,3 +197,39 @@ func TestBankBridgesBounded(t *testing.T) {
 		t.Fatalf("vaultCity must rebuild per 516, got %d", len(p.vaultCity))
 	}
 }
+
+// Live decode 2026-07-05: k7 = per-row quality, k5 = per-row UNIT value ×10000
+// (equipment). Values feed the EMV book → summary rows price immediately; counts
+// arrive width-variable (byte array when all ≤255).
+func TestBankContentQualityAndValues(t *testing.T) {
+	svc, p := newGlue(t)
+	p.dispatch(probe.KindResponse, 516, locationsParams([]string{"0006"}, []byte{0xAA}, []int64{0}))
+	p.dispatch(probe.KindResponse, 517, tabsParams(0xAA, []byte{0x11}, []string{"Hasilat"}))
+	params := contentParams(0x11, []int16{920, 837}, nil)
+	params[4] = []byte{1, 23}                       // width-variable counts
+	params[5] = []int64{428830000, 0}               // unit values ×10000; second not reported
+	params[7] = []byte{4, 1}                        // qualities
+	p.dispatch(probe.KindResponse, 1, params)
+
+	rows := svc.ListHoldings()
+	if len(rows) != 2 {
+		t.Fatalf("rows = %d, want 2", len(rows))
+	}
+	var valued, unvalued int
+	for _, r := range rows {
+		if r.Item.Index == 920 {
+			if r.Valuation.Amount != 42883 {
+				t.Fatalf("unit value wrong: %d, want 42883", r.Valuation.Amount)
+			}
+			if r.Item.Quality != 4 {
+				t.Fatalf("quality wrong: %d, want 4", r.Item.Quality)
+			}
+			valued++
+		} else {
+			unvalued++ // value 0 = not reported; stays honest
+		}
+	}
+	if valued != 1 || unvalued != 1 {
+		t.Fatalf("valued/unvalued = %d/%d", valued, unvalued)
+	}
+}
