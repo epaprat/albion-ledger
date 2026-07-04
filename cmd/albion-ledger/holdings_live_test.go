@@ -17,6 +17,7 @@ import (
 	"github.com/epaprat/albion-ledger/internal/domain/probe"
 	"github.com/epaprat/albion-ledger/internal/holdings"
 	"github.com/epaprat/albion-ledger/internal/loot"
+	"github.com/epaprat/albion-ledger/internal/pending"
 	"github.com/epaprat/albion-ledger/internal/valuation"
 )
 
@@ -51,10 +52,9 @@ func newGlue(t *testing.T) (*wailsadapter.Service, *probe.Classifier) {
 	objMu.Lock()
 	objReg = map[int]holdings.ItemRef{}
 	objOrder = nil
-	pendingInv = map[int]string{}
-	pendingLootResolve = map[int]pendingLoot{}
-	pendingPuts = map[int]pendingPut{}
-	pendingPutsDropped = 0
+	pendingInv = pending.New[string](1024, 0)
+	pendingLootResolve = pending.New[string](256, 10_000)
+	pendingPuts = pending.New[string](256, 10_000)
 	objMu.Unlock()
 	bagSlots = nil
 	selfContainerGUIDs = map[string]string{tBagGUID: selfBagGUID, tEqGUID: selfEquipGUID}
@@ -265,11 +265,12 @@ func TestSnapshotAuthority(t *testing.T) {
 // overflow/expiry are counted, and a fresh put still lands after TTL sweep frees room.
 func TestPendingPutsBounded(t *testing.T) {
 	svc, clf := newGlue(t)
+	const pendingPutsCap = 256 // bound lives in pending.Map; asserted via Len/Dropped
 	for i := 0; i < pendingPutsCap+50; i++ {
 		ingest(clf, svc, probe.KindEvent, 26, putEvent(100_000+i, 0, tBagGUID))
 	}
 	objMu.Lock()
-	n, dropped := len(pendingPuts), pendingPutsDropped
+	n, dropped := pendingPuts.Len(), pendingPuts.Dropped()
 	objMu.Unlock()
 	if n > pendingPutsCap {
 		t.Fatalf("pendingPuts %d exceeds cap %d", n, pendingPutsCap)

@@ -31,6 +31,7 @@ import (
 	"github.com/epaprat/albion-ledger/internal/holdings"
 	"github.com/epaprat/albion-ledger/internal/locations"
 	"github.com/epaprat/albion-ledger/internal/loot"
+	"github.com/epaprat/albion-ledger/internal/pending"
 	"github.com/epaprat/albion-ledger/internal/photon"
 	"github.com/epaprat/albion-ledger/internal/port"
 	"github.com/epaprat/albion-ledger/internal/valuation"
@@ -560,39 +561,18 @@ func bagSlotClear(objID int) {
 }
 
 // pendingPuts holds container-put updates whose New*Item declaration hasn't arrived
-// yet (itemObjID → target virtual/known container + seen time). Exact pendingLoot
-// pattern: cap + TTL + inline sweep + counted, rate-limited drop log (Principle XI).
-type pendingPut struct {
-	target string
-	seenMS int64
-}
-
+// yet (itemObjID → target virtual/known container). Bounds live in pending.Map
+// (cap 256, TTL 10s, counted drops); the rate-limited loss log stays here (FR-004).
 var (
-	pendingPuts           = map[int]pendingPut{}
-	pendingPutsDropped    int
+	pendingPuts           = pending.New[string](256, 10_000)
 	lastPendingPutDropLog int64
-)
-
-const (
-	pendingPutsCap   = 256
-	pendingPutsTTLMS = 10_000
 )
 
 func queuePendingPut(objID int, target string) {
 	now := nowMS()
 	objMu.Lock()
-	for id, p := range pendingPuts { // tiny map: inline TTL sweep
-		if now-p.seenMS > pendingPutsTTLMS {
-			delete(pendingPuts, id)
-			pendingPutsDropped++
-		}
-	}
-	if len(pendingPuts) < pendingPutsCap {
-		pendingPuts[objID] = pendingPut{target: target, seenMS: now}
-	} else {
-		pendingPutsDropped++
-	}
-	dropped := pendingPutsDropped
+	pendingPuts.Queue(objID, target, now)
+	dropped := pendingPuts.Dropped()
 	objMu.Unlock()
 	if dropped > 0 && now-lastPendingPutDropLog > 60_000 {
 		lastPendingPutDropLog = now
@@ -605,11 +585,9 @@ func queuePendingPut(objID int, target string) {
 // and must not be overridden by a late drain (008 US3, symmetric for equipped).
 func clearSelfPendingPuts() {
 	objMu.Lock()
-	for id, p := range pendingPuts {
-		if p.target == selfBagGUID || p.target == selfEquipGUID {
-			delete(pendingPuts, id)
-		}
-	}
+	pendingPuts.Clear(func(target string) bool {
+		return target == selfBagGUID || target == selfEquipGUID
+	})
 	objMu.Unlock()
 }
 
@@ -679,21 +657,11 @@ func applyMovedObject(svc *wailsadapter.Service, itemObj int, srcGUID, dstGUID s
 // (itemObjID → source + seen time); drained in registerNewItem like pendingInv.
 // Bounded by cap AND a TTL: item object ids are reused across zones, so a stale
 // entry drained hours later would fabricate a phantom loot event, and orphans must
-// never wedge the map full (Principle XI: cap + TTL with eviction).
-type pendingLoot struct {
-	source string
-	seenMS int64
-}
-
+// never wedge the map full. Bounds live in pending.Map (cap 256, TTL 10s, counted
+// drops); the rate-limited loss log stays with the consumer (FR-004).
 var (
-	pendingLootResolve     = map[int]pendingLoot{}
-	pendingLootDropped     int
+	pendingLootResolve     = pending.New[string](256, 10_000)
 	lastPendingLootDropLog int64
-)
-
-const (
-	pendingLootResolveCap   = 256
-	pendingLootResolveTTLMS = 10_000
 )
 
 // ingestLootObj emits one loot flow event from a resolved object registry entry —
@@ -718,18 +686,8 @@ func emitLootHits(svc *wailsadapter.Service, hits []loot.Hit) {
 		}
 		now := nowMS()
 		objMu.Lock()
-		for id, p := range pendingLootResolve { // tiny map (≤256): inline TTL sweep
-			if now-p.seenMS > pendingLootResolveTTLMS {
-				delete(pendingLootResolve, id)
-				pendingLootDropped++
-			}
-		}
-		if len(pendingLootResolve) < pendingLootResolveCap {
-			pendingLootResolve[h.ItemObjID] = pendingLoot{source: h.Source, seenMS: now}
-		} else {
-			pendingLootDropped++
-		}
-		dropped := pendingLootDropped
+		pendingLootResolve.Queue(h.ItemObjID, h.Source, now)
+		dropped := pendingLootResolve.Dropped()
 		objMu.Unlock()
 		// Loss must be observable without a debug flag (FR-004) — but at most 1 log/min.
 		if dropped > 0 && now-lastPendingLootDropLog > 60_000 {
@@ -791,30 +749,25 @@ func registerNewItem(svc *wailsadapter.Service, code int, params map[byte]interf
 	}
 	ref := holdings.ItemRef{Index: idx, Quality: quality, Count: count}
 	objReg[objID] = ref
-	pendGUID := pendingInv[objID] // own-state slot awaiting its declaration ("" = none)
-	delete(pendingInv, objID)
-	pl, lootPending := pendingLootResolve[objID] // loot hit awaiting this declaration
-	delete(pendingLootResolve, objID)
-	pp, putPending := pendingPuts[objID] // holdings put awaiting this declaration (008)
-	delete(pendingPuts, objID)
-	objMu.Unlock()
+	now := nowMS()
+	pendGUID, invPending := pendingInv.Take(objID, now)      // own-state slot awaiting this declaration
+	source, lootPending := pendingLootResolve.Take(objID, now) // loot hit awaiting it (TTL-guarded:
+	target, putPending := pendingPuts.Take(objID, now)         // ids are reused across zones — a stale
+	objMu.Unlock()                                             // drain would fabricate phantom events)
 
 	// An own-state bag/equipped object declared after the fact: place it into its
 	// self-container now that it resolves.
-	if pendGUID != "" {
+	if invPending {
 		svc.IngestPutItem(pendGUID, objID, ref)
 	}
-	// A loot pickup whose declaration arrived after the move: emit it now (007) —
-	// unless the entry is stale (object ids are reused across zones; draining an old
-	// entry with a NEW zone's declaration would fabricate a phantom loot event).
-	if lootPending && nowMS()-pl.seenMS <= pendingLootResolveTTLMS {
-		ingestLootObj(svc, objID, ref, pl.source)
+	// A loot pickup whose declaration arrived after the move: emit it now (007).
+	if lootPending {
+		ingestLootObj(svc, objID, ref, source)
 	}
-	// A holdings put whose declaration arrived late (008): place it now, same
-	// staleness guard as the loot drain. An untracked target still drops the item
-	// from its old spot (the put was authoritative — it left).
-	if putPending && nowMS()-pp.seenMS <= pendingPutsTTLMS {
-		if !svc.IngestPutItem(pp.target, objID, ref) {
+	// A holdings put whose declaration arrived late (008): place it now. An untracked
+	// target still drops the item from its old spot (the put was authoritative — it left).
+	if putPending {
+		if !svc.IngestPutItem(target, objID, ref) {
 			svc.IngestDeleteItem(objID)
 			bagSlotClear(objID)
 		}
@@ -838,11 +791,10 @@ const (
 
 // pendingInv maps an own-state object id (bag/equipped) not yet declared by a New*Item
 // to the self-container it belongs to; it is placed there when its declaration arrives.
-// Reset per own-state, so it is naturally small (bag + equipped); pendingInvCap is a
-// hard backstop against unbounded growth (Principle XI).
-var pendingInv = map[int]string{}
-
-const pendingInvCap = 1024
+// Reset per own-state, so it is naturally small (bag + equipped); the cap (1024) is a
+// hard backstop, and TTL 0 keeps entries alive until the next snapshot replaces them —
+// an own-state slot has no natural expiry (Principle XI bounds live in pending.Map).
+var pendingInv = pending.New[string](1024, 0)
 
 // ingestSelf sets one own-state self-container (bag or equipped) from its slot object
 // ids: already-declared objects are placed now, the rest queue in pendingInv keyed to
@@ -861,15 +813,12 @@ func ingestSelf(svc *wailsadapter.Service, guid, tab string, objIDs []int) {
 	for _, s := range slots {
 		resolved[s.ObjID] = true
 	}
+	now := nowMS()
 	objMu.Lock()
-	for id, g := range pendingInv { // clear this container's stale pending entries
-		if g == guid {
-			delete(pendingInv, id)
-		}
-	}
+	pendingInv.Clear(func(g string) bool { return g == guid }) // stale entries for this container
 	for _, id := range objIDs {
-		if !resolved[id] && len(pendingInv) < pendingInvCap {
-			pendingInv[id] = guid
+		if !resolved[id] {
+			pendingInv.Queue(id, guid, now)
 		}
 	}
 	objMu.Unlock()
