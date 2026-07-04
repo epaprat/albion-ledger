@@ -182,13 +182,10 @@ func TestBankSizedContainerNeverLoots(t *testing.T) {
 	}
 }
 
-// Read-side accessors for holdings move-application (008): same map, two consumers.
+// Read-side accessor for holdings move-application (008): same map, two consumers.
 func TestReadAccessors(t *testing.T) {
 	tr := New()
 	tr.AttachContainer("c1", 42, []int{0, 555}, 1000)
-	if !tr.KnownContainer("c1") || tr.KnownContainer("ghost") {
-		t.Fatal("KnownContainer wrong")
-	}
 	if id, ok := tr.SlotItem("c1", 1); !ok || id != 555 {
 		t.Fatalf("SlotItem(c1,1) = %d/%v, want 555/true", id, ok)
 	}

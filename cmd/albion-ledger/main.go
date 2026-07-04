@@ -123,11 +123,11 @@ func main() {
 		},
 		OnStartup: func(ctx context.Context) {
 			emitter.ctx = ctx
-			// Pre-create the player's virtual containers so live puts bridged to them
-			// land even before the first own-state snapshot (008: puts into unknown
-			// containers are no-ops by design).
-			svc.IngestSelfContainer(selfBagGUID, "Bag", nil)
-			svc.IngestSelfContainer(selfEquipGUID, "Equipped", nil)
+			// Pre-create the player's virtual containers (pinned, marked not-yet-
+			// observed) so live puts bridged to them land even before the first
+			// own-state snapshot, without faking a fresh empty inventory in the UI.
+			svc.EnsureSelfContainer(selfBagGUID, "Bag")
+			svc.EnsureSelfContainer(selfEquipGUID, "Equipped")
 			if flowStore != nil {
 				if err := flowStore.StartSession(ctx, model.CaptureSession{
 					ID: sessionID, StartedAt: nowMS(), SourceKind: srcKind, Interface: *iface,
@@ -291,7 +291,7 @@ func ingest(clf *probe.Classifier, svc *wailsadapter.Service, kind probe.Kind, c
 		// resurrected by a late declaration drain.
 		if slots, ok := capture.OwnInventorySlots(params); ok {
 			bagSlots = slots
-			clearBagPendingPuts()
+			clearSelfPendingPuts()
 		}
 	case model.CatCurrentLocation: // notification event 163 — "you entered <city>"
 		if city, ok := capture.CurrentCity(params); ok {
@@ -308,7 +308,13 @@ func ingest(clf *probe.Classifier, svc *wailsadapter.Service, kind probe.Kind, c
 				}
 			}
 			if ref, ok := resolveObj(objID); ok {
-				svc.IngestPutItem(target, objID, ref)
+				if !svc.IngestPutItem(target, objID, ref) {
+					// Destination untracked (e.g. quick-deposit into an unopened bank
+					// tab): the item still LEFT wherever it was — drop it from view so
+					// it can't linger stale; snapshots restore it where it truly lives.
+					svc.IngestDeleteItem(objID)
+					bagSlotClear(objID)
+				}
 			} else {
 				// Declaration not seen yet — queue instead of dropping (008 root-cause
 				// fix): drained in registerNewItem, expired entries counted.
@@ -386,10 +392,12 @@ func ingest(clf *probe.Classifier, svc *wailsadapter.Service, kind probe.Kind, c
 		switch code {
 		case 30:
 			if guid, slot, ok := capture.MoveItem(params); ok {
-				// Moves OUT OF the player's own containers can never be loot pickups —
-				// feeding them to the tracker only pollutes its pending queue (each own
-				// bag/equipped move queued 10s then expired, live-seen 2026-07-04).
-				if _, own := virtualContainer(guid); !own {
+				// Moves OUT OF the player's own bag can never be loot pickups — feeding
+				// them to the tracker only pollutes its pending queue (live-seen
+				// 2026-07-04). Gated on the CONFIRMED bag guid only: the key-51 equipped
+				// CANDIDATE must not silently suppress loot resolution if it turns out
+				// to be some other container.
+				if v, own := virtualContainer(guid); !own || v != selfBagGUID {
 					hits := lootTracker.ResolveMove(guid, slot, nowMS())
 					if debugFlow {
 						p, exp, cap := lootTracker.Stats()
@@ -403,7 +411,8 @@ func ingest(clf *probe.Classifier, svc *wailsadapter.Service, kind probe.Kind, c
 			}
 		case 39:
 			if guid, ids, ok := capture.MoveGivenItems(params); ok {
-				if _, own := virtualContainer(guid); !own {
+				if v, own := virtualContainer(guid); !own || v != selfBagGUID { // bag-only skip, see op-30
+
 					hits := lootTracker.ResolveMoveGiven(guid, ids, nowMS())
 					if debugFlow {
 						log.Printf("[flow] move-given: guid=%s ids=%d hits=%d", guid, len(ids), len(hits))
@@ -470,9 +479,13 @@ func updateSelf(svc *wailsadapter.Service, params map[byte]interface{}) {
 		svc.SetZone(zoneName(zone)) // raw cluster id → readable zone name
 	}
 	// Own-container GUID bridge (008): bag (key 54, confirmed) + equipped candidate
-	// (key 51). Rebuilt per Join; moves and E:26 reference these wire GUIDs.
-	if bagGUID, eqGUID, ok := capture.SelfContainers(params); ok {
-		selfContainerGUIDs = map[string]string{bagGUID: selfBagGUID}
+	// (key 51). Entries update INDEPENDENTLY — a Join variant carrying only one of the
+	// keys must not skip (or wipe) the other's bridge, so the map is amended in place
+	// (the guids are per-character constants, so this stays bounded at 2 entries).
+	if bagGUID, eqGUID, _ := capture.SelfContainers(params); bagGUID != "" || eqGUID != "" {
+		if bagGUID != "" {
+			selfContainerGUIDs[bagGUID] = selfBagGUID
+		}
 		if eqGUID != "" {
 			selfContainerGUIDs[eqGUID] = selfEquipGUID
 		}
@@ -521,11 +534,17 @@ func bagSlotItem(slot int) (int, bool) {
 	return bagSlots[slot], true
 }
 
+// maxBagSlots bounds the live bag slot map. The largest real bag is well under 128
+// slots; E:26 (key 1) and op-30 destination (key 3) slots come off the wire with no
+// upper bound of their own, and an unbounded pad loop here would let a single
+// hostile/corrupt packet allocate gigabytes (Principle IV/XI).
+const maxBagSlots = 256
+
 func bagSlotSet(slot, objID int) {
-	if slot < 0 {
+	if slot < 0 || slot >= maxBagSlots {
 		return
 	}
-	for slot >= len(bagSlots) { // bag grew (bigger bag equipped) — pad, bounded by maxWireSlots upstream
+	for slot >= len(bagSlots) { // bag grew (bigger bag equipped) — pad up to maxBagSlots
 		bagSlots = append(bagSlots, 0)
 	}
 	bagSlots[slot] = objID
@@ -581,12 +600,13 @@ func queuePendingPut(objID int, target string) {
 	}
 }
 
-// clearBagPendingPuts drops pending puts targeting the bag — a fresh own-state
-// snapshot is authoritative and must not be overridden by a late drain (008 US3).
-func clearBagPendingPuts() {
+// clearSelfPendingPuts drops pending puts targeting the player's own containers —
+// a fresh own-state snapshot (which carries BOTH bag and equipped) is authoritative
+// and must not be overridden by a late drain (008 US3, symmetric for equipped).
+func clearSelfPendingPuts() {
 	objMu.Lock()
 	for id, p := range pendingPuts {
-		if p.target == selfBagGUID {
+		if p.target == selfBagGUID || p.target == selfEquipGUID {
 			delete(pendingPuts, id)
 		}
 	}
@@ -611,8 +631,10 @@ func applyMoveToHoldings(svc *wailsadapter.Service, srcGUID string, srcSlot int,
 	applyMovedObject(svc, itemObj, srcGUID, dstGUID, dstSlot, hasDst)
 }
 
-// applyMovedObject relocates a known item object: destination bridged/known →
-// a real move; unknown destination (market, sale, closed bank) → drop from view
+// applyMovedObject relocates a known item object: the destination is tried against
+// holdings itself (bridged virtual id or any container holdings has seen — bank tabs
+// stay known here long after the loot tracker's 10-minute TTL would have swept them);
+// an untracked destination (market, sale, never-opened bank) drops the item from view
 // (contract rules 3-4). The bag slot map tracks bag-side changes.
 func applyMovedObject(svc *wailsadapter.Service, itemObj int, srcGUID, dstGUID string, dstSlot int, hasDst bool) {
 	if v, bridged := virtualContainer(srcGUID); bridged && v == selfBagGUID {
@@ -625,19 +647,26 @@ func applyMovedObject(svc *wailsadapter.Service, itemObj int, srcGUID, dstGUID s
 			if v == selfBagGUID {
 				bagSlotSet(dstSlot, itemObj)
 			}
-		} else if lootTracker.KnownContainer(dstGUID) {
-			target = dstGUID
+		} else {
+			target = dstGUID // let holdings decide — it knows every snapshotted container
 		}
 	}
 	if target == "" {
 		svc.IngestDeleteItem(itemObj) // leaves every tracked view; reappears via snapshots
 		if debugFlow {
-			log.Printf("[hold] move → unknown dst, dropped from view: obj=%d", itemObj)
+			log.Printf("[hold] move → no dst, dropped from view: obj=%d", itemObj)
 		}
 		return
 	}
 	if ref, ok := resolveObj(itemObj); ok {
-		svc.IngestPutItem(target, itemObj, ref)
+		if !svc.IngestPutItem(target, itemObj, ref) {
+			svc.IngestDeleteItem(itemObj)
+			bagSlotClear(itemObj)
+			if debugFlow {
+				log.Printf("[hold] move → untracked dst, dropped from view: obj=%d", itemObj)
+			}
+			return
+		}
 	} else {
 		queuePendingPut(itemObj, target)
 	}
@@ -782,9 +811,13 @@ func registerNewItem(svc *wailsadapter.Service, code int, params map[byte]interf
 		ingestLootObj(svc, objID, ref, pl.source)
 	}
 	// A holdings put whose declaration arrived late (008): place it now, same
-	// staleness guard as the loot drain.
+	// staleness guard as the loot drain. An untracked target still drops the item
+	// from its old spot (the put was authoritative — it left).
 	if putPending && nowMS()-pp.seenMS <= pendingPutsTTLMS {
-		svc.IngestPutItem(pp.target, objID, ref)
+		if !svc.IngestPutItem(pp.target, objID, ref) {
+			svc.IngestDeleteItem(objID)
+			bagSlotClear(objID)
+		}
 	}
 
 	// The item's own EstimatedMarketValue (key 4, a scalar int64) is the value the game

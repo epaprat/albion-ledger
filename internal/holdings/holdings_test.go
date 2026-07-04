@@ -1,6 +1,7 @@
 package holdings
 
 import (
+	"fmt"
 	"testing"
 
 	"github.com/epaprat/albion-ledger/internal/catalog"
@@ -164,6 +165,37 @@ func TestCurrentCityGroupsBank(t *testing.T) {
 		if r.Location == model.LocInventory && r.City != "" {
 			t.Fatalf("inventory row city = %q, want empty", r.City)
 		}
+	}
+}
+
+// Review fix (008): the player's own containers are pinned — a long session that
+// churns >containerCap loot/bank containers must never evict self-bag, or every
+// subsequent bag put would silently no-op (frozen bag until relog).
+func TestPinnedSelfContainerSurvivesEviction(t *testing.T) {
+	a, _ := newAgg(t)
+	a.EnsureSelfContainer("self-bag", "Bag") // pinned, first inserted (startup order)
+	a.PutItem("self-bag", 900001, ItemRef{Index: 920}, 100)
+	for i := 0; i < containerCap+50; i++ {
+		a.SetContainer(fmt.Sprintf("churn-%d", i), "", nil, int64(200+i))
+	}
+	if !a.PutItem("self-bag", 900002, ItemRef{Index: 920}, 9999) {
+		t.Fatal("self-bag was evicted by container churn (must be pinned)")
+	}
+}
+
+// Review fix (008): pre-created-but-never-observed containers must not surface in
+// the Summary — an empty fresh-looking Bag/Equipped before any capture fakes data.
+func TestUnseenPrecreatedContainersHidden(t *testing.T) {
+	a, _ := newAgg(t)
+	a.EnsureSelfContainer("self-bag", "Bag")
+	a.EnsureSelfContainer("self-equipped", "Equipped")
+	if got := len(a.Summary(1000).Cities); got != 0 {
+		t.Fatalf("unseen pre-created containers must be hidden, got %d cities", got)
+	}
+	// First real data makes them visible.
+	a.PutItem("self-bag", 900003, ItemRef{Index: 920}, 2000)
+	if got := len(a.Summary(3000).Cities); got == 0 {
+		t.Fatal("container with real data must surface")
 	}
 }
 

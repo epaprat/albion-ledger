@@ -32,6 +32,7 @@ type container struct {
 	tab      string                    // bank tab name, or "Inventory"
 	items    map[int]model.HoldingItem // objId -> row
 	lastSeen int64
+	pinned   bool // player's own containers: never cap-evicted (a frozen bag is a defect)
 }
 
 // containerCap bounds the number of tracked containers (Principle XI; FR-011).
@@ -133,10 +134,23 @@ func (a *Aggregator) SetContainer(containerGUID, ownerGUID string, slots []SlotI
 // SetSelfContainer REPLACES a player-owned container (bag / equipped) that has no
 // owner GUID in the wire data — it comes from own-state slot arrays. Grouped under
 // the inventory city with the given tab (e.g. "Bag", "Equipped").
+// EnsureSelfContainer pre-creates (or re-labels) a player-owned container WITHOUT
+// marking anything as observed: no citySeen touch, lastSeen stays zero until real
+// wire data arrives, and the container is pinned against cap eviction. Lets live puts
+// bridged to the player's containers land before the first own-state snapshot while
+// keeping the UI's "nothing captured yet" state honest (008).
+func (a *Aggregator) EnsureSelfContainer(containerGUID, tab string) {
+	a.mu.Lock()
+	defer a.mu.Unlock()
+	c := a.ensureContainer(containerGUID)
+	c.location, c.city, c.tab, c.pinned = model.LocInventory, "", tab, true
+}
+
 func (a *Aggregator) SetSelfContainer(containerGUID, tab string, slots []SlotItem, nowMS int64) {
 	a.mu.Lock()
 	defer a.mu.Unlock()
 	c := a.ensureContainer(containerGUID)
+	c.pinned = true
 	for objID := range c.items {
 		if a.objLoc[objID] == containerGUID {
 			delete(a.objLoc, objID)
@@ -156,16 +170,17 @@ func (a *Aggregator) SetSelfContainer(containerGUID, tab string, slots []SlotIte
 
 // PutItem incrementally adds (or moves) one item into a KNOWN container —
 // InventoryPutItem / applied move. The item is removed from any previous container
-// first (a move), then placed here. Puts into an unknown container GUID are a no-op:
-// the caller routes self containers through the GUID bridge (which pre-creates them)
-// and drops unknown destinations from view — the old "first-seen container defaults
-// to Bag" guess glued phantom 'Bag' tabs onto bank/market GUIDs (008).
-func (a *Aggregator) PutItem(containerGUID string, objID int, ref ItemRef, nowMS int64) {
+// first (a move), then placed here. Puts into an unknown container GUID are NOT
+// applied (applied=false): the caller decides the fallback (drop from view) — the
+// old "first-seen container defaults to Bag" guess glued phantom 'Bag' tabs onto
+// bank/market GUIDs (008). Returning the outcome keeps "item entered untracked
+// space" observable instead of a silent no-op that leaves the item stale in place.
+func (a *Aggregator) PutItem(containerGUID string, objID int, ref ItemRef, nowMS int64) (applied bool) {
 	a.mu.Lock()
 	defer a.mu.Unlock()
 	c, known := a.containers[containerGUID]
 	if !known {
-		return
+		return false
 	}
 	a.removeObj(objID) // a move: drop from wherever it was
 	row := a.row(ref.Index, ref.Quality, ref.Count, c.location, c.city, c.tab, nowMS)
@@ -174,6 +189,7 @@ func (a *Aggregator) PutItem(containerGUID string, objID int, ref ItemRef, nowMS
 	c.lastSeen = nowMS
 	a.objLoc[objID] = containerGUID
 	a.touchCity(c.location, c.city, nowMS)
+	return true
 }
 
 // DeleteItem incrementally removes one item by object id — InventoryDeleteItem.
@@ -194,17 +210,24 @@ func (a *Aggregator) ensureContainer(guid string) *container {
 	if c, ok := a.containers[guid]; ok {
 		return c
 	}
-	if len(a.containers) >= containerCap && len(a.order) > 0 {
-		old := a.order[0]
-		a.order = a.order[1:]
-		if c := a.containers[old]; c != nil {
-			for objID := range c.items {
+	if len(a.containers) >= containerCap {
+		// Evict the oldest UNPINNED container: the player's own bag/equipped sit at
+		// the head of the order (pre-created at startup) and evicting them would
+		// silently freeze the bag view for the rest of the session (008 review).
+		for i, old := range a.order {
+			victim := a.containers[old]
+			if victim == nil || victim.pinned {
+				continue
+			}
+			a.order = append(a.order[:i], a.order[i+1:]...)
+			for objID := range victim.items {
 				if a.objLoc[objID] == old { // don't drop an entry an object earned elsewhere
 					delete(a.objLoc, objID)
 				}
 			}
+			delete(a.containers, old)
+			break
 		}
-		delete(a.containers, old)
 	}
 	a.order = append(a.order, guid)
 	c := &container{items: map[int]model.HoldingItem{}}
@@ -325,6 +348,9 @@ func (a *Aggregator) Summary(nowMS int64) model.HoldingsSummary {
 	}
 
 	for _, c := range a.containers {
+		if c.lastSeen == 0 && len(c.items) == 0 {
+			continue // pre-created, never observed: showing it would fake freshness (X/XII)
+		}
 		cityName := invName
 		isInv := true
 		if c.location == model.LocBank {

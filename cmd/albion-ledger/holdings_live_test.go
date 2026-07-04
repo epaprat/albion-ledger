@@ -5,6 +5,7 @@ package main
 // rules in specs/008-holdings-freshness/contracts/holdings-live.md.
 
 import (
+	"encoding/hex"
 	"strings"
 	"testing"
 
@@ -59,28 +60,16 @@ func newGlue(t *testing.T) (*wailsadapter.Service, *probe.Classifier) {
 	selfContainerGUIDs = map[string]string{tBagGUID: selfBagGUID, tEqGUID: selfEquipGUID}
 	lootTracker = loot.New()
 
-	// Pre-create virtual containers (mirrors OnStartup).
-	svc.IngestSelfContainer(selfBagGUID, "Bag", nil)
-	svc.IngestSelfContainer(selfEquipGUID, "Equipped", nil)
+	// Pre-create virtual containers (mirrors OnStartup): pinned, not-yet-observed.
+	svc.EnsureSelfContainer(selfBagGUID, "Bag")
+	svc.EnsureSelfContainer(selfEquipGUID, "Equipped")
 	return svc, probe.New(reg)
 }
 
 func guidBytes(hexish string) []byte {
-	// tests use 32-char hex guids; decode loosely (a-f0-9 pairs)
-	b := make([]byte, 16)
-	for i := 0; i < 16; i++ {
-		var v byte
-		for j := 0; j < 2; j++ {
-			c := hexish[i*2+j]
-			v <<= 4
-			switch {
-			case c >= '0' && c <= '9':
-				v |= c - '0'
-			case c >= 'a' && c <= 'f':
-				v |= c - 'a' + 10
-			}
-		}
-		b[i] = v
+	b, err := hex.DecodeString(hexish)
+	if err != nil {
+		panic("malformed test guid: " + hexish) // surface typo'd constants loudly
 	}
 	return b
 }
@@ -250,10 +239,8 @@ func TestSnapshotAuthority(t *testing.T) {
 	// Snapshot arrives: bag = only object 914 (declared, index 837); 913 excluded.
 	registerNewItem(svc, 32, declParams(914, 837, 1))
 	ingestSelf(svc, selfBagGUID, "Bag", []int{914})
-	if slots, ok := map[bool][]int{true: {0, 914}}[true]; ok { // rebuild as own-state would
-		bagSlots = slots
-	}
-	clearBagPendingPuts()
+	bagSlots = []int{0, 914} // rebuilt from key 55, as the own-state handler does
+	clearSelfPendingPuts()
 	// Late declaration of 913 must NOT resurrect it (pending cleared by snapshot).
 	registerNewItem(svc, 32, declParams(913, 920, 1))
 	if bagHas(svc, 920) {
@@ -300,5 +287,81 @@ func TestUnknownContainerPutCreatesNothing(t *testing.T) {
 	ingest(clf, svc, probe.KindEvent, 26, putEvent(915, 0, strings.Repeat("de", 16)))
 	if holdingsCount(svc) != 0 {
 		t.Fatalf("put to unknown container must be a no-op, got %d rows", holdingsCount(svc))
+	}
+}
+
+// Review fix: an E:26 into an UNTRACKED container (quick-deposit into an unopened
+// bank tab) must still remove the item from its previous container — the old silent
+// no-op left it stale in the bag, the exact bug class 008 fights.
+func TestPutToUntrackedContainerDropsFromOldView(t *testing.T) {
+	svc, clf := newGlue(t)
+	registerNewItem(svc, 32, declParams(916, 920, 1))
+	ingest(clf, svc, probe.KindEvent, 26, putEvent(916, 2, tBagGUID))
+	if !bagHas(svc, 920) {
+		t.Fatal("setup: item must start in the bag")
+	}
+	// Server-driven transfer to a never-attached container.
+	ingest(clf, svc, probe.KindEvent, 26, putEvent(916, 0, strings.Repeat("ab", 16)))
+	if bagHas(svc, 920) || holdingsCount(svc) != 0 {
+		t.Fatal("item must leave the bag when put into an untracked container")
+	}
+	if _, ok := bagSlotItem(2); ok {
+		t.Fatal("bag slot map must drop the departed item")
+	}
+}
+
+// Review fix (IV/XI): hostile slot indexes must not balloon the bag slot map — one
+// corrupt E:26/op-30 with slot=2^31 would otherwise allocate gigabytes.
+func TestBagSlotsBoundedAgainstHostileSlots(t *testing.T) {
+	svc, clf := newGlue(t)
+	registerNewItem(svc, 32, declParams(917, 920, 1))
+	ingest(clf, svc, probe.KindEvent, 26, putEvent(917, 1<<30, tBagGUID))
+	if len(bagSlots) > maxBagSlots {
+		t.Fatalf("bagSlots grew to %d (hostile slot accepted)", len(bagSlots))
+	}
+	// The sane path keeps working: a legal slot still lands.
+	ingest(clf, svc, probe.KindEvent, 26, putEvent(917, 3, tBagGUID))
+	if id, ok := bagSlotItem(3); !ok || id != 917 {
+		t.Fatalf("legal slot rejected after hostile attempt: %d/%v", id, ok)
+	}
+}
+
+// Review fix: snapshot authority must be symmetric — an equipped-targeted pending
+// put must not resurrect an item the equipped snapshot excluded.
+func TestSnapshotAuthorityEquipped(t *testing.T) {
+	svc, clf := newGlue(t)
+	ingest(clf, svc, probe.KindEvent, 26, putEvent(918, 0, tEqGUID)) // undeclared → pending
+	registerNewItem(svc, 32, declParams(919, 837, 1))
+	ingestSelf(svc, selfEquipGUID, "Equipped", []int{919}) // authoritative, excludes 918
+	clearSelfPendingPuts()
+	registerNewItem(svc, 32, declParams(918, 920, 1)) // late declaration
+	for _, r := range svc.ListHoldings() {
+		if r.Item.Index == 920 && r.Group == "Equipped" {
+			t.Fatal("snapshot-excluded item resurrected into Equipped")
+		}
+	}
+}
+
+// Review fix: a deposit into a bank tab holdings knows (snapshotted) must relocate
+// the item even when the loot tracker never attached (or TTL-swept) that guid —
+// destination knowledge lives in holdings, not the 10-minute loot cache.
+func TestMoveToHoldingsKnownButTrackerUnknownDst(t *testing.T) {
+	svc, clf := newGlue(t)
+	registerNewItem(svc, 32, declParams(921, 920, 1))
+	ingest(clf, svc, probe.KindEvent, 26, putEvent(921, 0, tBagGUID))
+	svc.IngestBankVault([]string{"bankOwner"}, []string{"Items"})
+	svc.IngestContainer(tBankGUID, "bankOwner", nil) // holdings knows; tracker does NOT
+	ingest(clf, svc, probe.KindRequest, 30, moveParams(0, tBagGUID, 1, tBankGUID))
+	if bagHas(svc, 920) {
+		t.Fatal("item must leave the bag")
+	}
+	var inBank bool
+	for _, r := range svc.ListHoldings() {
+		if r.Item.Index == 920 && r.Group == "Items" {
+			inBank = true
+		}
+	}
+	if !inBank {
+		t.Fatal("item must land in the snapshotted bank tab (tracker TTL must not matter)")
 	}
 }

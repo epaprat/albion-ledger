@@ -123,3 +123,71 @@ func TestMoveGivenItemsFromRequestBytes(t *testing.T) {
 		t.Fatalf("ids = %v, want [10 30] (zeros filtered)", ids)
 	}
 }
+
+// MoveDest pulls op-30 destination (key 3 slot, key 4 guid); missing/empty key 4 →
+// not-ok, missing key 3 → slot -1 tolerated (008 move application).
+func TestMoveDestFromRequestBytes(t *testing.T) {
+	dst := []byte{7, 7, 7, 7, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16}
+	payload := photon.BuildRequestPacket(30, []photon.Field{
+		{Key: 0, Type: photon.TypeByte, Val: byte(3)},
+		{Key: 3, Type: photon.TypeByte, Val: byte(12)},
+		{Key: 4, Type: photon.TypeArray | photon.TypeByte, Val: dst},
+		{Key: 253, Type: photon.TypeShort, Val: int16(30)},
+	})
+	var got map[byte]interface{}
+	pr := photon.NewPhotonParser(func(_ byte, params map[byte]interface{}) { got = params }, nil, nil)
+	if !pr.ReceivePacket(payload) {
+		t.Fatal("ReceivePacket false")
+	}
+	slot, g, ok := MoveDest(got)
+	if !ok || slot != 12 || g != "0707070705060708090a0b0c0d0e0f10" {
+		t.Fatalf("MoveDest → slot=%d g=%q ok=%v", slot, g, ok)
+	}
+
+	// No key 3 (auto-slot variant, live-seen keys=[0 1 2 4 5]): slot -1, still ok.
+	payload = photon.BuildRequestPacket(30, []photon.Field{
+		{Key: 4, Type: photon.TypeArray | photon.TypeByte, Val: dst},
+		{Key: 253, Type: photon.TypeShort, Val: int16(30)},
+	})
+	pr = photon.NewPhotonParser(func(_ byte, params map[byte]interface{}) { got = params }, nil, nil)
+	if !pr.ReceivePacket(payload) {
+		t.Fatal("ReceivePacket false")
+	}
+	if slot, _, ok := MoveDest(got); !ok || slot != -1 {
+		t.Fatalf("MoveDest without key 3 → slot=%d ok=%v, want -1/true", slot, ok)
+	}
+
+	// No key 4: destination unknown → not-ok (caller drops from view).
+	payload = photon.BuildRequestPacket(30, []photon.Field{
+		{Key: 3, Type: photon.TypeByte, Val: byte(2)},
+		{Key: 253, Type: photon.TypeShort, Val: int16(30)},
+	})
+	pr = photon.NewPhotonParser(func(_ byte, params map[byte]interface{}) { got = params }, nil, nil)
+	if !pr.ReceivePacket(payload) {
+		t.Fatal("ReceivePacket false")
+	}
+	if _, _, ok := MoveDest(got); ok {
+		t.Fatal("MoveDest without key 4 must be not-ok")
+	}
+}
+
+// MoveGivenDest pulls the op-39 destination guid (key 2); absent → not-ok.
+func TestMoveGivenDestFromRequestBytes(t *testing.T) {
+	dst := []byte{8, 8, 8, 8, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16}
+	payload := photon.BuildRequestPacket(39, []photon.Field{
+		{Key: 2, Type: photon.TypeArray | photon.TypeByte, Val: dst},
+		{Key: 253, Type: photon.TypeShort, Val: int16(39)},
+	})
+	var got map[byte]interface{}
+	pr := photon.NewPhotonParser(func(_ byte, params map[byte]interface{}) { got = params }, nil, nil)
+	if !pr.ReceivePacket(payload) {
+		t.Fatal("ReceivePacket false")
+	}
+	g, ok := MoveGivenDest(got)
+	if !ok || g != "0808080805060708090a0b0c0d0e0f10" {
+		t.Fatalf("MoveGivenDest → g=%q ok=%v", g, ok)
+	}
+	if _, ok := MoveGivenDest(map[byte]interface{}{}); ok {
+		t.Fatal("MoveGivenDest without key 2 must be not-ok")
+	}
+}
