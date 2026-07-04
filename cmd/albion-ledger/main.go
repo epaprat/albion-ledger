@@ -386,23 +386,30 @@ func ingest(clf *probe.Classifier, svc *wailsadapter.Service, kind probe.Kind, c
 		switch code {
 		case 30:
 			if guid, slot, ok := capture.MoveItem(params); ok {
-				hits := lootTracker.ResolveMove(guid, slot, nowMS())
-				if debugFlow {
-					p, exp, cap := lootTracker.Stats()
-					log.Printf("[flow] move: guid=%s slot=%d hits=%d (pending=%d expired=%d capdrop=%d)", guid, slot, len(hits), p, exp, cap)
+				// Moves OUT OF the player's own containers can never be loot pickups —
+				// feeding them to the tracker only pollutes its pending queue (each own
+				// bag/equipped move queued 10s then expired, live-seen 2026-07-04).
+				if _, own := virtualContainer(guid); !own {
+					hits := lootTracker.ResolveMove(guid, slot, nowMS())
+					if debugFlow {
+						p, exp, cap := lootTracker.Stats()
+						log.Printf("[flow] move: guid=%s slot=%d hits=%d (pending=%d expired=%d capdrop=%d)", guid, slot, len(hits), p, exp, cap)
+					}
+					emitLootHits(svc, hits)
 				}
-				emitLootHits(svc, hits)
 				// Holdings move-application (008) — AFTER loot correlation, never before.
 				dstSlot, dstGUID, hasDst := capture.MoveDest(params)
 				applyMoveToHoldings(svc, guid, slot, dstGUID, dstSlot, hasDst)
 			}
 		case 39:
 			if guid, ids, ok := capture.MoveGivenItems(params); ok {
-				hits := lootTracker.ResolveMoveGiven(guid, ids, nowMS())
-				if debugFlow {
-					log.Printf("[flow] move-given: guid=%s ids=%d hits=%d", guid, len(ids), len(hits))
+				if _, own := virtualContainer(guid); !own {
+					hits := lootTracker.ResolveMoveGiven(guid, ids, nowMS())
+					if debugFlow {
+						log.Printf("[flow] move-given: guid=%s ids=%d hits=%d", guid, len(ids), len(hits))
+					}
+					emitLootHits(svc, hits)
 				}
-				emitLootHits(svc, hits)
 				dstGUID, hasDst := capture.MoveGivenDest(params)
 				for _, id := range ids {
 					applyMovedObject(svc, id, guid, dstGUID, -1, hasDst)
