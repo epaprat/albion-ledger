@@ -62,6 +62,10 @@ export function IngestMarket(arg1, arg2, arg3, arg4) {
   return window['go']['wailsadapter']['Service']['IngestMarket'](arg1, arg2, arg3, arg4);
 }
 
+export function IngestMarketPrice(arg1, arg2, arg3) {
+  return window['go']['wailsadapter']['Service']['IngestMarketPrice'](arg1, arg2, arg3);
+}
+
 export function IngestPutItem(arg1, arg2, arg3) {
   return window['go']['wailsadapter']['Service']['IngestPutItem'](arg1, arg2, arg3);
 }

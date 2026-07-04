@@ -35,6 +35,8 @@ export function IngestLoot(arg1:string,arg2:number,arg3:number,arg4:number,arg5:
 
 export function IngestMarket(arg1:number,arg2:number,arg3:number,arg4:number):Promise<void>;
 
+export function IngestMarketPrice(arg1:string,arg2:number,arg3:number):Promise<void>;
+
 export function IngestPutItem(arg1:string,arg2:number,arg3:holdings.ItemRef):Promise<boolean>;
 
 export function IngestSelfContainer(arg1:string,arg2:string,arg3:Array<holdings.SlotItem>):Promise<void>;
