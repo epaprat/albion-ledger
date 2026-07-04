@@ -46,6 +46,36 @@ func (b *Book) SetEMV(index, quality int, amount, asOf int64) {
 	b.mu.Unlock()
 }
 
+// EMVEntry is one persisted server-estimate row (010: the book survives restarts so
+// values learned from declarations keep pricing K-overview summary rows next session).
+type EMVEntry struct {
+	Index, Quality int
+	Amount, AsOf   int64
+}
+
+// SnapshotEMV returns all recorded server estimates (for persistence).
+func (b *Book) SnapshotEMV() []EMVEntry {
+	b.mu.RLock()
+	defer b.mu.RUnlock()
+	out := make([]EMVEntry, 0, len(b.emv))
+	for k, p := range b.emv {
+		out = append(out, EMVEntry{Index: k.index, Quality: k.quality, Amount: p.amount, AsOf: p.asOf})
+	}
+	return out
+}
+
+// RestoreEMV loads persisted server estimates without touching newer live data.
+func (b *Book) RestoreEMV(entries []EMVEntry) {
+	b.mu.Lock()
+	defer b.mu.Unlock()
+	for _, e := range entries {
+		k := key{e.Index, e.Quality}
+		if cur, ok := b.emv[k]; !ok || e.AsOf > cur.asOf {
+			b.emv[k] = priced{e.Amount, e.AsOf}
+		}
+	}
+}
+
 // Valuer computes the best valuation from a Book against a staleness threshold.
 type Valuer struct {
 	book       *Book

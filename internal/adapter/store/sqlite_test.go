@@ -7,6 +7,7 @@ import (
 	"testing"
 
 	"github.com/epaprat/albion-ledger/internal/domain/model"
+	"github.com/epaprat/albion-ledger/internal/valuation"
 )
 
 func TestStoreRoundTrip(t *testing.T) {
@@ -218,5 +219,42 @@ func TestAppendFlowEventsIdempotent(t *testing.T) {
 	}
 	if lootSilver != 1000 || lootValued != 1 {
 		t.Fatalf("loot upsert not applied: silver=%d valued=%d, want 1000/1", lootSilver, lootValued)
+	}
+}
+
+// 010: the EMV book survives restarts — save, reload, newest-asOf wins on conflict.
+func TestEMVBookRoundTrip(t *testing.T) {
+	ctx := context.Background()
+	db, err := Open(filepath.Join(t.TempDir(), "emv.db"))
+	if err != nil {
+		t.Fatal(err)
+	}
+	defer db.Close()
+	if err := db.SaveEMVBook(ctx, []valuation.EMVEntry{
+		{Index: 920, Quality: 1, Amount: 42883, AsOf: 1000},
+		{Index: 837, Quality: 4, Amount: 13500, AsOf: 2000},
+	}); err != nil {
+		t.Fatal(err)
+	}
+	// Older write must not clobber newer; newer must win.
+	if err := db.SaveEMVBook(ctx, []valuation.EMVEntry{
+		{Index: 920, Quality: 1, Amount: 1, AsOf: 500},     // stale — ignored
+		{Index: 837, Quality: 4, Amount: 14000, AsOf: 3000}, // newer — wins
+	}); err != nil {
+		t.Fatal(err)
+	}
+	got, err := db.LoadEMVBook(ctx)
+	if err != nil {
+		t.Fatal(err)
+	}
+	byKey := map[[2]int]valuation.EMVEntry{}
+	for _, e := range got {
+		byKey[[2]int{e.Index, e.Quality}] = e
+	}
+	if e := byKey[[2]int{920, 1}]; e.Amount != 42883 {
+		t.Fatalf("stale write clobbered: %+v", e)
+	}
+	if e := byKey[[2]int{837, 4}]; e.Amount != 14000 {
+		t.Fatalf("newer write lost: %+v", e)
 	}
 }

@@ -25,7 +25,7 @@ const qColor = (q) => ['#30363d', '#8b949e', '#3fb950', '#58a6ff', '#bc8cff', '#
     </div>
     <div class="vals">
       <span class="ea">{{ r.valuation.source === 'unknown' ? '—' : compact(r.valuation.amount) }}</span>
-      <span class="tot" v-if="r.valuation.source !== 'unknown'">{{ compact(r.valuation.amount * r.count) }}</span>
+      <span class="tot" v-if="r.valuation.source !== 'unknown' && r.count > 1">{{ compact(r.valuation.amount * r.count) }}</span>
     </div>
     <div class="tip" role="tooltip">
       <strong :class="{ unknown: !r.item.known }">{{ r.item.displayName }}</strong>

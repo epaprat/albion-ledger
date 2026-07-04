@@ -124,6 +124,13 @@ func main() {
 			svc.EnsureSelfContainer(app.SelfBagGUID, "Bag")
 			svc.EnsureSelfContainer(app.SelfEquipGUID, "Equipped")
 			if flowStore != nil {
+				// Persisted EMV book (010): values learned in earlier sessions keep
+				// pricing K-overview summary rows now; the book flushes on shutdown.
+				if entries, err := flowStore.LoadEMVBook(ctx); err == nil {
+					book.RestoreEMV(entries)
+				} else {
+					log.Printf("store LoadEMVBook: %v", err)
+				}
 				if err := flowStore.StartSession(ctx, model.CaptureSession{
 					ID: sessionID, StartedAt: nowMS(), SourceKind: srcKind, Interface: *iface,
 				}); err != nil {
@@ -137,6 +144,9 @@ func main() {
 		OnShutdown: func(context.Context) {
 			if flowStore != nil {
 				svc.StopFlowPersistence() // drain the final batch before the DB closes
+				if err := flowStore.SaveEMVBook(context.Background(), book.SnapshotEMV()); err != nil {
+					log.Printf("store SaveEMVBook: %v", err)
+				}
 				_ = flowStore.EndSession(context.Background(), sessionID, nowMS(), model.SessionTotals{})
 				_ = flowStore.Close()
 			}
