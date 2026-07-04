@@ -71,7 +71,17 @@ func handleBankTabs(p *Pipeline, _ probe.Kind, _ int, params map[byte]interface{
 	if !ok {
 		return
 	}
-	city := p.vaultCity[vault] // "" tolerated → content falls back to the generic city
+	city, cityKnown := p.vaultCity[vault]
+	if !cityKnown {
+		// A 517 whose vault is not in the CURRENT location list is a stale leftover
+		// from a previous (ephemeral-guid) opening — recording its tabs with an
+		// empty city would mint unreconcilable ghost containers. Skip; the next
+		// 516+517 pair re-delivers everything (live/replay-seen 2026-07-05).
+		if p.debug {
+			log.Printf("[bank] tabs for unknown vault %s dropped", vault)
+		}
+		return
+	}
 	for _, t := range tabs {
 		if _, exists := p.tabMeta[t.TabGUID]; !exists && len(p.tabMeta) >= maxTabMetaEntries {
 			if p.debug {
@@ -95,7 +105,7 @@ func handleBankTabContent(p *Pipeline, _ probe.Kind, _ int, params map[byte]inte
 		return // shape lock: unrelated op-1 responses die here (contract rule 4)
 	}
 	meta, known := p.tabMeta[tabGUID]
-	if !known {
+	if !known || meta.city == "" {
 		// No tab meta: either an unrelated shape-passing op-1 or a content packet
 		// racing ahead of its 517 (never observed live — 516/517 always precede).
 		// Skipping is safer than inventing a fallback identity: ephemeral guids mean
@@ -106,6 +116,7 @@ func handleBankTabContent(p *Pipeline, _ probe.Kind, _ int, params map[byte]inte
 		return
 	}
 	refs := make([]holdings.ItemRef, len(rows))
+	valued := 0
 	for i, r := range rows {
 		refs[i] = holdings.ItemRef{Index: r.ItemIndex, Count: r.Count, Quality: r.Quality}
 		// The overview carries per-row UNIT values for equipment (×10000, decoded
@@ -114,6 +125,7 @@ func handleBankTabContent(p *Pipeline, _ probe.Kind, _ int, params map[byte]inte
 		// they price via the quality-0 EMV fallback once seen elsewhere.
 		if r.UnitValue > 0 {
 			p.sink.IngestEMV(r.ItemIndex, r.Quality, r.UnitValue/vaultValueScale, p.nowMS())
+			valued++
 		}
 	}
 	// STABLE synthetic container id: the wire guid changes on every K opening, so
@@ -122,6 +134,6 @@ func handleBankTabContent(p *Pipeline, _ probe.Kind, _ int, params map[byte]inte
 	stableID := "vault:" + meta.city + ":" + meta.name
 	p.sink.IngestVaultSummaryTab(stableID, meta.city, meta.name, refs)
 	if p.debug {
-		log.Printf("[bank] content tab=%s city=%q name=%q rows=%d", tabGUID, meta.city, meta.name, len(rows))
+		log.Printf("[bank] content tab=%s city=%q name=%q rows=%d valued=%d", tabGUID, meta.city, meta.name, len(rows), valued)
 	}
 }

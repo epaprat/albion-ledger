@@ -135,17 +135,50 @@ func BankTabContent(params map[byte]interface{}) (tabGUID string, rows []BankTab
 	if !iok || !cok || len(idx) != len(counts) || len(idx) == 0 || len(idx) > maxBankTabRows {
 		return "", nil, false
 	}
-	qualities, _ := params[7].([]byte)
-	values, _ := params[5].([]int64)
+	qualities := byteOrIntSlice(params[7])
+	values := int64Slice(params[5])
 	rows = make([]BankTabRow, len(idx))
 	for i := range idx {
 		rows[i] = BankTabRow{ItemIndex: idx[i], Count: counts[i]}
 		if i < len(qualities) && qualities[i] >= 1 && qualities[i] <= 5 {
-			rows[i].Quality = int(qualities[i])
+			rows[i].Quality = qualities[i]
 		}
 		if i < len(values) && values[i] > 0 {
 			rows[i].UnitValue = values[i]
 		}
 	}
 	return hex.EncodeToString(guid), rows, true
+}
+
+// byteOrIntSlice reads a small-int array in ANY Photon width — the serializer picks
+// the narrowest element type per packet ([]byte, []int16, []int32), so a fixed-type
+// assertion silently loses fields on real traffic (the classic width trap).
+func byteOrIntSlice(v interface{}) []int {
+	if b, ok := v.([]byte); ok {
+		out := make([]int, len(b))
+		for i, x := range b {
+			out[i] = int(x)
+		}
+		return out
+	}
+	if n, ok := intSlice(v); ok {
+		return n
+	}
+	return nil
+}
+
+// int64Slice reads an int64-ish array in any width ([]int64 or []int32) — values
+// ×10000 usually need int64, but small-value tabs may arrive narrower.
+func int64Slice(v interface{}) []int64 {
+	switch a := v.(type) {
+	case []int64:
+		return a
+	case []int32:
+		out := make([]int64, len(a))
+		for i, x := range a {
+			out[i] = int64(x)
+		}
+		return out
+	}
+	return nil
 }
