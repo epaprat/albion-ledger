@@ -70,9 +70,28 @@ func (v *Valuer) Value(index, quality int, nowMS int64) model.Valuation {
 		return v.mk(live.amount, model.SourceLiveMarket, live.asOf, nowMS)
 	case hasEMV:
 		return v.mk(emv.amount, model.SourceServerEstimate, emv.asOf, nowMS)
-	default:
-		return model.Valuation{Amount: 0, Source: model.SourceUnknown, AsOf: 0, Stale: false}
 	}
+
+	// Quality-0 fallback (010): type-based summary rows (K bank overview) don't know
+	// the item's quality, but the book is quality-keyed — a normal-quality miss left
+	// clearly-valued items showing as unvalued (live "EMV missing" report). Any
+	// recorded quality beats nothing; the LOWEST recorded quality wins so the
+	// estimate stays conservative.
+	if quality == 0 {
+		v.book.mu.RLock()
+		defer v.book.mu.RUnlock()
+		for q := 1; q <= 5; q++ {
+			if e, ok := v.book.live[key{index, q}]; ok {
+				return v.mk(e.amount, model.SourceLiveMarket, e.asOf, nowMS)
+			}
+		}
+		for q := 1; q <= 5; q++ {
+			if e, ok := v.book.emv[key{index, q}]; ok {
+				return v.mk(e.amount, model.SourceServerEstimate, e.asOf, nowMS)
+			}
+		}
+	}
+	return model.Valuation{Amount: 0, Source: model.SourceUnknown, AsOf: 0, Stale: false}
 }
 
 func (v *Valuer) mk(amount int64, src model.ValuationSource, asOf, nowMS int64) model.Valuation {

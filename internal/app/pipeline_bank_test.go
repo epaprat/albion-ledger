@@ -78,26 +78,33 @@ func TestBankOverviewChain(t *testing.T) {
 	}
 }
 
-// Rule 2+7: content BEFORE tab meta → fallback name, later 517 corrects (same guid,
-// one tab, no duplicates).
-func TestBankContentBeforeMeta(t *testing.T) {
+// Rule 2 (revised after live discovery — guids are EPHEMERAL per K opening):
+// content without known tab meta is SKIPPED (a fallback identity could never be
+// reconciled later); once meta arrives, content lands under the STABLE city+name
+// identity, and repeated openings with fresh guids REPLACE instead of duplicating.
+func TestBankContentBeforeMetaSkipsThenStableIdentity(t *testing.T) {
 	svc, p := newGlue(t)
 	p.dispatch(probe.KindResponse, 1, contentParams(0x11, []int16{920}, []int16{5}))
-	rows := svc.ListHoldings()
-	if len(rows) != 1 {
-		t.Fatalf("rows = %d, want 1 (fallback-named tab)", len(rows))
+	if n := len(svc.ListHoldings()); n != 0 {
+		t.Fatalf("meta-less content must be skipped, got %d rows", n)
 	}
-	fallbackName := rows[0].Group
-	if fallbackName == "" {
-		t.Fatal("fallback tab name must not be empty")
-	}
-	// Meta arrives; content re-sent (the game re-sends on browse) → real name, still 1 tab.
+	// First opening.
 	p.dispatch(probe.KindResponse, 516, locationsParams([]string{"0006"}, []byte{0xAA}, []int64{0}))
 	p.dispatch(probe.KindResponse, 517, tabsParams(0xAA, []byte{0x11}, []string{"Setler"}))
 	p.dispatch(probe.KindResponse, 1, contentParams(0x11, []int16{920}, []int16{5}))
+	// Second opening: SAME tab, FRESH ephemeral guids (live 2026-07-05 behavior).
+	p.dispatch(probe.KindResponse, 516, locationsParams([]string{"0006"}, []byte{0xCC}, []int64{0}))
+	p.dispatch(probe.KindResponse, 517, tabsParams(0xCC, []byte{0x33}, []string{"Setler"}))
+	p.dispatch(probe.KindResponse, 1, contentParams(0x33, []int16{920}, []int16{9}))
+	rows := svc.ListHoldings()
+	if len(rows) != 1 || rows[0].Group != "Setler" || rows[0].Count != 9 {
+		t.Fatalf("re-opening must REPLACE under the stable identity, got %+v", rows)
+	}
+	// Old ephemeral guid's content is also refused now (meta was rebuilt).
+	p.dispatch(probe.KindResponse, 1, contentParams(0x11, []int16{920}, []int16{99}))
 	rows = svc.ListHoldings()
-	if len(rows) != 1 || rows[0].Group != "Setler" {
-		t.Fatalf("after meta want 1 row in 'Setler', got %+v", rows)
+	if len(rows) != 1 || rows[0].Count != 9 {
+		t.Fatalf("stale-guid content must not apply: %+v", rows)
 	}
 }
 
@@ -118,30 +125,33 @@ func TestBankContentShapeLock(t *testing.T) {
 	}
 }
 
-// Rule 5: same tab guid via K summary and physical open (99) → one tab, last wins.
+// Rule 5 (revised — ephemeral guids killed guid-level merging): the K summary lives
+// under its own stable identity; a physical open (99) is a separate source. The K
+// tab itself never duplicates across openings (stable identity test above).
 // Rule 6: synthetic rows never disturb the 008 move paths.
-func TestBankSummaryPhysicalMergeAndMoveIsolation(t *testing.T) {
+func TestBankSummaryAndMoveIsolation(t *testing.T) {
 	svc, p := newGlue(t)
 	p.dispatch(probe.KindResponse, 516, locationsParams([]string{"0006"}, []byte{0xAA}, []int64{0}))
 	p.dispatch(probe.KindResponse, 517, tabsParams(0xAA, []byte{0x11}, []string{"Hammadde"}))
 	p.dispatch(probe.KindResponse, 1, contentParams(0x11, []int16{920}, []int16{7}))
-
-	// Physical open of the SAME tab guid (99 path, object-based).
-	p.registerNewItem(32, declParams(700, 837, 1))
-	svc.IngestBankVault([]string{"owner1"}, []string{"Eski"})
-	p.dispatch(probe.KindEvent, 99, map[byte]interface{}{
-		0: int32(6), 1: bankGUID(0x11), 3: []int32{700}, 252: int16(99),
-	})
-	rows := svc.ListHoldings()
-	if len(rows) != 1 || rows[0].ObjID != 700 {
-		t.Fatalf("physical open must replace the summary rows: %+v", rows)
+	if n := len(svc.ListHoldings()); n != 1 {
+		t.Fatalf("setup: %d rows", n)
 	}
 
-	// A bag move against the bag still behaves (008 regression smoke).
+	// A bag put + a physical bank container coexist without touching the K tab.
 	p.registerNewItem(32, declParams(910, 920, 1))
 	p.dispatch(probe.KindEvent, 26, putEvent(910, 2, tBagGUID))
 	if !bagHas(svc, 920) {
 		t.Fatal("008 put path broken by bank overview glue")
+	}
+	rows := svc.ListHoldings()
+	if len(rows) != 2 {
+		t.Fatalf("want K row + bag row, got %d", len(rows))
+	}
+	for _, r := range rows {
+		if r.Group == "Hammadde" && r.ObjID >= 0 {
+			t.Fatalf("K summary row lost its synthetic id: %+v", r)
+		}
 	}
 }
 

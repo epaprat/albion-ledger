@@ -45,6 +45,11 @@ func handleBankLocations(p *Pipeline, _ probe.Kind, _ int, params map[byte]inter
 		return
 	}
 	p.vaultCity = make(map[string]string, len(locs))
+	// Vault/tab guids are EPHEMERAL — every K opening mints a fresh set (live-seen
+	// 2026-07-05: three openings, three different guids for the same tab). A fresh
+	// location list therefore also resets the tab bridge; stale ephemeral guids are
+	// garbage that would only pile toward the cap.
+	p.tabMeta = make(map[string]tabInfo)
 	values := make(map[string]int64, len(locs))
 	for _, l := range locs {
 		city := p.zoneName(l.ClusterID)
@@ -91,13 +96,24 @@ func handleBankTabContent(p *Pipeline, _ probe.Kind, _ int, params map[byte]inte
 	}
 	meta, known := p.tabMeta[tabGUID]
 	if !known {
-		meta = tabInfo{city: "", name: "Vault " + tabGUID[:8]}
+		// No tab meta: either an unrelated shape-passing op-1 or a content packet
+		// racing ahead of its 517 (never observed live — 516/517 always precede).
+		// Skipping is safer than inventing a fallback identity: ephemeral guids mean
+		// a mislabeled container could never be reconciled later (live 2026-07-05).
+		if p.debug {
+			log.Printf("[bank] content for unknown tab %s dropped (no meta)", tabGUID)
+		}
+		return
 	}
 	refs := make([]holdings.ItemRef, len(rows))
 	for i, r := range rows {
 		refs[i] = holdings.ItemRef{Index: r.ItemIndex, Count: r.Count} // quality 0: research D6
 	}
-	p.sink.IngestVaultSummaryTab(tabGUID, meta.city, meta.name, refs)
+	// STABLE synthetic container id: the wire guid changes on every K opening, so
+	// keying by it would grow one container per opening for the same tab (live-seen
+	// duplication). City+name is the stable identity the player actually sees.
+	stableID := "vault:" + meta.city + ":" + meta.name
+	p.sink.IngestVaultSummaryTab(stableID, meta.city, meta.name, refs)
 	if p.debug {
 		log.Printf("[bank] content tab=%s city=%q name=%q rows=%d", tabGUID, meta.city, meta.name, len(rows))
 	}
