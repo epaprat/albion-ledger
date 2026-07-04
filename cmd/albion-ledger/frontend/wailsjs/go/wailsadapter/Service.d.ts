@@ -17,6 +17,8 @@ export function HoldingsSummary():Promise<model.HoldingsSummary>;
 
 export function IngestBankVault(arg1:Array<string>,arg2:Array<string>):Promise<void>;
 
+export function IngestCityVaultValues(arg1:Record<string, number>):Promise<void>;
+
 export function IngestContainer(arg1:string,arg2:string,arg3:Array<holdings.SlotItem>):Promise<void>;
 
 export function IngestDeleteItem(arg1:number):Promise<void>;
@@ -38,6 +40,8 @@ export function IngestPutItem(arg1:string,arg2:number,arg3:holdings.ItemRef):Pro
 export function IngestSelfContainer(arg1:string,arg2:string,arg3:Array<holdings.SlotItem>):Promise<void>;
 
 export function IngestSilver(arg1:string,arg2:number,arg3:number,arg4:string):Promise<void>;
+
+export function IngestVaultSummaryTab(arg1:string,arg2:string,arg3:string,arg4:Array<holdings.ItemRef>):Promise<void>;
 
 export function ListFlow():Promise<Array<model.FlowEventView>>;
 

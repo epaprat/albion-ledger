@@ -55,17 +55,21 @@ type Aggregator struct {
 	bankOwnerCity map[string]string // owner GUID -> city it belongs to (current city at 414 time)
 	currentCity   string            // latest observed city display name; "" if unknown
 	citySeen      map[string]int64  // city display name -> last-seen ms
+	// cityVaultValue: K-overview per-city vault totals (010); replaced wholesale
+	// each R:516, bounded by the game's location count.
+	cityVaultValue map[string]int64
 }
 
 // New creates an Aggregator.
 func New(cat port.Catalog, val port.Valuer, staleAfter int64) *Aggregator {
 	return &Aggregator{
 		cat: cat, val: val, staleAfter: staleAfter,
-		containers:    map[string]*container{},
-		objLoc:        map[int]string{},
-		bankOwners:    map[string]string{},
-		bankOwnerCity: map[string]string{},
-		citySeen:      map[string]int64{},
+		containers:     map[string]*container{},
+		objLoc:         map[int]string{},
+		bankOwners:     map[string]string{},
+		bankOwnerCity:  map[string]string{},
+		citySeen:       map[string]int64{},
+		cityVaultValue: map[string]int64{},
 	}
 }
 
@@ -256,6 +260,46 @@ func (a *Aggregator) touchCity(loc model.Location, city string, nowMS int64) {
 // invName is the display name of the inventory pseudo-city group.
 const invName = "Inventory"
 
+// SetVaultSummaryTab REPLACES one bank tab from a K bank-overview content summary
+// (feature 010): city-tagged, REAL tab name, type-based rows. Row keys are SYNTHETIC
+// NEGATIVE ids (-(index*16+quality)-1) — real object ids are positive, so summary
+// rows can never collide with tracked objects or enter the 008 move/delete paths.
+// The same tab guid seen via a physical open (SetContainer/99) shares this container:
+// last writer wins, content AND name (contract rule 5).
+func (a *Aggregator) SetVaultSummaryTab(tabGUID, city, tabName string, rows []ItemRef, nowMS int64) {
+	a.mu.Lock()
+	defer a.mu.Unlock()
+	c := a.ensureContainer(tabGUID)
+	for objID := range c.items {
+		if a.objLoc[objID] == tabGUID {
+			delete(a.objLoc, objID)
+		}
+	}
+	c.location, c.city, c.tab = model.LocBank, city, tabName
+	c.items = make(map[int]model.HoldingItem, len(rows))
+	c.lastSeen = nowMS
+	for _, r := range rows {
+		synthID := -(r.Index*16 + r.Quality) - 1
+		row := a.row(r.Index, r.Quality, r.Count, model.LocBank, city, tabName, nowMS)
+		row.ObjID = synthID
+		c.items[synthID] = row
+	}
+	a.touchCity(model.LocBank, city, nowMS)
+}
+
+// SetCityVaultValues REPLACES the game-reported per-city vault totals from the K
+// overview location list (R:516 k5, already scaled to silver by the caller). A fresh
+// K opening is the authority: stale cities drop wholesale (XI — no accretion).
+func (a *Aggregator) SetCityVaultValues(values map[string]int64, nowMS int64) {
+	a.mu.Lock()
+	defer a.mu.Unlock()
+	a.cityVaultValue = make(map[string]int64, len(values))
+	for city, v := range values {
+		a.cityVaultValue[city] = v
+		a.citySeen[bankCityName(city)] = nowMS
+	}
+}
+
 // bankCityName is the display name for a bank container's city group; an unknown
 // city ("") groups under a generic "Bank" until a current city is known (US3).
 func bankCityName(city string) string {
@@ -390,6 +434,12 @@ func (a *Aggregator) Summary(nowMS int64) model.HoldingsSummary {
 		}
 	}
 
+	// Cities known only from the K-overview vault totals (010) still get a group:
+	// the user should see "Thetford: 11M in the vault" before any tab is browsed.
+	for city := range a.cityVaultValue {
+		getCity(bankCityName(city), false)
+	}
+
 	// Roll up into ordered DTOs.
 	var grand int64
 	var grandUnvalued int
@@ -438,6 +488,7 @@ func (a *Aggregator) Summary(nowMS int64) model.HoldingsSummary {
 		out = append(out, model.CitySummary{
 			Name: cn, IsInventory: ca.isInv, Total: cityTotal, UnvaluedCount: cityUnvalued,
 			Tabs: tabs, State: a.stateOf(a.citySeen[cn], a.citySeen[cn] > 0, nowMS),
+			VaultValue: a.cityVaultValue[cn], // 0 = not reported (010)
 		})
 	}
 	return model.HoldingsSummary{TotalValue: grand, UnvaluedCount: grandUnvalued, Cities: out}

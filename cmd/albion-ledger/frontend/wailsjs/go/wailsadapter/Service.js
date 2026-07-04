@@ -26,6 +26,10 @@ export function IngestBankVault(arg1, arg2) {
   return window['go']['wailsadapter']['Service']['IngestBankVault'](arg1, arg2);
 }
 
+export function IngestCityVaultValues(arg1) {
+  return window['go']['wailsadapter']['Service']['IngestCityVaultValues'](arg1);
+}
+
 export function IngestContainer(arg1, arg2, arg3) {
   return window['go']['wailsadapter']['Service']['IngestContainer'](arg1, arg2, arg3);
 }
@@ -68,6 +72,10 @@ export function IngestSelfContainer(arg1, arg2, arg3) {
 
 export function IngestSilver(arg1, arg2, arg3, arg4) {
   return window['go']['wailsadapter']['Service']['IngestSilver'](arg1, arg2, arg3, arg4);
+}
+
+export function IngestVaultSummaryTab(arg1, arg2, arg3, arg4) {
+  return window['go']['wailsadapter']['Service']['IngestVaultSummaryTab'](arg1, arg2, arg3, arg4);
 }
 
 export function ListFlow() {

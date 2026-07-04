@@ -188,6 +188,19 @@ func (s *Service) SetCurrentCity(city string) {
 	s.emitHoldings()
 }
 
+// IngestVaultSummaryTab replaces one bank tab from a K bank-overview content
+// summary (city-tagged, real tab name, type-based rows — feature 010).
+func (s *Service) IngestVaultSummaryTab(tabGUID, city, tabName string, rows []holdings.ItemRef) {
+	s.agg.SetVaultSummaryTab(tabGUID, city, tabName, rows, s.nowMS())
+	s.emitHoldings()
+}
+
+// IngestCityVaultValues replaces the per-city vault totals from the K overview (010).
+func (s *Service) IngestCityVaultValues(values map[string]int64) {
+	s.agg.SetCityVaultValues(values, s.nowMS())
+	s.emitHoldings()
+}
+
 // IngestBankVault records bank tab owners + names (from BankVaultInfo).
 func (s *Service) IngestBankVault(owners, tabNames []string) { s.agg.SetBankVault(owners, tabNames) }
 

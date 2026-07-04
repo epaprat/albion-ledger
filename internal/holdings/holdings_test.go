@@ -240,3 +240,81 @@ func TestSummaryTotals(t *testing.T) {
 		t.Fatalf("want single inventory city group, got %+v", s.Cities)
 	}
 }
+
+// 010: K bank-overview summary tabs — REPLACE semantics, real tab names, synthetic
+// negative row ids that can never collide with real object ids or enter move paths.
+func TestVaultSummaryTab(t *testing.T) {
+	a, _ := newAgg(t)
+	rows := []ItemRef{{Index: 920, Count: 19}, {Index: 837, Count: 2}}
+	a.SetVaultSummaryTab("tabg1", "Thetford", "Hammadde", rows, 1000)
+	list := a.List()
+	if len(list) != 2 {
+		t.Fatalf("rows = %d, want 2", len(list))
+	}
+	for _, r := range list {
+		if r.Location != model.LocBank || r.City != "Thetford" || r.Group != "Hammadde" {
+			t.Fatalf("row misplaced: %+v", r)
+		}
+		if r.ObjID >= 0 {
+			t.Fatalf("summary row must use synthetic NEGATIVE id, got %d", r.ObjID)
+		}
+	}
+	// REPLACE: second snapshot with one row → one row.
+	a.SetVaultSummaryTab("tabg1", "Thetford", "Hammadde", rows[:1], 2000)
+	if n := len(a.List()); n != 1 {
+		t.Fatalf("after replace want 1, got %d", n)
+	}
+	// Synthetic ids are invisible to the incremental move/delete paths.
+	synth := a.List()[0].ObjID
+	a.DeleteItem(synth, 3000) // defensive: even a direct delete of a negative id must not corrupt
+	if !a.PutItem("tabg1", 999, ItemRef{Index: 920}, 3500) {
+		t.Fatal("known summary tab must accept a real put (same container semantics)")
+	}
+}
+
+// 010: same tab guid seen via K summary AND physical open (99) → ONE container,
+// last writer wins (contract rule 5).
+func TestVaultSummaryMergesWithPhysicalOpen(t *testing.T) {
+	a, _ := newAgg(t)
+	a.SetBankVault([]string{"owner1"}, []string{"Eski Ad"})
+	a.SetContainer("tabg2", "owner1", []SlotItem{{ObjID: 500, Ref: ItemRef{Index: 920}}}, 1000)
+	// K summary arrives later for the SAME guid: content + real name replace.
+	a.SetVaultSummaryTab("tabg2", "Thetford", "Hammadde", []ItemRef{{Index: 837, Count: 3}}, 2000)
+	list := a.List()
+	if len(list) != 1 || list[0].Item.Index != 837 || list[0].Group != "Hammadde" {
+		t.Fatalf("K summary must replace content+name: %+v", list)
+	}
+	// Physical open later wins back with object rows.
+	a.SetContainer("tabg2", "owner1", []SlotItem{{ObjID: 501, Ref: ItemRef{Index: 920}}}, 3000)
+	list = a.List()
+	if len(list) != 1 || list[0].ObjID != 501 {
+		t.Fatalf("physical open must win back: %+v", list)
+	}
+}
+
+// 010: per-city vault totals surface on the Summary and REPLACE wholesale.
+func TestCityVaultValues(t *testing.T) {
+	a, _ := newAgg(t)
+	a.SetCityVaultValues(map[string]int64{"Thetford": 11094210, "Lymhurst": 318725}, 1000)
+	sum := a.Summary(2000)
+	var got int64
+	for _, c := range sum.Cities {
+		if c.Name == "Thetford" {
+			got = c.VaultValue
+		}
+	}
+	if got != 11094210 {
+		t.Fatalf("Thetford VaultValue = %d, want 11094210", got)
+	}
+	// Second K opening reports fewer locations → old entries drop (REPLACE).
+	a.SetCityVaultValues(map[string]int64{"Thetford": 12000000}, 3000)
+	sum = a.Summary(4000)
+	for _, c := range sum.Cities {
+		if c.Name == "Lymhurst" && c.VaultValue != 0 {
+			t.Fatalf("stale Lymhurst value survived replace: %d", c.VaultValue)
+		}
+		if c.Name == "Thetford" && c.VaultValue != 12000000 {
+			t.Fatalf("Thetford not updated: %d", c.VaultValue)
+		}
+	}
+}

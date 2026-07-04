@@ -107,7 +107,10 @@ const staleLabel = (st) => {
             {{ city.name }}
             <span class="badge stale" v-if="staleLabel(city.state)">{{ staleLabel(city.state) }}</span>
           </h2>
-          <span class="city-total num">{{ compact(city.total) }}</span>
+          <span class="city-total num">
+            {{ compact(city.total) }}
+            <span class="muted" v-if="city.vaultValue" :title="'Game-reported vault total (K overview)'">· vault {{ compact(city.vaultValue) }}</span>
+          </span>
         </div>
 
         <div v-for="t in tabsOf(city)" :key="city.name + '/' + t.name" class="group">

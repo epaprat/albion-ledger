@@ -56,6 +56,8 @@ type Sink interface {
 	IngestPutItem(containerGUID string, objID int, ref holdings.ItemRef) bool
 	IngestDeleteItem(objID int)
 	IngestBankVault(owners, tabNames []string)
+	IngestVaultSummaryTab(tabGUID, city, tabName string, rows []holdings.ItemRef)
+	IngestCityVaultValues(values map[string]int64)
 	IngestSilver(id string, net int64, ts int64, source string)
 	IngestLoot(id string, index, quality, count int, ts int64, source string)
 	IngestGather(id string, index, quality, count int, ts int64, source string)
@@ -97,6 +99,11 @@ type Pipeline struct {
 	// Holdings freshness glue (008): own-container GUID bridge + live bag slot map.
 	selfContainerGUIDs map[string]string
 	bagSlots           []int
+
+	// K bank-overview bridges (010): vault guid → city, tab guid → (city, name).
+	// vaultCity is REBUILT per R:516 (full list); tabMeta upserts, capped.
+	vaultCity map[string]string
+	tabMeta   map[string]tabInfo
 }
 
 // New wires a Pipeline. locs may be nil (zones stay raw cluster ids).
@@ -113,6 +120,8 @@ func New(sink Sink, clf *probe.Classifier, locs *locations.Locations, nowMS func
 		pendingLootResolve: pending.New[string](256, 10_000),
 		pendingPuts:        pending.New[string](256, 10_000),
 		selfContainerGUIDs: map[string]string{},
+		vaultCity:          map[string]string{},
+		tabMeta:            map[string]tabInfo{},
 	}
 }
 

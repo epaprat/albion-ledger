@@ -107,6 +107,20 @@ func encodeTypedArray(elemType byte, val interface{}) []byte {
 		arr := val.([]byte)
 		out := appendCompressedUint32(nil, uint32(len(arr)))
 		return append(out, arr...)
+	case typeShort:
+		arr := val.([]int16)
+		out := appendCompressedUint32(nil, uint32(len(arr)))
+		for _, n := range arr {
+			out = binary.LittleEndian.AppendUint16(out, uint16(n))
+		}
+		return out
+	case typeCompressedLong:
+		arr := val.([]int64)
+		out := appendCompressedUint32(nil, uint32(len(arr)))
+		for _, n := range arr {
+			out = appendCompressedInt64(out, n)
+		}
+		return out
 	case typeString:
 		arr := val.([]string)
 		out := appendCompressedUint32(nil, uint32(len(arr)))
@@ -144,4 +158,19 @@ func appendCompressedUint32(dst []byte, v uint32) []byte {
 func appendCompressedInt32(dst []byte, n int32) []byte {
 	zig := (uint32(n) << 1) ^ uint32(n>>31)
 	return appendCompressedUint32(dst, zig)
+}
+
+func appendCompressedInt64(dst []byte, n int64) []byte {
+	zig := (uint64(n) << 1) ^ uint64(n>>63)
+	for {
+		b := byte(zig & 0x7F)
+		zig >>= 7
+		if zig != 0 {
+			b |= 0x80
+		}
+		dst = append(dst, b)
+		if zig == 0 {
+			return dst
+		}
+	}
 }

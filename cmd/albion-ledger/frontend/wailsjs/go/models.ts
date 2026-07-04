@@ -184,6 +184,7 @@ export namespace model {
 	    unvaluedCount: number;
 	    tabs: TabSummary[];
 	    state: SectionState;
+	    vaultValue: number;
 	
 	    static createFrom(source: any = {}) {
 	        return new CitySummary(source);
@@ -197,6 +198,7 @@ export namespace model {
 	        this.unvaluedCount = source["unvaluedCount"];
 	        this.tabs = this.convertValues(source["tabs"], TabSummary);
 	        this.state = this.convertValues(source["state"], SectionState);
+	        this.vaultValue = source["vaultValue"];
 	    }
 	
 		convertValues(a: any, classs: any, asMap: boolean = false): any {
