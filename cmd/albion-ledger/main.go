@@ -11,8 +11,6 @@ import (
 	"log"
 	"os"
 	"path/filepath"
-	"sort"
-	"sync"
 	"time"
 
 	"github.com/wailsapp/wails/v2"
@@ -24,14 +22,12 @@ import (
 	"github.com/epaprat/albion-ledger/internal/adapter/capture"
 	"github.com/epaprat/albion-ledger/internal/adapter/store"
 	wailsadapter "github.com/epaprat/albion-ledger/internal/adapter/wails"
+	"github.com/epaprat/albion-ledger/internal/app"
 	"github.com/epaprat/albion-ledger/internal/catalog"
 	"github.com/epaprat/albion-ledger/internal/codes"
 	"github.com/epaprat/albion-ledger/internal/domain/model"
 	"github.com/epaprat/albion-ledger/internal/domain/probe"
-	"github.com/epaprat/albion-ledger/internal/holdings"
 	"github.com/epaprat/albion-ledger/internal/locations"
-	"github.com/epaprat/albion-ledger/internal/loot"
-	"github.com/epaprat/albion-ledger/internal/pending"
 	"github.com/epaprat/albion-ledger/internal/photon"
 	"github.com/epaprat/albion-ledger/internal/port"
 	"github.com/epaprat/albion-ledger/internal/valuation"
@@ -39,8 +35,6 @@ import (
 
 //go:embed all:frontend/dist
 var assets embed.FS
-
-const emvEventCode = 466
 
 func nowMS() int64 { return time.Now().UnixMilli() }
 
@@ -69,7 +63,6 @@ func main() {
 	codesPath := flag.String("codes", "", "override code map file (data/codes.json format)")
 	debugFlowFlag := flag.Bool("debugflow", false, "log flow (silver/loot/gather/fame) attribution to stderr")
 	flag.Parse()
-	debugFlow = *debugFlowFlag
 
 	cat, err := catalog.New(data.ItemsJSON)
 	if err != nil {
@@ -84,6 +77,7 @@ func main() {
 	if err != nil {
 		log.Fatal(err)
 	}
+	var locs *locations.Locations // nil = zones show raw cluster ids
 	if l, err := locations.New(data.ClustersJSON); err != nil {
 		log.Printf("cluster map unavailable, zones show raw ids: %v", err)
 	} else {
@@ -98,7 +92,7 @@ func main() {
 	emitter := &wailsEmitter{}
 	svc := wailsadapter.NewService(cat, book, val, emitter, 5000, nowMS)
 
-	clf := probe.New(reg)
+	pipe := app.New(svc, probe.New(reg), locs, nowMS, *debugFlowFlag)
 
 	// Local-first store (Principle VIII): earnings events are persisted to SQLite as
 	// they arrive; the in-memory ledger stays bounded (Principle XI). Best-effort — if
@@ -115,7 +109,7 @@ func main() {
 		srcKind = model.SourceReplay
 	}
 
-	app := wails.Run(&options.App{
+	runErr := wails.Run(&options.App{
 		Title:  "Albion Ledger",
 		Width:  1100,
 		Height: 720,
@@ -127,8 +121,8 @@ func main() {
 			// Pre-create the player's virtual containers (pinned, marked not-yet-
 			// observed) so live puts bridged to them land even before the first
 			// own-state snapshot, without faking a fresh empty inventory in the UI.
-			svc.EnsureSelfContainer(selfBagGUID, "Bag")
-			svc.EnsureSelfContainer(selfEquipGUID, "Equipped")
+			svc.EnsureSelfContainer(app.SelfBagGUID, "Bag")
+			svc.EnsureSelfContainer(app.SelfEquipGUID, "Equipped")
 			if flowStore != nil {
 				if err := flowStore.StartSession(ctx, model.CaptureSession{
 					ID: sessionID, StartedAt: nowMS(), SourceKind: srcKind, Interface: *iface,
@@ -138,7 +132,7 @@ func main() {
 				svc.StartFlowPersistence(ctx, flowStore, sessionID)
 				svc.SetFlowReader(flowStore, sessionID) // zone analytics read side (006)
 			}
-			go runCapture(ctx, *iface, *replay, clf, svc)
+			go runCapture(ctx, *iface, *replay, pipe, svc)
 		},
 		OnShutdown: func(context.Context) {
 			if flowStore != nil {
@@ -149,14 +143,15 @@ func main() {
 		},
 		Bind: []interface{}{svc},
 	})
-	if app != nil {
-		log.Fatal(app)
+	if runErr != nil {
+		log.Fatal(runErr)
 	}
 }
 
-// runCapture drives capture → Photon parse → classify → service ingest, and
-// periodically pushes capture status to the UI.
-func runCapture(ctx context.Context, iface, replay string, clf *probe.Classifier, svc *wailsadapter.Service) {
+// runCapture drives capture → Photon parse → pipeline dispatch, and periodically
+// pushes capture status to the UI. All classification/handler glue lives in
+// internal/app (feature 009); this function is setup only.
+func runCapture(ctx context.Context, iface, replay string, pipe *app.Pipeline, svc *wailsadapter.Service) {
 	var src port.PacketSource
 	var err error
 	if replay != "" {
@@ -169,45 +164,7 @@ func runCapture(ctx context.Context, iface, replay string, clf *probe.Classifier
 		}
 	}
 
-	parser := photon.NewPhotonParser(
-		func(opByte byte, params map[byte]interface{}) {
-			// The player's own OUTGOING operation requests (passively observed). The op
-			// code lives in param 253; loot correlation needs the item-move requests (007).
-			// Require the REAL key-253 code — the raw-opByte fallback can collide on
-			// partially-decoded requests and feed bogus guids into the loot tracker (the
-			// same hardening updateSelf got in the 005 review).
-			code, ok := capture.IntParam(params, 253)
-			if !ok {
-				return
-			}
-			if debugFlow && (code == 30 || code == 39) {
-				log.Printf("[flow] request: code=%d keys=%v", code, paramKeys(params))
-			}
-			ingest(clf, svc, probe.KindRequest, code, params)
-		},
-		func(opByte byte, _ int16, _ string, params map[byte]interface{}) {
-			// The operation code lives in param 253 for responses (opByte is the raw
-			// Photon opcode); own-state Join carries 253=2. Without this, op-2 responses
-			// (masteries + login inventory) never classify.
-			rc := codeFrom(params, 253, int(opByte))
-			// Self-identity (own objId + name) rides on EVERY Join op-2 — the login Join
-			// AND every zone-change Join (where userObjectId changes per map). Read it here,
-			// independent of the key-55 (bag) guard that gates own-state/character_spec, so
-			// self stays fresh across zones and is set even when the app starts mid-session.
-			// Require the REAL response op code (key 253 == 2): the raw-opByte fallback can
-			// collide on unrelated/partially-decoded responses, and a foreign message whose
-			// key 0 parses as an int would silently corrupt selfObjID and all attribution.
-			if fromKey, ok := capture.IntParam(params, 253); ok && fromKey == 2 {
-				updateSelf(svc, params)
-			}
-			ingest(clf, svc, probe.KindResponse, rc, params)
-		},
-		func(evByte byte, params map[byte]interface{}) {
-			code := codeFrom(params, 252, int(evByte))
-			registerNewItem(svc, code, params) // declare object ids + feed EMV before containers reference them
-			ingest(clf, svc, probe.KindEvent, code, params)
-		},
-	)
+	parser := photon.NewPhotonParser(pipe.OnRequest, pipe.OnResponse, pipe.OnEvent)
 	parser.OnEncrypted = func() {}
 
 	// Status ticker. Every 30th tick it also re-broadcasts the flow summary so the
@@ -242,675 +199,4 @@ func runCapture(ctx context.Context, iface, replay string, clf *probe.Classifier
 	for payload := range ch {
 		parser.ReceivePacket(payload)
 	}
-}
-
-
-// ingest routes a classified message into the views (market value + holdings + spec).
-func ingest(clf *probe.Classifier, svc *wailsadapter.Service, kind probe.Kind, code int, params map[byte]interface{}) {
-	cl, ok := clf.Classify(kind, code, params)
-	if !ok {
-		return
-	}
-	switch cl.Category {
-	case model.CatItemValueEMV:
-		if idx, quality, value, ok := extractEMV(params); ok {
-			svc.IngestEMV(idx, quality, value, nowMS())
-		}
-	case model.CatInventory: // AttachItemContainer — key-3 slots are in-world object ids,
-		// resolved to item type+quality via the object registry (New*Item declarations).
-		if cGUID, ownerGUID, objIDs, ok := capture.ContainerItems(params); ok {
-			svc.IngestContainer(cGUID, ownerGUID, resolveObjects(objIDs))
-		}
-		// Loot correlation also needs this container: source link + SLOT-INDEXED map
-		// (empties preserved), and attaching may resolve moves that arrived early.
-		if guid, srcObjID, slots, ok := capture.ContainerSlots(params); ok {
-			if debugFlow {
-				// Live-verified 2026-07-03: key0 IS the source obj id for open-world loot
-				// containers; bank containers carry a small constant (6) — harmless, as the
-				// tracker excludes bank-sized containers from loot resolution.
-				log.Printf("[flow] attach: guid=%s src=%d slots=%d", guid, srcObjID, len(slots))
-			}
-			emitLootHits(svc, lootTracker.AttachContainer(guid, srcObjID, slots, nowMS()))
-		}
-	case model.CatBank: // BankVaultInfo — declares the bank tabs (owner GUIDs + names)
-		if owners, tabNames, ok := capture.BankVault(params); ok {
-			svc.IngestBankVault(owners, tabNames)
-		}
-	case model.CatCharacterSpec: // own-state (op-2 with key 55): the login bag (key 55) + equipped (key 52)
-		// NOTE: key 55 is the bag and key 52 the worn set — neither is masteries (the
-		// earlier reading was wrong); the real spec source is TBD, so Spec stays empty.
-		// Self-identity is handled in the response callback (updateSelf) for EVERY op-2,
-		// not here, so it is not gated by the key-55 guard (login-only) — see runCapture.
-		if objIDs, ok := capture.OwnInventory(params); ok {
-			ingestSelf(svc, selfBagGUID, "Bag", objIDs)
-		}
-		if objIDs, ok := capture.OwnEquipped(params); ok {
-			ingestSelf(svc, selfEquipGUID, "Equipped", objIDs)
-		}
-		// Full snapshot is authoritative (008): rebuild the live bag slot map from key 55
-		// and drop bag-targeted pending puts — an item the snapshot excluded must not be
-		// resurrected by a late declaration drain.
-		if slots, ok := capture.OwnInventorySlots(params); ok {
-			bagSlots = slots
-			clearSelfPendingPuts()
-		}
-	case model.CatCurrentLocation: // notification event 163 — "you entered <city>"
-		if city, ok := capture.CurrentCity(params); ok {
-			svc.SetCurrentCity(city)
-			svc.SetZone(city) // readable city name overrides the raw cluster id for flow zone
-		}
-	case model.CatInventoryPut: // event 26 — item added/moved into a container (live)
-		if objID, slot, cGUID, ok := capture.PutItem(params); ok {
-			target := cGUID
-			if v, bridged := virtualContainer(cGUID); bridged {
-				target = v
-				if target == selfBagGUID && slot >= 0 {
-					bagSlotSet(slot, objID) // keep the live bag slot map aligned (008)
-				}
-			}
-			if ref, ok := resolveObj(objID); ok {
-				if !svc.IngestPutItem(target, objID, ref) {
-					// Destination untracked (e.g. quick-deposit into an unopened bank
-					// tab): the item still LEFT wherever it was — drop it from view so
-					// it can't linger stale; snapshots restore it where it truly lives.
-					svc.IngestDeleteItem(objID)
-					bagSlotClear(objID)
-				}
-			} else {
-				// Declaration not seen yet — queue instead of dropping (008 root-cause
-				// fix): drained in registerNewItem, expired entries counted.
-				queuePendingPut(objID, target)
-			}
-		}
-	case model.CatInventoryDelete: // event 27 — item removed from a container (live)
-		if objID, ok := capture.DeleteItem(params); ok {
-			svc.IngestDeleteItem(objID)
-			bagSlotClear(objID)
-		}
-	case model.CatSilver: // TakeSilver (62) — own net silver (US1)
-		if target, obj, net, ok := capture.SilverEvent(params); ok {
-			if debugFlow {
-				log.Printf("[flow] silver evt: obj=%d target=%d net=%d self=%d match=%v", obj, target, net, selfObjID, isSelfObj(obj))
-			}
-			// key0 (obj) is the RECEIVING player (self); key2 is the mob/target entity.
-			// Live-verified 2026-07-01: obj==self across a session, target varies per mob.
-			if isSelfObj(obj) && net != 0 {
-				// Per-event nonce: identical yields are common (same mob type, AoE kills in
-				// one wire tick) and key 1 (timestamp) is not guaranteed — without the seq,
-				// equal-net pickups collapse into one id and undercount. Wire-level
-				// retransmits are already deduped by the Photon reliable layer.
-				ts, _ := capture.IntParam(params, 1)
-				id := fmt.Sprintf("sv:%d:%d:%d", ts, net, nextFlowSeq())
-				svc.IngestSilver(id, net, nowMS(), "")
-			}
-		}
-	case model.CatLoot: // OtherGrabbedLoot (279) — observability only. Own ITEM loot is
-		// counted by the 007 correlation (own move request × loot source); ingesting the
-		// 279 broadcast too would double-count the same pickup under a different dedup id.
-		// Own SILVER grabs already arrive via TakeSilver(62). Kept classified so probe
-		// coverage still observes the category.
-		if debugFlow {
-			if looter, isSilver, itemID, amount, ok := capture.LootGrab(params); ok {
-				log.Printf("[flow] loot evt (broadcast, not ingested): looter=%q item=%d amt=%d isSilver=%v", looter, itemID, amount, isSilver)
-			}
-		}
-	case model.CatGatherFishing: // HarvestFinished (61) + RewardGranted (267) — own gathers (US3)
-		switch code {
-		case 61:
-			if gatherer, itemID, amount, ok := capture.HarvestEvent(params); ok && isSelfObj(gatherer) {
-				// Each harvest tick on the SAME node is a distinct gain (a node yields
-				// several charges), so the dedup id must be per-tick unique — keying by
-				// node+item collapsed multiple charges into one (~3× undercount). Photon
-				// transport already drops re-delivered packets, so a monotonic seq is safe.
-				node, _ := capture.IntParam(params, 3)
-				id := fmt.Sprintf("hv:%d:%d:%d", node, itemID, nextFlowSeq())
-				if debugFlow {
-					std, _ := capture.IntParam(params, 5)
-					bonus, _ := capture.IntParam(params, 6)
-					prem, _ := capture.IntParam(params, 7)
-					log.Printf("[flow] harvest: node=%d item=%d std=%d bonus=%d prem=%d total=%d", node, itemID, std, bonus, prem, amount)
-				}
-				svc.IngestGather(id, itemID, 0, amount, nowMS(), "")
-			}
-		case 267:
-			if itemID, qty, ok := capture.RewardEvent(params); ok {
-				id := fmt.Sprintf("rw:%d:%d:%d", itemID, qty, nextFlowSeq())
-				if debugFlow {
-					log.Printf("[flow] reward: item=%d qty=%d", itemID, qty)
-				}
-				svc.IngestGather(id, itemID, 0, qty, nowMS(), "")
-			}
-			// code 38 is unverified (see codes.json / tasks T031) — intentionally ignored.
-		}
-	case model.CatLootSource: // NewLoot(98) / NewLootChest(393) / LootChestOpened(395)
-		if objID, name, ok := capture.LootSource(params, code); ok {
-			lootTracker.RegisterSource(objID, name, nowMS())
-			if debugFlow {
-				log.Printf("[flow] loot source: code=%d obj=%d name=%q", code, objID, name)
-			}
-		}
-	case model.CatLootMove: // own item-move requests (op-30 single, op-39 take-all)
-		switch code {
-		case 30:
-			if guid, slot, ok := capture.MoveItem(params); ok {
-				// Moves OUT OF the player's own bag can never be loot pickups — feeding
-				// them to the tracker only pollutes its pending queue (live-seen
-				// 2026-07-04). Gated on the CONFIRMED bag guid only: the key-51 equipped
-				// CANDIDATE must not silently suppress loot resolution if it turns out
-				// to be some other container.
-				if v, own := virtualContainer(guid); !own || v != selfBagGUID {
-					hits := lootTracker.ResolveMove(guid, slot, nowMS())
-					if debugFlow {
-						p, exp, cap := lootTracker.Stats()
-						log.Printf("[flow] move: guid=%s slot=%d hits=%d (pending=%d expired=%d capdrop=%d)", guid, slot, len(hits), p, exp, cap)
-					}
-					emitLootHits(svc, hits)
-				}
-				// Holdings move-application (008) — AFTER loot correlation, never before.
-				dstSlot, dstGUID, hasDst := capture.MoveDest(params)
-				applyMoveToHoldings(svc, guid, slot, dstGUID, dstSlot, hasDst)
-			}
-		case 39:
-			if guid, ids, ok := capture.MoveGivenItems(params); ok {
-				if v, own := virtualContainer(guid); !own || v != selfBagGUID { // bag-only skip, see op-30
-
-					hits := lootTracker.ResolveMoveGiven(guid, ids, nowMS())
-					if debugFlow {
-						log.Printf("[flow] move-given: guid=%s ids=%d hits=%d", guid, len(ids), len(hits))
-					}
-					emitLootHits(svc, hits)
-				}
-				dstGUID, hasDst := capture.MoveGivenDest(params)
-				for _, id := range ids {
-					applyMovedObject(svc, id, guid, dstGUID, -1, hasDst)
-				}
-			}
-		}
-	case model.CatFame: // UpdateFame (82 event) — fame is inherently own (US4)
-		if fame, ok := capture.FameEvent(params); ok && fame > 0 {
-			// Per-event nonce: key 1 (running total) is unverified — if absent, every
-			// id would be "fm:0" and all fame after the first tick would be dropped.
-			total, _ := capture.IntParam(params, 1)
-			id := fmt.Sprintf("fm:%d:%d", total, nextFlowSeq())
-			svc.IngestFame(id, fame, nowMS())
-		}
-	}
-}
-
-// self identity for own-earning attribution (005). Set from the Join own-state
-// response; touched only on the single capture goroutine, so no lock needed.
-var (
-	selfObjID int
-	selfName  string
-	debugFlow bool  // -debugflow: log flow attribution to stderr
-	flowSeq   int64 // monotonic nonce for flow events lacking a natural unique wire id
-	locs      *locations.Locations // cluster-id → zone-name resolver (nil = raw ids)
-)
-
-// zoneName resolves a raw cluster id to a readable zone name when the map is loaded.
-func zoneName(clusterID string) string {
-	if locs != nil {
-		return locs.Resolve(clusterID)
-	}
-	return clusterID
-}
-
-// nextFlowSeq returns a per-event unique nonce (capture runs on one goroutine, so a
-// plain increment is race-free) for building dedup ids of events like harvest ticks
-// that legitimately repeat with identical field values.
-func nextFlowSeq() int64 { flowSeq++; return flowSeq }
-
-// updateSelf refreshes the local player's own object id + name from a Join op-2
-// response (key 0 objId, key 2 name). Called for every op-2 so self stays correct
-// across zone changes (objId changes per map) and is set even mid-session. Requires
-// BOTH fields — a partial match (e.g. a stray int at key 0 of a non-Join op-2 variant)
-// must never overwrite a good identity with garbage.
-func updateSelf(svc *wailsadapter.Service, params map[byte]interface{}) {
-	objID, name, ok := capture.SelfIdentity(params)
-	if !ok || objID <= 0 || name == "" {
-		return
-	}
-	selfObjID = objID
-	selfName = name
-	svc.SetSelf(objID, name)
-	// The Join also carries the current location/cluster (key 8) — stamp it as the zone
-	// so flow events know where they happened (per-zone analytics, 006). Open-world zones
-	// only surface here (event 163 covers cities); raw cluster id is fine, named later.
-	if zone, zok := params[8].(string); zok && zone != "" {
-		svc.SetZone(zoneName(zone)) // raw cluster id → readable zone name
-	}
-	// Own-container GUID bridge (008): bag (key 54, confirmed) + equipped candidate
-	// (key 51). Entries update INDEPENDENTLY — a Join variant carrying only one of the
-	// keys must not skip (or wipe) the other's bridge, so the map is amended in place
-	// (the guids are per-character constants, so this stays bounded at 2 entries).
-	if bagGUID, eqGUID, _ := capture.SelfContainers(params); bagGUID != "" || eqGUID != "" {
-		if bagGUID != "" {
-			selfContainerGUIDs[bagGUID] = selfBagGUID
-		}
-		if eqGUID != "" {
-			selfContainerGUIDs[eqGUID] = selfEquipGUID
-		}
-		if debugFlow {
-			log.Printf("[hold] self containers: bag=%s equipped-candidate=%s", bagGUID, eqGUID)
-		}
-	}
-	if debugFlow {
-		log.Printf("[flow] self set: objID=%d name=%q (op-2)", selfObjID, selfName)
-	}
-}
-
-// isSelfObj reports whether an object id is the local player. Until self is known
-// (selfObjID==0) it returns false so we never count another player's earnings.
-func isSelfObj(objID int) bool { return selfObjID != 0 && objID == selfObjID }
-
-
-// lootTracker correlates own move requests with loot sources (feature 007). Touched
-// only on the capture goroutine (its own mutex guards the internals anyway).
-var lootTracker = loot.New()
-
-// ── Holdings freshness glue (feature 008) ────────────────────────────────────
-// All state below is touched only on the capture goroutine.
-
-// selfContainerGUIDs bridges the player's own container GUIDs (from the Join
-// own-state: key 54 = bag, confirmed; key 51 = equipped CANDIDATE) to the virtual
-// container ids holdings uses. Rebuilt on every Join.
-var selfContainerGUIDs = map[string]string{}
-
-// virtualContainer maps a wire container GUID to its holdings virtual id ("self-bag"
-// / "self-equipped") when it is one of the player's own containers.
-func virtualContainer(guid string) (string, bool) {
-	v, ok := selfContainerGUIDs[guid]
-	return v, ok
-}
-
-// bagSlots is the live slot→itemObjID map of the player's bag (0 = empty), built from
-// own-state key 55 and kept aligned by E:26 puts, deletes and applied moves — the
-// player's move requests address the bag BY SLOT INDEX.
-var bagSlots []int
-
-func bagSlotItem(slot int) (int, bool) {
-	if slot < 0 || slot >= len(bagSlots) || bagSlots[slot] <= 0 {
-		return 0, false
-	}
-	return bagSlots[slot], true
-}
-
-// maxBagSlots bounds the live bag slot map. The largest real bag is well under 128
-// slots; E:26 (key 1) and op-30 destination (key 3) slots come off the wire with no
-// upper bound of their own, and an unbounded pad loop here would let a single
-// hostile/corrupt packet allocate gigabytes (Principle IV/XI).
-const maxBagSlots = 256
-
-func bagSlotSet(slot, objID int) {
-	if slot < 0 || slot >= maxBagSlots {
-		return
-	}
-	for slot >= len(bagSlots) { // bag grew (bigger bag equipped) — pad up to maxBagSlots
-		bagSlots = append(bagSlots, 0)
-	}
-	bagSlots[slot] = objID
-}
-
-func bagSlotClear(objID int) {
-	for i, v := range bagSlots {
-		if v == objID {
-			bagSlots[i] = 0
-			return
-		}
-	}
-}
-
-// pendingPuts holds container-put updates whose New*Item declaration hasn't arrived
-// yet (itemObjID → target virtual/known container). Bounds live in pending.Map
-// (cap 256, TTL 10s, counted drops); the rate-limited loss log stays here (FR-004).
-var (
-	pendingPuts           = pending.New[string](256, 10_000)
-	lastPendingPutDropLog int64
-)
-
-func queuePendingPut(objID int, target string) {
-	now := nowMS()
-	objMu.Lock()
-	pendingPuts.Queue(objID, target, now)
-	dropped := pendingPuts.Dropped()
-	objMu.Unlock()
-	if dropped > 0 && now-lastPendingPutDropLog > 60_000 {
-		lastPendingPutDropLog = now
-		log.Printf("holdings: %d pending puts dropped so far (declaration never arrived)", dropped)
-	}
-}
-
-// clearSelfPendingPuts drops pending puts targeting the player's own containers —
-// a fresh own-state snapshot (which carries BOTH bag and equipped) is authoritative
-// and must not be overridden by a late drain (008 US3, symmetric for equipped).
-func clearSelfPendingPuts() {
-	objMu.Lock()
-	pendingPuts.Clear(func(target string) bool {
-		return target == selfBagGUID || target == selfEquipGUID
-	})
-	objMu.Unlock()
-}
-
-// applyMoveToHoldings applies a single-item move request (op-30) to the holdings
-// view: resolve the source slot to an item object, then relocate or drop it.
-func applyMoveToHoldings(svc *wailsadapter.Service, srcGUID string, srcSlot int, dstGUID string, dstSlot int, hasDst bool) {
-	var itemObj int
-	if v, bridged := virtualContainer(srcGUID); bridged && v == selfBagGUID {
-		if id, ok := bagSlotItem(srcSlot); ok {
-			itemObj = id
-			bagSlots[srcSlot] = 0
-		}
-	} else if id, ok := lootTracker.SlotItem(srcGUID, srcSlot); ok {
-		itemObj = id
-	}
-	if itemObj == 0 {
-		return // source unknown/empty — nothing to apply (snapshot reconciles later)
-	}
-	applyMovedObject(svc, itemObj, srcGUID, dstGUID, dstSlot, hasDst)
-}
-
-// applyMovedObject relocates a known item object: the destination is tried against
-// holdings itself (bridged virtual id or any container holdings has seen — bank tabs
-// stay known here long after the loot tracker's 10-minute TTL would have swept them);
-// an untracked destination (market, sale, never-opened bank) drops the item from view
-// (contract rules 3-4). The bag slot map tracks bag-side changes.
-func applyMovedObject(svc *wailsadapter.Service, itemObj int, srcGUID, dstGUID string, dstSlot int, hasDst bool) {
-	if v, bridged := virtualContainer(srcGUID); bridged && v == selfBagGUID {
-		bagSlotClear(itemObj)
-	}
-	target := ""
-	if hasDst {
-		if v, bridged := virtualContainer(dstGUID); bridged {
-			target = v
-			if v == selfBagGUID {
-				bagSlotSet(dstSlot, itemObj)
-			}
-		} else {
-			target = dstGUID // let holdings decide — it knows every snapshotted container
-		}
-	}
-	if target == "" {
-		svc.IngestDeleteItem(itemObj) // leaves every tracked view; reappears via snapshots
-		if debugFlow {
-			log.Printf("[hold] move → no dst, dropped from view: obj=%d", itemObj)
-		}
-		return
-	}
-	if ref, ok := resolveObj(itemObj); ok {
-		if !svc.IngestPutItem(target, itemObj, ref) {
-			svc.IngestDeleteItem(itemObj)
-			bagSlotClear(itemObj)
-			if debugFlow {
-				log.Printf("[hold] move → untracked dst, dropped from view: obj=%d", itemObj)
-			}
-			return
-		}
-	} else {
-		queuePendingPut(itemObj, target)
-	}
-	if debugFlow {
-		log.Printf("[hold] move applied: obj=%d → %s", itemObj, target)
-	}
-}
-
-// pendingLootResolve holds loot hits whose New*Item declaration hasn't arrived yet
-// (itemObjID → source + seen time); drained in registerNewItem like pendingInv.
-// Bounded by cap AND a TTL: item object ids are reused across zones, so a stale
-// entry drained hours later would fabricate a phantom loot event, and orphans must
-// never wedge the map full. Bounds live in pending.Map (cap 256, TTL 10s, counted
-// drops); the rate-limited loss log stays with the consumer (FR-004).
-var (
-	pendingLootResolve     = pending.New[string](256, 10_000)
-	lastPendingLootDropLog int64
-)
-
-// ingestLootObj emits one loot flow event from a resolved object registry entry —
-// the single place the loot dedup id ("lt:<itemObjID>") and argument order live, so
-// the fast path and the late-declaration path can never drift.
-func ingestLootObj(svc *wailsadapter.Service, itemObjID int, ref holdings.ItemRef, source string) {
-	svc.IngestLoot(fmt.Sprintf("lt:%d", itemObjID), ref.Index, ref.Quality, ref.Count, nowMS(), source)
-}
-
-// emitLootHits turns tracker hits into flow loot events: the item identity, quality
-// and stack count come from the object registry (New*Item declaration) — quality-keyed
-// valuation works (closes the ADR-022 quality-0 gap for loot). Undeclared objects wait
-// in pendingLootResolve until their declaration arrives or the TTL expires.
-func emitLootHits(svc *wailsadapter.Service, hits []loot.Hit) {
-	for _, h := range hits {
-		if debugFlow {
-			log.Printf("[flow] loot hit: itemObj=%d source=%q", h.ItemObjID, h.Source)
-		}
-		if ref, ok := resolveObj(h.ItemObjID); ok {
-			ingestLootObj(svc, h.ItemObjID, ref, h.Source)
-			continue
-		}
-		now := nowMS()
-		objMu.Lock()
-		pendingLootResolve.Queue(h.ItemObjID, h.Source, now)
-		dropped := pendingLootResolve.Dropped()
-		objMu.Unlock()
-		// Loss must be observable without a debug flag (FR-004) — but at most 1 log/min.
-		if dropped > 0 && now-lastPendingLootDropLog > 60_000 {
-			lastPendingLootDropLog = now
-			log.Printf("loot: %d pending pickups dropped so far (declaration never arrived)", dropped)
-		}
-	}
-}
-
-// paramKeys returns the sorted parameter keys of a message (debug aid).
-func paramKeys(params map[byte]interface{}) []int {
-	ks := make([]int, 0, len(params))
-	for k := range params {
-		ks = append(ks, int(k))
-	}
-	sort.Ints(ks)
-	return ks
-}
-
-// objReg maps in-world object ids to their item type+quality. Container slots
-// (AttachItemContainer key 3) reference object ids, so New*Item events (codes 30-37,
-// which declare objectId→itemType+quality) must be captured first to resolve a container.
-var (
-	objMu    sync.Mutex
-	objReg   = map[int]holdings.ItemRef{}
-	objOrder []int
-)
-
-const objRegCap = 50_000
-
-// registerNewItem records objectId → {itemIndex, quality, count} from a New*Item
-// event and feeds the item's server EstimatedMarketValue into valuation. Field map
-// (reference client NewItem): key 1 = itemIndex, key 2 = quantity, key 4 = EMV
-// (scaled ×10000), key 6 = quality, key 7 = durability.
-func registerNewItem(svc *wailsadapter.Service, code int, params map[byte]interface{}) {
-	if code < 30 || code > 37 { // NewEquipmentItem..NewEquipmentItemLegendarySoul
-		return
-	}
-	objID, ok1 := capture.IntParam(params, 0)
-	idx, ok2 := capture.IntParam(params, 1)
-	if !ok1 || !ok2 {
-		return
-	}
-	count := 1
-	if c, ok := capture.IntParam(params, 2); ok && c > 0 {
-		count = c
-	}
-	quality, _ := capture.IntParam(params, 6)
-	if quality < 0 || quality > 5 { // furniture etc. put non-quality data here
-		quality = 0
-	}
-	objMu.Lock()
-	if _, exists := objReg[objID]; !exists {
-		if len(objReg) >= objRegCap && len(objOrder) > 0 {
-			delete(objReg, objOrder[0])
-			objOrder = objOrder[1:]
-		}
-		objOrder = append(objOrder, objID)
-	}
-	ref := holdings.ItemRef{Index: idx, Quality: quality, Count: count}
-	objReg[objID] = ref
-	now := nowMS()
-	pendGUID, invPending := pendingInv.Take(objID, now)      // own-state slot awaiting this declaration
-	source, lootPending := pendingLootResolve.Take(objID, now) // loot hit awaiting it (TTL-guarded:
-	target, putPending := pendingPuts.Take(objID, now)         // ids are reused across zones — a stale
-	objMu.Unlock()                                             // drain would fabricate phantom events)
-
-	// An own-state bag/equipped object declared after the fact: place it into its
-	// self-container now that it resolves.
-	if invPending {
-		svc.IngestPutItem(pendGUID, objID, ref)
-	}
-	// A loot pickup whose declaration arrived after the move: emit it now (007).
-	if lootPending {
-		ingestLootObj(svc, objID, ref, source)
-	}
-	// A holdings put whose declaration arrived late (008): place it now. An untracked
-	// target still drops the item from its old spot (the put was authoritative — it left).
-	if putPending {
-		if !svc.IngestPutItem(target, objID, ref) {
-			svc.IngestDeleteItem(objID)
-			bagSlotClear(objID)
-		}
-	}
-
-	// The item's own EstimatedMarketValue (key 4, a scalar int64) is the value the game
-	// shows when you open it — feed it to valuation so held items are valued without a
-	// market capture.
-	if emv, ok := capture.IntParam(params, 4); ok && emv > 0 {
-		svc.IngestEMV(idx, quality, int64(emv)/emvScale, nowMS())
-	}
-}
-
-// Fixed container ids for the player's own bag + equipped sets, which arrive in
-// own-state slot arrays without a wire GUID. They group under the inventory city as
-// separate tabs.
-const (
-	selfBagGUID   = "self-bag"
-	selfEquipGUID = "self-equipped"
-)
-
-// pendingInv maps an own-state object id (bag/equipped) not yet declared by a New*Item
-// to the self-container it belongs to; it is placed there when its declaration arrives.
-// Reset per own-state, so it is naturally small (bag + equipped); the cap (1024) is a
-// hard backstop, and TTL 0 keeps entries alive until the next snapshot replaces them —
-// an own-state slot has no natural expiry (Principle XI bounds live in pending.Map).
-var pendingInv = pending.New[string](1024, 0)
-
-// ingestSelf sets one own-state self-container (bag or equipped) from its slot object
-// ids: already-declared objects are placed now, the rest queue in pendingInv keyed to
-// this container. Re-runs replace the container wholesale (own-state is a full list).
-func ingestSelf(svc *wailsadapter.Service, guid, tab string, objIDs []int) {
-	slots := resolveObjects(objIDs)
-	if debugFlow {
-		idxs := make([]int, len(slots))
-		for i, s := range slots {
-			idxs[i] = s.Ref.Index
-		}
-		log.Printf("[self] %s objIDs=%v resolvedItemIdx=%v (%d/%d resolved)", tab, objIDs, idxs, len(slots), len(objIDs))
-	}
-	svc.IngestSelfContainer(guid, tab, slots)
-	resolved := make(map[int]bool, len(slots))
-	for _, s := range slots {
-		resolved[s.ObjID] = true
-	}
-	now := nowMS()
-	objMu.Lock()
-	pendingInv.Clear(func(g string) bool { return g == guid }) // stale entries for this container
-	for _, id := range objIDs {
-		if !resolved[id] {
-			pendingInv.Queue(id, guid, now)
-		}
-	}
-	objMu.Unlock()
-}
-
-// resolveObjects maps container object ids to slot items (objId + ref), skipping
-// unresolved ones. The objId is kept so incremental moves can target the item.
-func resolveObjects(objIDs []int) []holdings.SlotItem {
-	objMu.Lock()
-	defer objMu.Unlock()
-	slots := make([]holdings.SlotItem, 0, len(objIDs))
-	for _, id := range objIDs {
-		if r, ok := objReg[id]; ok {
-			slots = append(slots, holdings.SlotItem{ObjID: id, Ref: r})
-		}
-	}
-	return slots
-}
-
-// resolveObj returns the ref for a single object id (for incremental Put).
-func resolveObj(objID int) (holdings.ItemRef, bool) {
-	objMu.Lock()
-	defer objMu.Unlock()
-	r, ok := objReg[objID]
-	return r, ok
-}
-
-// emvScale: the server EMV is stored scaled by 10000 (silver = raw / 10000).
-const emvScale = 10000
-
-// extractEMV pulls (index, quality, silver value) from the two EMV layouts.
-func extractEMV(params map[byte]interface{}) (index, quality int, value int64, ok bool) {
-	if id, okId := firstInt(params[0]); okId {
-		if v, okV := firstInt64(params[1]); okV {
-			return id, 0, v / emvScale, true
-		}
-	}
-	if id, okId := firstInt(params[2]); okId {
-		v, _ := firstInt64(params[4])
-		q, _ := firstInt(params[3])
-		return id, q, v / emvScale, true
-	}
-	return 0, 0, 0, false
-}
-
-func codeFrom(params map[byte]interface{}, key byte, fallback int) int {
-	if v, ok := params[key]; ok {
-		if n, ok := firstInt(v); ok {
-			return n
-		}
-		switch n := v.(type) {
-		case int16:
-			return int(n)
-		case int32:
-			return int(n)
-		}
-	}
-	return fallback
-}
-
-func firstInt(v interface{}) (int, bool) {
-	switch a := v.(type) {
-	case []int16:
-		if len(a) > 0 {
-			return int(a[0]), true
-		}
-	case []int32:
-		if len(a) > 0 {
-			return int(a[0]), true
-		}
-	case []byte:
-		if len(a) > 0 {
-			return int(a[0]), true
-		}
-	case int16:
-		return int(a), true
-	case int32:
-		return int(a), true
-	}
-	return 0, false
-}
-
-func firstInt64(v interface{}) (int64, bool) {
-	switch a := v.(type) {
-	case []int32:
-		if len(a) > 0 {
-			return int64(a[0]), true
-		}
-	case []int64:
-		if len(a) > 0 {
-			return a[0], true
-		}
-	}
-	return 0, false
 }

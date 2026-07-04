@@ -1,5 +1,6 @@
-// Package app orchestrates a capture/replay run: source → Photon parse →
+// Runner orchestrates a probe capture/replay run: source → Photon parse →
 // classify → coverage rollup → local store. It depends only on ports + domain.
+// (The package doc lives in pipeline.go — the live-app pipeline, feature 009.)
 package app
 
 import (
