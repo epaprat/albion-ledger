@@ -291,3 +291,27 @@ func hexOf(prefix byte) string {
 	}
 	return string(out)
 }
+
+// 010: market sell orders feed valuation (the resource price source). Buy orders
+// (requests) are ignored; prices persist via the estimate book too.
+func TestMarketOrdersFeedPrices(t *testing.T) {
+	svc, p := newGlue(t)
+	// Bank summary tab with an unpriced resource (T7_WOOD → index 920 in testCat).
+	p.dispatch(probe.KindResponse, 516, locationsParams([]string{"0006"}, []byte{0xAA}, []int64{0}))
+	p.dispatch(probe.KindResponse, 517, tabsParams(0xAA, []byte{0x11}, []string{"Hammadde"}))
+	p.dispatch(probe.KindResponse, 1, contentParams(0x11, []int16{920}, []int16{7}))
+	for _, r := range svc.ListHoldings() {
+		if r.Valuation.Amount != 0 {
+			t.Fatalf("setup: resource must start unvalued, got %+v", r.Valuation)
+		}
+	}
+	// A market browse returns sell offers for the same resource.
+	offer := `{"UnitPriceSilver":70000,"ItemTypeId":"T7_WOOD","EnchantmentLevel":0,"QualityLevel":1,"AuctionType":"offer"}`
+	request := `{"UnitPriceSilver":990000,"ItemTypeId":"T7_WOOD","EnchantmentLevel":0,"QualityLevel":1,"AuctionType":"request"}`
+	p.dispatch(probe.KindResponse, 82, map[byte]interface{}{0: []string{offer, request}, 253: int16(82)})
+
+	rows := svc.ListHoldings()
+	if len(rows) != 1 || rows[0].Valuation.Amount != 7 {
+		t.Fatalf("resource must price from the sell offer (7s), got %+v", rows)
+	}
+}

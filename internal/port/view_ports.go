@@ -7,6 +7,9 @@ type Catalog interface {
 	// Resolve never errors: an unknown index yields a safe placeholder
 	// (Known=false, DisplayName "Unknown item #N").
 	Resolve(index int, quality int) model.Item
+	// IndexOf resolves a uniqueName to its catalog index (market order feeds
+	// identify items by name — feature 010); ok=false for unknown names.
+	IndexOf(uniqueName string) (int, bool)
 	// Reload swaps in a new catalog file at runtime (FR-012); a malformed file
 	// is rejected and the previous catalog is kept.
 	Reload(path string) error

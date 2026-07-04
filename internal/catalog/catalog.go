@@ -22,6 +22,7 @@ type fileFormat struct {
 type Catalog struct {
 	mu      sync.RWMutex
 	byIndex map[int]model.CatalogEntry
+	byName  map[string]int // uniqueName → index (market prices arrive by name, 010)
 }
 
 // New builds a catalog from JSON bytes (e.g. the embedded default).
@@ -30,7 +31,17 @@ func New(jsonBytes []byte) (*Catalog, error) {
 	if err != nil {
 		return nil, err
 	}
-	return &Catalog{byIndex: idx}, nil
+	return &Catalog{byIndex: idx, byName: nameIndex(idx)}, nil
+}
+
+func nameIndex(idx map[int]model.CatalogEntry) map[string]int {
+	names := make(map[string]int, len(idx))
+	for i, e := range idx {
+		if e.UniqueName != "" {
+			names[e.UniqueName] = i
+		}
+	}
+	return names
 }
 
 func parse(jsonBytes []byte) (map[int]model.CatalogEntry, error) {
@@ -85,6 +96,7 @@ func (c *Catalog) Reload(path string) error {
 	}
 	c.mu.Lock()
 	c.byIndex = idx
+	c.byName = nameIndex(idx)
 	c.mu.Unlock()
 	return nil
 }
@@ -102,4 +114,13 @@ func tierEnchant(uniqueName string) (tier, enchant int) {
 		}
 	}
 	return tier, enchant
+}
+
+// IndexOf resolves a uniqueName (e.g. "T4_RUNE@1") to its catalog index — market
+// order feeds identify items by name, valuation by index (feature 010).
+func (c *Catalog) IndexOf(uniqueName string) (int, bool) {
+	c.mu.RLock()
+	defer c.mu.RUnlock()
+	idx, ok := c.byName[uniqueName]
+	return idx, ok
 }

@@ -350,6 +350,21 @@ func (a *Aggregator) row(index, quality, count int, loc model.Location, city, gr
 
 // List returns all held items (containers + equipped). Items within a container are
 // ordered by display name for a stable view.
+// lastValuationRefresh picks a "now" for read-time re-valuation staleness checks:
+// the newest lastSeen across containers (the aggregator has no clock of its own).
+func (a *Aggregator) lastValuationRefresh() int64 {
+	var maxSeen int64
+	for _, c := range a.containers {
+		if c.lastSeen > maxSeen {
+			maxSeen = c.lastSeen
+		}
+	}
+	if a.equipped != nil && a.equipped.lastSeen > maxSeen {
+		maxSeen = a.equipped.lastSeen
+	}
+	return maxSeen
+}
+
 func (a *Aggregator) List() []model.HoldingItem {
 	a.mu.Lock()
 	defer a.mu.Unlock()
@@ -359,9 +374,17 @@ func (a *Aggregator) List() []model.HoldingItem {
 		guids = append(guids, g)
 	}
 	sort.Strings(guids)
+	nowMS := int64(0)
+	if len(a.containers) > 0 || a.equipped != nil {
+		nowMS = a.lastValuationRefresh()
+	}
 	appendSorted := func(items map[int]model.HoldingItem) {
 		rows := make([]model.HoldingItem, 0, len(items))
 		for _, it := range items {
+			// Re-value at READ time: prices can arrive AFTER a row was written
+			// (market browse pricing a bank summary — live-seen 2026-07-05); a
+			// write-time snapshot would freeze those rows unvalued forever.
+			it.Valuation = a.val.Value(it.Item.Index, it.Item.Quality, nowMS)
 			rows = append(rows, it)
 		}
 		sort.Slice(rows, func(i, j int) bool { return rows[i].Item.DisplayName < rows[j].Item.DisplayName })
@@ -425,10 +448,13 @@ func (a *Aggregator) Summary(nowMS int64) model.HoldingsSummary {
 		}
 		for _, it := range c.items {
 			t.count++
-			if it.Valuation.Source == model.SourceUnknown {
+			// Read-time re-valuation (see List): prices arriving after the write
+			// must reflect in totals too.
+			v := a.val.Value(it.Item.Index, it.Item.Quality, nowMS)
+			if v.Source == model.SourceUnknown {
 				t.unvalued++
 			} else {
-				t.subtotal += it.Valuation.Amount * int64(it.Count) // stack value
+				t.subtotal += v.Amount * int64(it.Count) // stack value
 			}
 		}
 	}

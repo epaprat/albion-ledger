@@ -93,6 +93,20 @@ func (s *Service) IngestEMV(index, quality int, value, asOf int64) {
 	}
 }
 
+// IngestMarketPrice records a market price identified by uniqueName (order feeds
+// carry names, not indexes — 010). The price doubles as a persisted server-estimate
+// so resources learned from a market browse keep pricing bank summaries next session.
+func (s *Service) IngestMarketPrice(uniqueName string, quality int, silver int64) {
+	idx, ok := s.cat.IndexOf(uniqueName)
+	if !ok {
+		return
+	}
+	now := s.nowMS()
+	s.book.SetMarket(idx, quality, silver, now)
+	s.book.SetEMV(idx, quality, silver, now)
+	s.upsert(idx, quality, now)
+}
+
 // IngestMarket records a live market price and refreshes its view row.
 func (s *Service) IngestMarket(index, quality int, price, asOf int64) {
 	s.book.SetMarket(index, quality, price, asOf)

@@ -58,6 +58,7 @@ type Sink interface {
 	IngestBankVault(owners, tabNames []string)
 	IngestVaultSummaryTab(tabGUID, city, tabName string, rows []holdings.ItemRef)
 	IngestCityVaultValues(values map[string]int64)
+	IngestMarketPrice(uniqueName string, quality int, silver int64)
 	IngestSilver(id string, net int64, ts int64, source string)
 	IngestLoot(id string, index, quality, count int, ts int64, source string)
 	IngestGather(id string, index, quality, count int, ts int64, source string)
@@ -181,7 +182,15 @@ func (p *Pipeline) updateSelf(params map[byte]interface{}) {
 	// so flow events know where they happened (per-zone analytics, 006). Open-world zones
 	// only surface here (event 163 covers cities); raw cluster id is fine, named later.
 	if zone, zok := params[8].(string); zok && zone != "" {
-		p.sink.SetZone(p.zoneName(zone))
+		name := p.zoneName(zone)
+		p.sink.SetZone(name)
+		// Mid-session starts miss the city-entry notification (event 163), leaving
+		// physically-opened bank tabs city-less ("Bank" ghost group, live-seen
+		// 2026-07-05). The Join cluster already names the place: a city or bank
+		// cluster feeds the current city too, normalized to the bare city name.
+		if city := bankCityDisplay(name); city != name || isKnownCity(name) {
+			p.sink.SetCurrentCity(bankCityDisplay(name))
+		}
 	}
 	// Own-container GUID bridge (008): bag (key 54, confirmed) + equipped candidate
 	// (key 51). Entries update INDEPENDENTLY — a Join variant carrying only one of the
