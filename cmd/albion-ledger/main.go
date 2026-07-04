@@ -123,6 +123,11 @@ func main() {
 		},
 		OnStartup: func(ctx context.Context) {
 			emitter.ctx = ctx
+			// Pre-create the player's virtual containers so live puts bridged to them
+			// land even before the first own-state snapshot (008: puts into unknown
+			// containers are no-ops by design).
+			svc.IngestSelfContainer(selfBagGUID, "Bag", nil)
+			svc.IngestSelfContainer(selfEquipGUID, "Equipped", nil)
 			if flowStore != nil {
 				if err := flowStore.StartSession(ctx, model.CaptureSession{
 					ID: sessionID, StartedAt: nowMS(), SourceKind: srcKind, Interface: *iface,
@@ -281,20 +286,39 @@ func ingest(clf *probe.Classifier, svc *wailsadapter.Service, kind probe.Kind, c
 		if objIDs, ok := capture.OwnEquipped(params); ok {
 			ingestSelf(svc, selfEquipGUID, "Equipped", objIDs)
 		}
+		// Full snapshot is authoritative (008): rebuild the live bag slot map from key 55
+		// and drop bag-targeted pending puts — an item the snapshot excluded must not be
+		// resurrected by a late declaration drain.
+		if slots, ok := capture.OwnInventorySlots(params); ok {
+			bagSlots = slots
+			clearBagPendingPuts()
+		}
 	case model.CatCurrentLocation: // notification event 163 — "you entered <city>"
 		if city, ok := capture.CurrentCity(params); ok {
 			svc.SetCurrentCity(city)
 			svc.SetZone(city) // readable city name overrides the raw cluster id for flow zone
 		}
 	case model.CatInventoryPut: // event 26 — item added/moved into a container (live)
-		if objID, cGUID, ok := capture.PutItem(params); ok {
+		if objID, slot, cGUID, ok := capture.PutItem(params); ok {
+			target := cGUID
+			if v, bridged := virtualContainer(cGUID); bridged {
+				target = v
+				if target == selfBagGUID && slot >= 0 {
+					bagSlotSet(slot, objID) // keep the live bag slot map aligned (008)
+				}
+			}
 			if ref, ok := resolveObj(objID); ok {
-				svc.IngestPutItem(cGUID, objID, ref)
+				svc.IngestPutItem(target, objID, ref)
+			} else {
+				// Declaration not seen yet — queue instead of dropping (008 root-cause
+				// fix): drained in registerNewItem, expired entries counted.
+				queuePendingPut(objID, target)
 			}
 		}
 	case model.CatInventoryDelete: // event 27 — item removed from a container (live)
 		if objID, ok := capture.DeleteItem(params); ok {
 			svc.IngestDeleteItem(objID)
+			bagSlotClear(objID)
 		}
 	case model.CatSilver: // TakeSilver (62) — own net silver (US1)
 		if target, obj, net, ok := capture.SilverEvent(params); ok {
@@ -368,6 +392,9 @@ func ingest(clf *probe.Classifier, svc *wailsadapter.Service, kind probe.Kind, c
 					log.Printf("[flow] move: guid=%s slot=%d hits=%d (pending=%d expired=%d capdrop=%d)", guid, slot, len(hits), p, exp, cap)
 				}
 				emitLootHits(svc, hits)
+				// Holdings move-application (008) — AFTER loot correlation, never before.
+				dstSlot, dstGUID, hasDst := capture.MoveDest(params)
+				applyMoveToHoldings(svc, guid, slot, dstGUID, dstSlot, hasDst)
 			}
 		case 39:
 			if guid, ids, ok := capture.MoveGivenItems(params); ok {
@@ -376,6 +403,10 @@ func ingest(clf *probe.Classifier, svc *wailsadapter.Service, kind probe.Kind, c
 					log.Printf("[flow] move-given: guid=%s ids=%d hits=%d", guid, len(ids), len(hits))
 				}
 				emitLootHits(svc, hits)
+				dstGUID, hasDst := capture.MoveGivenDest(params)
+				for _, id := range ids {
+					applyMovedObject(svc, id, guid, dstGUID, -1, hasDst)
+				}
 			}
 		}
 	case model.CatFame: // UpdateFame (82 event) — fame is inherently own (US4)
@@ -431,6 +462,17 @@ func updateSelf(svc *wailsadapter.Service, params map[byte]interface{}) {
 	if zone, zok := params[8].(string); zok && zone != "" {
 		svc.SetZone(zoneName(zone)) // raw cluster id → readable zone name
 	}
+	// Own-container GUID bridge (008): bag (key 54, confirmed) + equipped candidate
+	// (key 51). Rebuilt per Join; moves and E:26 reference these wire GUIDs.
+	if bagGUID, eqGUID, ok := capture.SelfContainers(params); ok {
+		selfContainerGUIDs = map[string]string{bagGUID: selfBagGUID}
+		if eqGUID != "" {
+			selfContainerGUIDs[eqGUID] = selfEquipGUID
+		}
+		if debugFlow {
+			log.Printf("[hold] self containers: bag=%s equipped-candidate=%s", bagGUID, eqGUID)
+		}
+	}
 	if debugFlow {
 		log.Printf("[flow] self set: objID=%d name=%q (op-2)", selfObjID, selfName)
 	}
@@ -444,6 +486,158 @@ func isSelfObj(objID int) bool { return selfObjID != 0 && objID == selfObjID }
 // lootTracker correlates own move requests with loot sources (feature 007). Touched
 // only on the capture goroutine (its own mutex guards the internals anyway).
 var lootTracker = loot.New()
+
+// ── Holdings freshness glue (feature 008) ────────────────────────────────────
+// All state below is touched only on the capture goroutine.
+
+// selfContainerGUIDs bridges the player's own container GUIDs (from the Join
+// own-state: key 54 = bag, confirmed; key 51 = equipped CANDIDATE) to the virtual
+// container ids holdings uses. Rebuilt on every Join.
+var selfContainerGUIDs = map[string]string{}
+
+// virtualContainer maps a wire container GUID to its holdings virtual id ("self-bag"
+// / "self-equipped") when it is one of the player's own containers.
+func virtualContainer(guid string) (string, bool) {
+	v, ok := selfContainerGUIDs[guid]
+	return v, ok
+}
+
+// bagSlots is the live slot→itemObjID map of the player's bag (0 = empty), built from
+// own-state key 55 and kept aligned by E:26 puts, deletes and applied moves — the
+// player's move requests address the bag BY SLOT INDEX.
+var bagSlots []int
+
+func bagSlotItem(slot int) (int, bool) {
+	if slot < 0 || slot >= len(bagSlots) || bagSlots[slot] <= 0 {
+		return 0, false
+	}
+	return bagSlots[slot], true
+}
+
+func bagSlotSet(slot, objID int) {
+	if slot < 0 {
+		return
+	}
+	for slot >= len(bagSlots) { // bag grew (bigger bag equipped) — pad, bounded by maxWireSlots upstream
+		bagSlots = append(bagSlots, 0)
+	}
+	bagSlots[slot] = objID
+}
+
+func bagSlotClear(objID int) {
+	for i, v := range bagSlots {
+		if v == objID {
+			bagSlots[i] = 0
+			return
+		}
+	}
+}
+
+// pendingPuts holds container-put updates whose New*Item declaration hasn't arrived
+// yet (itemObjID → target virtual/known container + seen time). Exact pendingLoot
+// pattern: cap + TTL + inline sweep + counted, rate-limited drop log (Principle XI).
+type pendingPut struct {
+	target string
+	seenMS int64
+}
+
+var (
+	pendingPuts           = map[int]pendingPut{}
+	pendingPutsDropped    int
+	lastPendingPutDropLog int64
+)
+
+const (
+	pendingPutsCap   = 256
+	pendingPutsTTLMS = 10_000
+)
+
+func queuePendingPut(objID int, target string) {
+	now := nowMS()
+	objMu.Lock()
+	for id, p := range pendingPuts { // tiny map: inline TTL sweep
+		if now-p.seenMS > pendingPutsTTLMS {
+			delete(pendingPuts, id)
+			pendingPutsDropped++
+		}
+	}
+	if len(pendingPuts) < pendingPutsCap {
+		pendingPuts[objID] = pendingPut{target: target, seenMS: now}
+	} else {
+		pendingPutsDropped++
+	}
+	dropped := pendingPutsDropped
+	objMu.Unlock()
+	if dropped > 0 && now-lastPendingPutDropLog > 60_000 {
+		lastPendingPutDropLog = now
+		log.Printf("holdings: %d pending puts dropped so far (declaration never arrived)", dropped)
+	}
+}
+
+// clearBagPendingPuts drops pending puts targeting the bag — a fresh own-state
+// snapshot is authoritative and must not be overridden by a late drain (008 US3).
+func clearBagPendingPuts() {
+	objMu.Lock()
+	for id, p := range pendingPuts {
+		if p.target == selfBagGUID {
+			delete(pendingPuts, id)
+		}
+	}
+	objMu.Unlock()
+}
+
+// applyMoveToHoldings applies a single-item move request (op-30) to the holdings
+// view: resolve the source slot to an item object, then relocate or drop it.
+func applyMoveToHoldings(svc *wailsadapter.Service, srcGUID string, srcSlot int, dstGUID string, dstSlot int, hasDst bool) {
+	var itemObj int
+	if v, bridged := virtualContainer(srcGUID); bridged && v == selfBagGUID {
+		if id, ok := bagSlotItem(srcSlot); ok {
+			itemObj = id
+			bagSlots[srcSlot] = 0
+		}
+	} else if id, ok := lootTracker.SlotItem(srcGUID, srcSlot); ok {
+		itemObj = id
+	}
+	if itemObj == 0 {
+		return // source unknown/empty — nothing to apply (snapshot reconciles later)
+	}
+	applyMovedObject(svc, itemObj, srcGUID, dstGUID, dstSlot, hasDst)
+}
+
+// applyMovedObject relocates a known item object: destination bridged/known →
+// a real move; unknown destination (market, sale, closed bank) → drop from view
+// (contract rules 3-4). The bag slot map tracks bag-side changes.
+func applyMovedObject(svc *wailsadapter.Service, itemObj int, srcGUID, dstGUID string, dstSlot int, hasDst bool) {
+	if v, bridged := virtualContainer(srcGUID); bridged && v == selfBagGUID {
+		bagSlotClear(itemObj)
+	}
+	target := ""
+	if hasDst {
+		if v, bridged := virtualContainer(dstGUID); bridged {
+			target = v
+			if v == selfBagGUID {
+				bagSlotSet(dstSlot, itemObj)
+			}
+		} else if lootTracker.KnownContainer(dstGUID) {
+			target = dstGUID
+		}
+	}
+	if target == "" {
+		svc.IngestDeleteItem(itemObj) // leaves every tracked view; reappears via snapshots
+		if debugFlow {
+			log.Printf("[hold] move → unknown dst, dropped from view: obj=%d", itemObj)
+		}
+		return
+	}
+	if ref, ok := resolveObj(itemObj); ok {
+		svc.IngestPutItem(target, itemObj, ref)
+	} else {
+		queuePendingPut(itemObj, target)
+	}
+	if debugFlow {
+		log.Printf("[hold] move applied: obj=%d → %s", itemObj, target)
+	}
+}
 
 // pendingLootResolve holds loot hits whose New*Item declaration hasn't arrived yet
 // (itemObjID → source + seen time); drained in registerNewItem like pendingInv.
@@ -565,6 +759,8 @@ func registerNewItem(svc *wailsadapter.Service, code int, params map[byte]interf
 	delete(pendingInv, objID)
 	pl, lootPending := pendingLootResolve[objID] // loot hit awaiting this declaration
 	delete(pendingLootResolve, objID)
+	pp, putPending := pendingPuts[objID] // holdings put awaiting this declaration (008)
+	delete(pendingPuts, objID)
 	objMu.Unlock()
 
 	// An own-state bag/equipped object declared after the fact: place it into its
@@ -577,6 +773,11 @@ func registerNewItem(svc *wailsadapter.Service, code int, params map[byte]interf
 	// entry with a NEW zone's declaration would fabricate a phantom loot event).
 	if lootPending && nowMS()-pl.seenMS <= pendingLootResolveTTLMS {
 		ingestLootObj(svc, objID, ref, pl.source)
+	}
+	// A holdings put whose declaration arrived late (008): place it now, same
+	// staleness guard as the loot drain.
+	if putPending && nowMS()-pp.seenMS <= pendingPutsTTLMS {
+		svc.IngestPutItem(pp.target, objID, ref)
 	}
 
 	// The item's own EstimatedMarketValue (key 4, a scalar int64) is the value the game
