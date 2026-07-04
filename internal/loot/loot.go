@@ -163,6 +163,21 @@ func (t *Tracker) ResolveMoveGiven(guid string, itemObjIDs []int, ts int64) []Hi
 	return t.resolveIDsLocked(guid, itemObjIDs, ts)
 }
 
+// SlotItem resolves (container GUID, slot) to the item object id in that slot, from
+// the same slot map loot correlation uses — one map, two consumers (008).
+func (t *Tracker) SlotItem(guid string, slot int) (itemObjID int, ok bool) {
+	t.mu.Lock()
+	defer t.mu.Unlock()
+	c, cok := t.containers[guid]
+	if !cok || slot < 0 || slot >= len(c.slots) {
+		return 0, false
+	}
+	if c.slots[slot] <= 0 {
+		return 0, false
+	}
+	return c.slots[slot], true
+}
+
 // Stats exposes the observable-loss counters (FR-004) and pending depth.
 func (t *Tracker) Stats() (pending, droppedExpired, droppedCap int) {
 	t.mu.Lock()

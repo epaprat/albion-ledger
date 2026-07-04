@@ -1,6 +1,7 @@
 package holdings
 
 import (
+	"fmt"
 	"testing"
 
 	"github.com/epaprat/albion-ledger/internal/catalog"
@@ -167,16 +168,51 @@ func TestCurrentCityGroupsBank(t *testing.T) {
 	}
 }
 
+// Review fix (008): the player's own containers are pinned — a long session that
+// churns >containerCap loot/bank containers must never evict self-bag, or every
+// subsequent bag put would silently no-op (frozen bag until relog).
+func TestPinnedSelfContainerSurvivesEviction(t *testing.T) {
+	a, _ := newAgg(t)
+	a.EnsureSelfContainer("self-bag", "Bag") // pinned, first inserted (startup order)
+	a.PutItem("self-bag", 900001, ItemRef{Index: 920}, 100)
+	for i := 0; i < containerCap+50; i++ {
+		a.SetContainer(fmt.Sprintf("churn-%d", i), "", nil, int64(200+i))
+	}
+	if !a.PutItem("self-bag", 900002, ItemRef{Index: 920}, 9999) {
+		t.Fatal("self-bag was evicted by container churn (must be pinned)")
+	}
+}
+
+// Review fix (008): pre-created-but-never-observed containers must not surface in
+// the Summary — an empty fresh-looking Bag/Equipped before any capture fakes data.
+func TestUnseenPrecreatedContainersHidden(t *testing.T) {
+	a, _ := newAgg(t)
+	a.EnsureSelfContainer("self-bag", "Bag")
+	a.EnsureSelfContainer("self-equipped", "Equipped")
+	if got := len(a.Summary(1000).Cities); got != 0 {
+		t.Fatalf("unseen pre-created containers must be hidden, got %d cities", got)
+	}
+	// First real data makes them visible.
+	a.PutItem("self-bag", 900003, ItemRef{Index: 920}, 2000)
+	if got := len(a.Summary(3000).Cities); got == 0 {
+		t.Fatal("container with real data must surface")
+	}
+}
+
 func TestIncrementalMoveAndDelete(t *testing.T) {
 	a, _ := newAgg(t)
 	a.SetBankVault([]string{"o1"}, []string{"Items"})
-	// Bank tab holds object 100 (item 920).
+	// Bank tab holds object 100 (item 920); the bag is a KNOWN self container
+	// (pre-created by the GUID bridge — 008: puts into unknown containers are no-ops).
+	a.SetSelfContainer("bagGuid", "Bag", nil, 900)
 	a.SetContainer("bankGuid", "o1", []SlotItem{{ObjID: 100, Ref: ItemRef{Index: 920}}}, 1000)
 	if n := len(a.List()); n != 1 {
 		t.Fatalf("after snapshot want 1, got %d", n)
 	}
-	// Move it to inventory (Put into a new container) → still exactly one item, now inventory.
-	a.PutItem("invGuid", 100, ItemRef{Index: 920}, 1100)
+	// Move it to the bag → still exactly one item, now inventory.
+	a.PutItem("bagGuid", 100, ItemRef{Index: 920}, 1100)
+	// Put into an UNKNOWN container is a no-op (008): nothing moves, nothing created.
+	a.PutItem("mysteryGuid", 100, ItemRef{Index: 920}, 1150)
 	rows := a.List()
 	if len(rows) != 1 {
 		t.Fatalf("after move want 1 (no dup), got %d", len(rows))

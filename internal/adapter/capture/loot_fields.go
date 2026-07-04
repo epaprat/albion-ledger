@@ -64,6 +64,30 @@ func MoveItem(params map[byte]interface{}) (srcContainerGUID string, srcSlot int
 	return hex.EncodeToString(g), slot, true
 }
 
+// MoveDest pulls the DESTINATION of a single-item move request (op-30): key 3 =
+// destination slot, key 4 = destination container GUID. Used by holdings move
+// application (008); absent destination → ok=false (callers drop from view).
+func MoveDest(params map[byte]interface{}) (dstSlot int, dstContainerGUID string, ok bool) {
+	g, gok := params[4].([]byte)
+	if !gok || len(g) == 0 {
+		return 0, "", false
+	}
+	s, sok := toIntVal(params[3])
+	if !sok || s < 0 {
+		s = -1
+	}
+	return s, hex.EncodeToString(g), true
+}
+
+// MoveGivenDest pulls the destination container GUID of a take-all move (op-39 key 2).
+func MoveGivenDest(params map[byte]interface{}) (dstContainerGUID string, ok bool) {
+	g, gok := params[2].([]byte)
+	if !gok || len(g) == 0 {
+		return "", false
+	}
+	return hex.EncodeToString(g), true
+}
+
 // MoveGivenItems pulls the "take all" move request (op-39): key 0 = source container
 // GUID, key 4 = item object ids.
 func MoveGivenItems(params map[byte]interface{}) (srcContainerGUID string, itemObjIDs []int, ok bool) {

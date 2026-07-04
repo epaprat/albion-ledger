@@ -161,9 +161,19 @@ func (s *Service) IngestSelfContainer(containerGUID, tab string, slots []holding
 }
 
 // IngestPutItem incrementally adds/moves one item into a container (live update).
-func (s *Service) IngestPutItem(containerGUID string, objID int, ref holdings.ItemRef) {
-	s.agg.PutItem(containerGUID, objID, ref, s.nowMS())
-	s.emitHoldings()
+// applied=false means the destination is untracked — the caller decides the fallback
+// (typically dropping the item from view so it can't linger stale in its old spot).
+func (s *Service) IngestPutItem(containerGUID string, objID int, ref holdings.ItemRef) (applied bool) {
+	applied = s.agg.PutItem(containerGUID, objID, ref, s.nowMS())
+	if applied {
+		s.emitHoldings()
+	}
+	return applied
+}
+
+// EnsureSelfContainer pre-creates a pinned, not-yet-observed player container (008).
+func (s *Service) EnsureSelfContainer(containerGUID, tab string) {
+	s.agg.EnsureSelfContainer(containerGUID, tab)
 }
 
 // IngestDeleteItem incrementally removes one item by object id (live update).

@@ -7,6 +7,8 @@ import {context} from '../models';
 
 export function EmitFlowNow():Promise<void>;
 
+export function EnsureSelfContainer(arg1:string,arg2:string):Promise<void>;
+
 export function FlowBreakdown(arg1:string):Promise<Array<model.FlowItemStatView>>;
 
 export function FlowSummary():Promise<model.SessionSummary>;
@@ -31,7 +33,7 @@ export function IngestLoot(arg1:string,arg2:number,arg3:number,arg4:number,arg5:
 
 export function IngestMarket(arg1:number,arg2:number,arg3:number,arg4:number):Promise<void>;
 
-export function IngestPutItem(arg1:string,arg2:number,arg3:holdings.ItemRef):Promise<void>;
+export function IngestPutItem(arg1:string,arg2:number,arg3:holdings.ItemRef):Promise<boolean>;
 
 export function IngestSelfContainer(arg1:string,arg2:string,arg3:Array<holdings.SlotItem>):Promise<void>;
 

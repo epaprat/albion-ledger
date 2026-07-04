@@ -77,6 +77,50 @@ func TestEquippedItemFromBytes(t *testing.T) {
 	}
 }
 
+// OwnInventorySlots must preserve slot positions (moves address the bag BY SLOT) and
+// reject hostile-size arrays (008).
+func TestOwnInventorySlotsFromBytes(t *testing.T) {
+	params := decodeResponse(t, 2, []photon.Field{
+		{Key: 55, Type: photon.TypeArray | photon.TypeInteger, Val: []int32{0, 910, -1, 930}},
+		{Key: 253, Type: photon.TypeShort, Val: int16(2)},
+	})
+	slots, ok := OwnInventorySlots(params)
+	if !ok || len(slots) != 4 || slots[0] != 0 || slots[1] != 910 || slots[2] != 0 || slots[3] != 930 {
+		t.Fatalf("slots = %v ok=%v, want [0 910 0 930]", slots, ok)
+	}
+	huge := make([]int32, maxWireSlots+1)
+	params = decodeResponse(t, 2, []photon.Field{
+		{Key: 55, Type: photon.TypeArray | photon.TypeInteger, Val: huge},
+		{Key: 253, Type: photon.TypeShort, Val: int16(2)},
+	})
+	if _, ok := OwnInventorySlots(params); ok {
+		t.Fatal("hostile-size bag must be rejected")
+	}
+}
+
+// SelfContainers pulls the own bag GUID (key 54) + equipped candidate (key 51).
+func TestSelfContainersFromBytes(t *testing.T) {
+	bag := []byte{0x0a, 0x94, 0x2a, 0x2c, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16}
+	eq := []byte{0x29, 0x9e, 0xdb, 0xed, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16}
+	params := decodeResponse(t, 2, []photon.Field{
+		{Key: 51, Type: photon.TypeArray | photon.TypeByte, Val: eq},
+		{Key: 54, Type: photon.TypeArray | photon.TypeByte, Val: bag},
+		{Key: 253, Type: photon.TypeShort, Val: int16(2)},
+	})
+	b, e, ok := SelfContainers(params)
+	if !ok || b != "0a942a2c05060708090a0b0c0d0e0f10" || e != "299edbed05060708090a0b0c0d0e0f10" {
+		t.Fatalf("SelfContainers → bag=%q eq=%q ok=%v", b, e, ok)
+	}
+	// Bag absent → not ok (bridge needs at least the bag).
+	params = decodeResponse(t, 2, []photon.Field{
+		{Key: 51, Type: photon.TypeArray | photon.TypeByte, Val: eq},
+		{Key: 253, Type: photon.TypeShort, Val: int16(2)},
+	})
+	if _, _, ok := SelfContainers(params); ok {
+		t.Fatal("missing bag guid must be not-ok")
+	}
+}
+
 func TestCurrentCityFromBytes(t *testing.T) {
 	// Notification event 163: key 0 = subtype 39 (city), key 2 = {"city":"<Name>"}.
 	params := decodeEvent(t, []photon.Field{
@@ -119,9 +163,9 @@ func TestPutItemFromBytes(t *testing.T) {
 		{Key: 2, Type: photon.TypeArray | photon.TypeByte, Val: guid},
 		{Key: 252, Type: photon.TypeShort, Val: int16(26)},
 	})
-	obj, cg, ok := PutItem(params)
-	if !ok || obj != 1633639 || cg != "0102030405060708090a0b0c0d0e0f10" {
-		t.Fatalf("PutItem → obj=%d cg=%q ok=%v", obj, cg, ok)
+	obj, slot, cg, ok := PutItem(params)
+	if !ok || obj != 1633639 || slot != 66 || cg != "0102030405060708090a0b0c0d0e0f10" {
+		t.Fatalf("PutItem → obj=%d slot=%d cg=%q ok=%v", obj, slot, cg, ok)
 	}
 }
 

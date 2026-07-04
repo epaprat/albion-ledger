@@ -6,6 +6,10 @@ export function EmitFlowNow() {
   return window['go']['wailsadapter']['Service']['EmitFlowNow']();
 }
 
+export function EnsureSelfContainer(arg1, arg2) {
+  return window['go']['wailsadapter']['Service']['EnsureSelfContainer'](arg1, arg2);
+}
+
 export function FlowBreakdown(arg1) {
   return window['go']['wailsadapter']['Service']['FlowBreakdown'](arg1);
 }
