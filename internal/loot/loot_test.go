@@ -182,6 +182,27 @@ func TestBankSizedContainerNeverLoots(t *testing.T) {
 	}
 }
 
+// Read-side accessors for holdings move-application (008): same map, two consumers.
+func TestReadAccessors(t *testing.T) {
+	tr := New()
+	tr.AttachContainer("c1", 42, []int{0, 555}, 1000)
+	if !tr.KnownContainer("c1") || tr.KnownContainer("ghost") {
+		t.Fatal("KnownContainer wrong")
+	}
+	if id, ok := tr.SlotItem("c1", 1); !ok || id != 555 {
+		t.Fatalf("SlotItem(c1,1) = %d/%v, want 555/true", id, ok)
+	}
+	if _, ok := tr.SlotItem("c1", 0); ok {
+		t.Fatal("empty slot must be not-ok")
+	}
+	if _, ok := tr.SlotItem("c1", 9); ok {
+		t.Fatal("out-of-range slot must be not-ok")
+	}
+	if _, ok := tr.SlotItem("ghost", 0); ok {
+		t.Fatal("unknown container must be not-ok")
+	}
+}
+
 // Bounded-state soak (T015): heavy mixed load keeps every structure within caps.
 func TestSoakBoundedState(t *testing.T) {
 	tr := New()
