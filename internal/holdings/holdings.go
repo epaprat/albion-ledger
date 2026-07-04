@@ -154,19 +154,20 @@ func (a *Aggregator) SetSelfContainer(containerGUID, tab string, slots []SlotIte
 	a.citySeen[invName] = nowMS
 }
 
-// PutItem incrementally adds (or moves) one item into a container — InventoryPutItem.
-// The item is removed from any previous container first (a move), then placed here.
+// PutItem incrementally adds (or moves) one item into a KNOWN container —
+// InventoryPutItem / applied move. The item is removed from any previous container
+// first (a move), then placed here. Puts into an unknown container GUID are a no-op:
+// the caller routes self containers through the GUID bridge (which pre-creates them)
+// and drops unknown destinations from view — the old "first-seen container defaults
+// to Bag" guess glued phantom 'Bag' tabs onto bank/market GUIDs (008).
 func (a *Aggregator) PutItem(containerGUID string, objID int, ref ItemRef, nowMS int64) {
 	a.mu.Lock()
 	defer a.mu.Unlock()
-	a.removeObj(objID) // a move: drop from wherever it was
-	c := a.ensureContainer(containerGUID)
-	// A container first seen via a Put (the player's bag, not yet snapshotted) defaults
-	// to the Bag tab so moves merge with the own-state bag; a later full snapshot can
-	// still relabel it.
-	if c.tab == "" {
-		c.location, c.tab, c.city = model.LocInventory, "Bag", ""
+	c, known := a.containers[containerGUID]
+	if !known {
+		return
 	}
+	a.removeObj(objID) // a move: drop from wherever it was
 	row := a.row(ref.Index, ref.Quality, ref.Count, c.location, c.city, c.tab, nowMS)
 	row.ObjID = objID
 	c.items[objID] = row
