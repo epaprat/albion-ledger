@@ -63,16 +63,20 @@ func ContainerItems(params map[byte]interface{}) (containerGUID, ownerGUID strin
 	return containerGUID, ownerGUID, objIDs, true
 }
 
-// PutItem pulls (object id, container GUID) from an InventoryPutItem event (26):
-// key 0 = item object id, key 2 = container GUID (matches AttachItemContainer key 1),
-// key 1 = slot (unused here). The item is now in that container.
-func PutItem(params map[byte]interface{}) (objID int, containerGUID string, ok bool) {
+// PutItem pulls (object id, slot, container GUID) from an InventoryPutItem event (26):
+// key 0 = item object id, key 1 = slot index, key 2 = container GUID (matches
+// AttachItemContainer key 1). The item is now in that container at that slot.
+func PutItem(params map[byte]interface{}) (objID, slot int, containerGUID string, ok bool) {
 	id, iok := toIntVal(params[0])
 	g, gok := params[2].([]byte)
 	if !iok || !gok {
-		return 0, "", false
+		return 0, 0, "", false
 	}
-	return id, hex.EncodeToString(g), true
+	s, sok := toIntVal(params[1])
+	if !sok || s < 0 {
+		s = -1 // slot unknown — callers tolerate
+	}
+	return id, s, hex.EncodeToString(g), true
 }
 
 // DeleteItem pulls the removed object id from an InventoryDeleteItem event (27):
@@ -153,6 +157,23 @@ func OwnEquipped(params map[byte]interface{}) ([]int, bool) {
 	return slotObjIDs(params, 52)
 }
 
+// OwnInventorySlots pulls the bag as a SLOT-INDEXED array (own-state key 55): empties
+// stay as 0 IN PLACE, because the player's move requests address bag items by slot
+// index — compacting (like OwnInventory does for the snapshot view) would misalign
+// every live move (feature 008). Hostile-size arrays are rejected (maxWireSlots).
+func OwnInventorySlots(params map[byte]interface{}) ([]int, bool) {
+	arr, ok := intSlice(params[55])
+	if !ok || len(arr) > maxWireSlots {
+		return nil, false
+	}
+	for i, v := range arr {
+		if v <= 0 {
+			arr[i] = 0
+		}
+	}
+	return arr, true
+}
+
 func slotObjIDs(params map[byte]interface{}, key byte) ([]int, bool) {
 	arr, ok := intSlice(params[key])
 	if !ok {
@@ -182,6 +203,21 @@ func SelfIdentity(params map[byte]interface{}) (objID int, name string, ok bool)
 		return 0, "", false
 	}
 	return objID, name, true
+}
+
+// SelfContainers pulls the player's own container GUIDs from the Join own-state
+// response: key 54 = the BAG container GUID (live-confirmed 3× — E:26 key2, op-30
+// key4 and op-36 key0 all reference it), key 51 = the equipped-set GUID CANDIDATE
+// (unconfirmed; a wrong candidate is harmless — see 008 research Decision 4). Either
+// may be absent; ok=true when at least the bag GUID is present.
+func SelfContainers(params map[byte]interface{}) (bagGUID, equippedGUID string, ok bool) {
+	if g, gok := params[54].([]byte); gok && len(g) > 0 {
+		bagGUID = hex.EncodeToString(g)
+	}
+	if g, gok := params[51].([]byte); gok && len(g) > 0 {
+		equippedGUID = hex.EncodeToString(g)
+	}
+	return bagGUID, equippedGUID, bagGUID != ""
 }
 
 // IntParam reads an integer-valued param by key.
