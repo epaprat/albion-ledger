@@ -36,6 +36,17 @@ type tabInfo struct {
 	name string // REAL tab name from the overview
 }
 
+// bankCityDisplay normalizes a bank cluster's display name to the CITY name the
+// physical-open path uses ("Bank of Fort Sterling" → "Fort Sterling"), so both
+// sources group under ONE city instead of duplicating it (live-seen 2026-07-05).
+func bankCityDisplay(clusterName string) string {
+	const prefix = "Bank of "
+	if len(clusterName) > len(prefix) && clusterName[:len(prefix)] == prefix {
+		return clusterName[len(prefix):]
+	}
+	return clusterName
+}
+
 // handleBankLocations — R:516: rebuild the vault→city bridge and publish per-city
 // totals. REBUILD (not amend): each K opening carries the full location list, so a
 // wholesale replace both stays bounded and drops stale cities (contract rule 8).
@@ -52,7 +63,7 @@ func handleBankLocations(p *Pipeline, _ probe.Kind, _ int, params map[byte]inter
 	p.tabMeta = make(map[string]tabInfo)
 	values := make(map[string]int64, len(locs))
 	for _, l := range locs {
-		city := p.zoneName(l.ClusterID)
+		city := bankCityDisplay(p.zoneName(l.ClusterID))
 		p.vaultCity[l.VaultGUID] = city
 		if l.RawValue > 0 {
 			values[city] = l.RawValue / vaultValueScale

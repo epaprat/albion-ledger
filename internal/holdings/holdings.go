@@ -33,6 +33,7 @@ type container struct {
 	items    map[int]model.HoldingItem // objId -> row
 	lastSeen int64
 	pinned   bool // player's own containers: never cap-evicted (a frozen bag is a defect)
+	summary  bool // K-overview type-based summary tab (010) — yields to physical data
 }
 
 // containerCap bounds the number of tracked containers (Principle XI; FR-011).
@@ -269,7 +270,19 @@ const invName = "Inventory"
 func (a *Aggregator) SetVaultSummaryTab(tabGUID, city, tabName string, rows []ItemRef, nowMS int64) {
 	a.mu.Lock()
 	defer a.mu.Unlock()
+	// A PHYSICAL container (object-based, from an actual bank open) already covering
+	// this (city, tab) always wins: it is richer (object ids, declared values, real
+	// qualities), and summing both sources would double-count the tab (live-seen
+	// 2026-07-05: the same bank showed under two city groups). The K summary only
+	// fills tabs the player has never physically opened.
+	for guid, other := range a.containers {
+		if guid != tabGUID && !other.summary && other.location == model.LocBank &&
+			other.city == city && other.tab == tabName && len(other.items) > 0 {
+			return
+		}
+	}
 	c := a.ensureContainer(tabGUID)
+	c.summary = true
 	for objID := range c.items {
 		if a.objLoc[objID] == tabGUID {
 			delete(a.objLoc, objID)

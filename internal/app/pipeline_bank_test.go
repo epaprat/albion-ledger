@@ -233,3 +233,61 @@ func TestBankContentQualityAndValues(t *testing.T) {
 		t.Fatalf("valued/unvalued = %d/%d", valued, unvalued)
 	}
 }
+
+// Live 2026-07-05: the same bank must not appear as TWO city groups. The K path
+// normalizes "Bank of X" to "X", and a physically-opened (object-based) tab wins —
+// the K summary never overwrites or double-counts it.
+func TestBankCityUnificationAndPhysicalWins(t *testing.T) {
+	svc, p := newGlue(t)
+	// Physical open first: city recorded via bank vault + container (object rows).
+	p.registerNewItem(32, declParams(700, 837, 1))
+	svc.SetCurrentCity("Fort Sterling")
+	svc.IngestBankVault([]string{hexOf(0x99)}, []string{"Hammadde"})
+	p.dispatch(probe.KindEvent, 99, map[byte]interface{}{
+		0: int32(6), 1: bankGUID(0x77), 2: bankGUID(0x99), 3: []int32{700}, 252: int16(99),
+	})
+
+	// K overview for the same bank: cluster resolves to "Bank of Fort Sterling"
+	// (normalized to "Fort Sterling"), same tab name → summary must yield.
+	p.dispatch(probe.KindResponse, 516, locationsParams([]string{"XKCD"}, []byte{0xAA}, []int64{50000}))
+	p.vaultCity[hexOf(0xAA)] = "Fort Sterling" // as bankCityDisplay would produce
+	p.dispatch(probe.KindResponse, 517, tabsParams(0xAA, []byte{0x11}, []string{"Hammadde"}))
+	p.dispatch(probe.KindResponse, 1, contentParams(0x11, []int16{920}, []int16{7}))
+
+	rows := svc.ListHoldings()
+	var hammadde int
+	for _, r := range rows {
+		if r.Group == "Hammadde" {
+			hammadde++
+			if r.ObjID < 0 {
+				t.Fatalf("summary row must yield to the physical tab: %+v", r)
+			}
+		}
+	}
+	if hammadde != 1 {
+		t.Fatalf("Hammadde rows = %d, want exactly the physical 1 (no double count)", hammadde)
+	}
+	// A tab NOT physically opened still fills from K.
+	p.dispatch(probe.KindResponse, 517, tabsParams(0xAA, []byte{0x22}, []string{"Setler"}))
+	p.dispatch(probe.KindResponse, 1, contentParams(0x22, []int16{837}, []int16{3}))
+	found := false
+	for _, r := range svc.ListHoldings() {
+		if r.Group == "Setler" && r.ObjID < 0 {
+			found = true
+		}
+	}
+	if !found {
+		t.Fatal("unopened tab must still fill from the K summary")
+	}
+}
+
+func hexOf(prefix byte) string {
+	g := bankGUID(prefix)
+	const hexd = "0123456789abcdef"
+	out := make([]byte, 32)
+	for i, b := range g {
+		out[i*2] = hexd[b>>4]
+		out[i*2+1] = hexd[b&0xf]
+	}
+	return string(out)
+}
