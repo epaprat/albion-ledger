@@ -18,6 +18,7 @@ const zoneWindow = ref('session')    // time window for zone stats
 const flowSummary = ref({ active: false, netSilver: 0, silverPerHour: 0, lootValue: 0, gatherValue: 0, fame: 0, famePerHour: 0, rateReady: false, unvaluedCount: 0, eventCount: 0 })
 const spec = ref({ masteries: [], nodeCount: 0, totalFame: 0 })
 const specFilter = ref('')
+const specHideUntouched = ref(false)
 const status = ref({ capturing: false, interface: '', encryptedRate: 0, driftAlert: '' })
 const ready = ref(false)
 
@@ -30,6 +31,7 @@ const specCollapsed = (key) => !!specOpen.value[key]
 const specTree = computed(() => {
   const q = specFilter.value.trim().toLowerCase()
   const rows = (spec.value.masteries || []).filter(m => {
+    if (specHideUntouched.value && !m.touched) return false
     if (!q) return true
     return (m.name || '').toLowerCase().includes(q)
       || (m.subcategory || '').toLowerCase().includes(q)
@@ -39,12 +41,13 @@ const specTree = computed(() => {
   for (const m of rows) {
     const cat = m.category || 'Other'
     const sub = m.subcategory || '—'
-    if (!cats.has(cat)) cats.set(cat, { name: cat, nodes: 0, fame: 0, maxLevel: 0, subs: new Map() })
+    if (!cats.has(cat)) cats.set(cat, { name: cat, nodes: 0, touched: 0, fame: 0, maxLevel: 0, subs: new Map() })
     const c = cats.get(cat)
-    if (!c.subs.has(sub)) c.subs.set(sub, { name: sub, nodes: 0, fame: 0, maxLevel: 0, rows: [] })
+    if (!c.subs.has(sub)) c.subs.set(sub, { name: sub, nodes: 0, touched: 0, fame: 0, maxLevel: 0, rows: [] })
     const sc = c.subs.get(sub)
     sc.rows.push(m); sc.nodes++; sc.fame += m.fame || 0; sc.maxLevel = Math.max(sc.maxLevel, m.level || 0)
     c.nodes++; c.fame += m.fame || 0; c.maxLevel = Math.max(c.maxLevel, m.level || 0)
+    if (m.touched) { sc.touched++; c.touched++ }
   }
   const catList = [...cats.values()].sort((a, b) => b.fame - a.fame)
   for (const c of catList) {
@@ -194,6 +197,9 @@ onMounted(async () => {
             <strong>{{ spec.nodeCount }} nodes</strong>
             <span class="muted" v-if="spec.totalFame">· {{ compact(spec.totalFame) }} fame</span>
             <span class="filters">
+              <label class="sr-pair" style="display:inline-flex;align-items:center;gap:5px;">
+                <input v-model="specHideUntouched" type="checkbox" /> Only started
+              </label>
               <label class="sr-pair">Filter
                 <input v-model="specFilter" type="search" placeholder="node name…" aria-label="Filter nodes" />
               </label>
@@ -204,19 +210,19 @@ onMounted(async () => {
               <button class="spec-head cat" @click="toggleSpec(c.name)" :aria-expanded="!specCollapsed(c.name)">
                 <span class="chev" :class="{ open: !specCollapsed(c.name) }">▸</span>
                 <span class="spec-name">{{ c.name }}</span>
-                <span class="muted">· {{ c.nodes }} · max {{ c.maxLevel }} · {{ compact(c.fame) }}</span>
+                <span class="muted">· {{ c.touched }}/{{ c.nodes }} started · max {{ c.maxLevel }} · {{ compact(c.fame) }}</span>
               </button>
               <div v-show="!specCollapsed(c.name)" class="spec-subs">
                 <div v-for="sc in c.subList" :key="sc.name" class="spec-sub">
                   <button class="spec-head sub" @click="toggleSpec(c.name + '/' + sc.name)" :aria-expanded="!specCollapsed(c.name + '/' + sc.name)">
                     <span class="chev" :class="{ open: !specCollapsed(c.name + '/' + sc.name) }">▸</span>
                     <span class="spec-name">{{ sc.name }}</span>
-                    <span class="muted">· {{ sc.nodes }} · max {{ sc.maxLevel }} · {{ compact(sc.fame) }}</span>
+                    <span class="muted">· {{ sc.touched }}/{{ sc.nodes }} · max {{ sc.maxLevel }} · {{ compact(sc.fame) }}</span>
                   </button>
                   <table v-show="!specCollapsed(c.name + '/' + sc.name)">
                     <caption class="sr-only">{{ c.name }} — {{ sc.name }}</caption>
                     <tbody>
-                      <tr v-for="m in sc.rows" :key="m.index">
+                      <tr v-for="m in sc.rows" :key="m.index" :class="{ untouched: !m.touched }">
                         <td>{{ m.name }}</td>
                         <td class="num">{{ m.level }}</td>
                         <td>
@@ -273,6 +279,7 @@ tbody tr:hover { background: var(--panel); }
 .chev.open { transform: rotate(90deg); }
 .spec-subs { display: flex; flex-direction: column; gap: 1px; }
 .spec-sub table { margin-left: 40px; width: calc(100% - 40px); }
+.untouched { opacity: 0.4; }
 .bar { display: inline-block; width: 120px; height: 8px; background: var(--border); border-radius: 4px; overflow: hidden; vertical-align: middle; }
 .bar-fill { display: block; height: 100%; background: var(--good); }
 </style>

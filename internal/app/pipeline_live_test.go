@@ -371,3 +371,7 @@ func (testSpecNames) Resolve(id int) (string, string, string, bool) {
 	}
 	return "", "", "", false
 }
+
+func (testSpecNames) All() []model.SpecNodeCatalog {
+	return []model.SpecNodeCatalog{{ID: 22, Name: "Combat Axes", Category: "Combat", Subcategory: "Axes"}}
+}

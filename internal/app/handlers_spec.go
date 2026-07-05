@@ -87,19 +87,32 @@ func handleSpecDone(p *Pipeline, _ probe.Kind, _ int, params map[byte]interface{
 	}
 }
 
-// emitSpec resolves node names/categories and pushes the Destiny Board DTO.
+// emitSpec builds the COMPLETE Destiny Board (every catalog node, untouched ones at
+// level 0 like the in-game B menu) with the player's live progress overlaid, and
+// pushes the DTO. NodeCount/TotalFame stay TOUCHED-only (real progress totals).
 func (p *Pipeline) emitSpec() {
-	rows := p.board.List()
-	masteries := make([]model.MasteryLevel, len(rows))
-	for i, n := range rows {
-		name, category, subcategory, ok := p.specNames.Resolve(n.ID)
-		if !ok {
-			name = "Node #" + strconv.Itoa(n.ID)
-			category = "Other"
-		}
-		masteries[i] = model.MasteryLevel{
-			Index: n.ID, Name: name, Level: n.Level,
-			Progress: n.Progress, Fame: n.Fame, Category: category, Subcategory: subcategory,
+	// Live progress by node id.
+	prog := map[int]specboard.Node{}
+	for _, n := range p.board.List() {
+		prog[n.ID] = n
+	}
+	catalog := p.specNames.All()
+	masteries := make([]model.MasteryLevel, 0, len(catalog)+len(prog))
+	inCatalog := make(map[int]bool, len(catalog))
+	add := func(id int, name, category, subcategory string, n specboard.Node, touched bool) {
+		masteries = append(masteries, model.MasteryLevel{
+			Index: id, Name: name, Level: n.Level, Progress: n.Progress, Fame: n.Fame,
+			Category: category, Subcategory: subcategory, Touched: touched,
+		})
+	}
+	for _, c := range catalog {
+		inCatalog[c.ID] = true
+		add(c.ID, c.Name, c.Category, c.Subcategory, prog[c.ID], prog[c.ID].Level > 0 || prog[c.ID].Fame > 0)
+	}
+	// A live node not in the catalog (unknown id) still shows, honestly labelled.
+	for id, n := range prog {
+		if !inCatalog[id] {
+			add(id, "Node #"+strconv.Itoa(id), "Other", "", n, true)
 		}
 	}
 	count, totalFame := p.board.Totals()

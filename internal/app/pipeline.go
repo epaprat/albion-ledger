@@ -75,6 +75,7 @@ type Sink interface {
 // SpecResolver maps a Destiny Board node id to a readable name + category (011).
 type SpecResolver interface {
 	Resolve(id int) (name, category, subcategory string, ok bool)
+	All() []model.SpecNodeCatalog
 }
 
 // Pipeline holds every piece of capture-time state that used to be a package global

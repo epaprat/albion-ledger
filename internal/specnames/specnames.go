@@ -9,6 +9,8 @@ import (
 	"fmt"
 	"os"
 	"sync"
+
+	"github.com/epaprat/albion-ledger/internal/domain/model"
 )
 
 type entry struct {
@@ -56,6 +58,19 @@ func (c *Catalog) Resolve(id int) (name, category, subcategory string, ok bool) 
 	defer c.mu.RUnlock()
 	e, found := c.byID[id]
 	return e.Name, e.Category, e.Subcategory, found
+}
+
+// All returns every catalog node (id, name, category, subcategory) so the Spec view
+// can show the COMPLETE Destiny Board — untouched nodes at level 0 — like the game's
+// B menu, not only the nodes the wire snapshot carries (011).
+func (c *Catalog) All() []model.SpecNodeCatalog {
+	c.mu.RLock()
+	defer c.mu.RUnlock()
+	out := make([]model.SpecNodeCatalog, 0, len(c.byID))
+	for _, e := range c.byID {
+		out = append(out, model.SpecNodeCatalog{ID: e.ID, Name: e.Name, Category: e.Category, Subcategory: e.Subcategory})
+	}
+	return out
 }
 
 // Reload swaps in a new catalog file at runtime; a malformed file is rejected and
