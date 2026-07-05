@@ -3,7 +3,7 @@ import { ref, computed, onMounted } from 'vue'
 import HoldingsPanel from './components/HoldingsPanel.vue'
 import FlowPanel from './components/FlowPanel.vue'
 import SessionSummaryBar from './components/SessionSummaryBar.vue'
-import { fmt, tierLabel, qLabel, srcText } from './format.js'
+import { fmt, compact, tierLabel, qLabel, srcText } from './format.js'
 
 const tab = ref('flow')
 const market = ref(new Map())        // index -> LiveViewItem
@@ -16,10 +16,16 @@ const flowZones = ref([])            // ZoneStatView[] (006 — per-zone rates)
 const flowView = ref('items')        // active FlowPanel view ('zones' gates the fetch)
 const zoneWindow = ref('session')    // time window for zone stats
 const flowSummary = ref({ active: false, netSilver: 0, silverPerHour: 0, lootValue: 0, gatherValue: 0, fame: 0, famePerHour: 0, rateReady: false, unvaluedCount: 0, eventCount: 0 })
-const spec = ref({ masteries: [] })
+const spec = ref({ masteries: [], nodeCount: 0, totalFame: 0 })
+const specFilter = ref('')
 const status = ref({ capturing: false, interface: '', encryptedRate: 0, driftAlert: '' })
 const ready = ref(false)
 
+const specRows = computed(() => {
+  const q = specFilter.value.trim().toLowerCase()
+  const rows = spec.value.masteries || []
+  return q ? rows.filter(m => (m.name || '').toLowerCase().includes(q)) : rows
+})
 const marketRows = computed(() =>
   [...market.value.values()].sort((a, b) => (b.lastSeen || 0) - (a.lastSeen || 0))
 )
@@ -149,20 +155,40 @@ onMounted(async () => {
         </table>
       </section>
 
-      <!-- SPEC -->
+      <!-- SPEC (Destiny Board, 011) -->
       <section v-else>
         <div v-if="!spec.masteries || spec.masteries.length === 0" class="state">
-          <p class="big">No specs captured yet</p>
-          <p class="muted">Open your character / destiny board (or relog) so the data streams.</p>
+          <p class="big">Destiny Board not captured yet</p>
+          <p class="muted">Change zones (or relog) so your skill tree streams in.</p>
         </div>
-        <table v-else>
-          <thead><tr><th>Mastery</th><th class="num">Level</th></tr></thead>
-          <tbody>
-            <tr v-for="m in spec.masteries.filter(x => x.level > 0)" :key="m.index">
-              <td>{{ m.name }}</td><td class="num">{{ m.level }}</td>
-            </tr>
-          </tbody>
-        </table>
+        <template v-else>
+          <div class="total" role="status" aria-live="polite">
+            <span>Destiny Board</span>
+            <strong>{{ spec.nodeCount }} nodes</strong>
+            <span class="muted" v-if="spec.totalFame">· {{ compact(spec.totalFame) }} fame</span>
+            <span class="filters">
+              <label class="sr-pair">Filter
+                <input v-model="specFilter" type="search" placeholder="node name…" aria-label="Filter nodes" />
+              </label>
+            </span>
+          </div>
+          <table>
+            <caption class="sr-only">Destiny Board nodes by level</caption>
+            <thead><tr><th>Node</th><th class="num">Level</th><th>Progress</th><th class="num">Fame</th></tr></thead>
+            <tbody>
+              <tr v-for="m in specRows" :key="m.index">
+                <td>{{ m.name }}<span class="muted" v-if="m.category"> · {{ m.category }}</span></td>
+                <td class="num">{{ m.level }}</td>
+                <td>
+                  <span class="bar" :title="Math.round(m.progress * 100) + '%'">
+                    <span class="bar-fill" :style="{ width: Math.round(m.progress * 100) + '%' }"></span>
+                  </span>
+                </td>
+                <td class="num">{{ m.fame ? compact(m.fame) : '—' }}</td>
+              </tr>
+            </tbody>
+          </table>
+        </template>
       </section>
     </main>
   </div>
@@ -193,4 +219,6 @@ tbody tr:hover { background: var(--panel); }
 .badge.server_estimate { background: rgba(210,153,34,.18); color: var(--warn); }
 .badge.unknown { color: var(--muted); }
 .badge.stale { background: rgba(248,81,73,.18); color: var(--bad); margin-left: 8px; }
+.bar { display: inline-block; width: 120px; height: 8px; background: var(--border); border-radius: 4px; overflow: hidden; vertical-align: middle; }
+.bar-fill { display: block; height: 100%; background: var(--good); }
 </style>

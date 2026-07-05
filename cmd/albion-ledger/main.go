@@ -29,6 +29,7 @@ import (
 	"github.com/epaprat/albion-ledger/internal/domain/model"
 	"github.com/epaprat/albion-ledger/internal/domain/probe"
 	"github.com/epaprat/albion-ledger/internal/locations"
+	"github.com/epaprat/albion-ledger/internal/specnames"
 	"github.com/epaprat/albion-ledger/internal/photon"
 	"github.com/epaprat/albion-ledger/internal/port"
 	"github.com/epaprat/albion-ledger/internal/valuation"
@@ -64,6 +65,7 @@ func main() {
 	codesPath := flag.String("codes", "", "override code map file (data/codes.json format)")
 	debugFlowFlag := flag.Bool("debugflow", false, "log flow (silver/loot/gather/fame) attribution to stderr")
 	noExternal := flag.Bool("noexternal", false, "disable the community price feed (AODP) — no outbound HTTP")
+	specNodesPath := flag.String("specnodes", "", "override Destiny Board node-name catalog (data/specnodes.json format)")
 	flag.Parse()
 
 	cat, err := catalog.New(data.ItemsJSON)
@@ -94,7 +96,16 @@ func main() {
 	emitter := &wailsEmitter{}
 	svc := wailsadapter.NewService(cat, book, val, emitter, 5000, nowMS)
 
-	pipe := app.New(svc, probe.New(reg), locs, nowMS, *debugFlowFlag)
+	specCat, err := specnames.New(data.SpecNodesJSON)
+	if err != nil {
+		log.Fatal(err)
+	}
+	if *specNodesPath != "" {
+		if err := specCat.Reload(*specNodesPath); err != nil {
+			log.Printf("spec-nodes override failed, using bundled: %v", err)
+		}
+	}
+	pipe := app.New(svc, probe.New(reg), locs, specCat, nowMS, *debugFlowFlag)
 
 	// Local-first store (Principle VIII): earnings events are persisted to SQLite as
 	// they arrive; the in-memory ledger stays bounded (Principle XI). Best-effort — if

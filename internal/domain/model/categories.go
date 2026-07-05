@@ -42,6 +42,12 @@ const (
 	CatBankLocations  Category = "bank_locations"
 	CatBankTabs       Category = "bank_tabs"
 	CatBankTabContent Category = "bank_tab_content"
+	// CatSpecSnapshot/CatSpecDelta/CatSpecDone carry the Destiny Board (achievement
+	// family, feature 011): E:154 full self snapshot every Join, E:153 live progress
+	// delta, E:152 node completion. Not probe coverage targets.
+	CatSpecSnapshot Category = "spec_snapshot"
+	CatSpecDelta    Category = "spec_delta"
+	CatSpecDone     Category = "spec_done"
 )
 
 // AllCategories is the full ordered set of target categories (13). The coverage

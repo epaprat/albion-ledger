@@ -53,7 +53,7 @@ func newGlue(t *testing.T) (*wailsadapter.Service, *Pipeline) {
 	val := valuation.NewValuer(book, model.DefaultStaleAfterMS)
 	svc := wailsadapter.NewService(c, book, val, nil, 100, nowMS)
 
-	p := New(svc, probe.New(reg), nil, nowMS, false)
+	p := New(svc, probe.New(reg), nil, testSpecNames{}, nowMS, false)
 	p.selfContainerGUIDs = map[string]string{tBagGUID: SelfBagGUID, tEqGUID: SelfEquipGUID}
 
 	// Pre-create virtual containers (mirrors OnStartup): pinned, not-yet-observed.
@@ -361,4 +361,13 @@ func TestMoveToHoldingsKnownButTrackerUnknownDst(t *testing.T) {
 	if !inBank {
 		t.Fatal("item must land in the snapshotted bank tab (tracker TTL must not matter)")
 	}
+}
+// testSpecNames is a trivial resolver for the pipeline tests (011).
+type testSpecNames struct{}
+
+func (testSpecNames) Resolve(id int) (string, string, bool) {
+	if id == 22 {
+		return "Combat Axes", "fighting", true
+	}
+	return "", "", false
 }

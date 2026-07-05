@@ -12,3 +12,6 @@ var CodesJSON []byte
 
 //go:embed clusters.json
 var ClustersJSON []byte
+
+//go:embed specnodes.json
+var SpecNodesJSON []byte

@@ -62,12 +62,17 @@ type HoldingsSummary struct {
 
 // MasteryLevel is one character specialization level.
 type MasteryLevel struct {
-	Index int    `json:"index"`
-	Name  string `json:"name"` // best-effort; "Mastery #<index>" fallback
-	Level int    `json:"level"`
+	Index    int     `json:"index"`
+	Name     string  `json:"name"` // resolved node name; "Node #<index>" fallback
+	Level    int     `json:"level"`
+	Progress float64 `json:"progress"` // fraction to next level [0,1] (011)
+	Fame     int64   `json:"fame"`     // accumulated fame on this node (011)
+	Category string  `json:"category"` // node category, e.g. "fighting" (011)
 }
 
-// CharacterSpec is the player's specialization levels.
+// CharacterSpec is the player's Destiny Board (specialization) state.
 type CharacterSpec struct {
 	Masteries []MasteryLevel `json:"masteries"`
+	NodeCount int            `json:"nodeCount"` // total nodes (011)
+	TotalFame int64          `json:"totalFame"` // summed node fame (011)
 }

@@ -1,6 +1,9 @@
 package photon
 
-import "encoding/binary"
+import (
+	"encoding/binary"
+	"math"
+)
 
 // This encoder produces valid Photon payloads for tests and synthetic fixtures.
 // It is the inverse of the decoder for the subset of types we craft. Encoding
@@ -93,6 +96,8 @@ func encodeValue(tc byte, val interface{}) []byte {
 		s := val.(string)
 		out := appendCompressedUint32(nil, uint32(len(s)))
 		return append(out, s...)
+	case typeFloat:
+		return binary.LittleEndian.AppendUint32(nil, math.Float32bits(val.(float32)))
 	default:
 		if tc&typeArray == typeArray {
 			return encodeTypedArray(tc&^typeArray, val)
@@ -119,6 +124,13 @@ func encodeTypedArray(elemType byte, val interface{}) []byte {
 		out := appendCompressedUint32(nil, uint32(len(arr)))
 		for _, n := range arr {
 			out = appendCompressedInt64(out, n)
+		}
+		return out
+	case typeFloat:
+		arr := val.([]float32)
+		out := appendCompressedUint32(nil, uint32(len(arr)))
+		for _, f := range arr {
+			out = binary.LittleEndian.AppendUint32(out, math.Float32bits(f))
 		}
 		return out
 	case typeString:

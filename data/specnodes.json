@@ -1,0 +1,3490 @@
+{
+ "_comment": "Destiny Board node names from ao-bin-dumps achievements.xml (version c3980dfe-1309-4811-aa3e-1a3a670ac675). id = DOCUMENT-ORDER index (0-based) over \u003cachievement\u003e+\u003ctemplateachievement\u003e defs — the wire E:154 alignment assumption, live-verified per 011 quickstart. Regenerate: scripts/gen-spec-nodes.",
+ "nodes": [
+  {
+   "id": 0,
+   "name": "Adventurer Adept",
+   "category": "main"
+  },
+  {
+   "id": 1,
+   "name": "Adventurer Elder",
+   "category": "main"
+  },
+  {
+   "id": 2,
+   "name": "Adventurer Expert",
+   "category": "main"
+  },
+  {
+   "id": 3,
+   "name": "Adventurer Grandmaster",
+   "category": "main"
+  },
+  {
+   "id": 4,
+   "name": "Adventurer Journeyman",
+   "category": "main"
+  },
+  {
+   "id": 5,
+   "name": "Adventurer Master",
+   "category": "main"
+  },
+  {
+   "id": 6,
+   "name": "Combat Arcanestaffs",
+   "category": "fighting"
+  },
+  {
+   "id": 7,
+   "name": "Combat Arcanestaffs Arcane",
+   "category": "fighting"
+  },
+  {
+   "id": 8,
+   "name": "Combat Arcanestaffs Avalon",
+   "category": "fighting"
+  },
+  {
+   "id": 9,
+   "name": "Combat Arcanestaffs Crystal",
+   "category": "fighting"
+  },
+  {
+   "id": 10,
+   "name": "Combat Arcanestaffs Enigmatic",
+   "category": "fighting"
+  },
+  {
+   "id": 11,
+   "name": "Combat Arcanestaffs Great",
+   "category": "fighting"
+  },
+  {
+   "id": 12,
+   "name": "Combat Arcanestaffs Hell",
+   "category": "fighting"
+  },
+  {
+   "id": 13,
+   "name": "Combat Arcanestaffs Morgana",
+   "category": "fighting"
+  },
+  {
+   "id": 14,
+   "name": "Combat Arcanestaffs Undead",
+   "category": "fighting"
+  },
+  {
+   "id": 15,
+   "name": "Combat Axes",
+   "category": "fighting"
+  },
+  {
+   "id": 16,
+   "name": "Combat Axes Avalon",
+   "category": "fighting"
+  },
+  {
+   "id": 17,
+   "name": "Combat Axes Axe",
+   "category": "fighting"
+  },
+  {
+   "id": 18,
+   "name": "Combat Axes Crystal",
+   "category": "fighting"
+  },
+  {
+   "id": 19,
+   "name": "Combat Axes Great",
+   "category": "fighting"
+  },
+  {
+   "id": 20,
+   "name": "Combat Axes Halberd",
+   "category": "fighting"
+  },
+  {
+   "id": 21,
+   "name": "Combat Axes Hell",
+   "category": "fighting"
+  },
+  {
+   "id": 22,
+   "name": "Combat Axes Keeper",
+   "category": "fighting"
+  },
+  {
+   "id": 23,
+   "name": "Combat Axes Morgana",
+   "category": "fighting"
+  },
+  {
+   "id": 24,
+   "name": "Combat Books",
+   "category": "fighting"
+  },
+  {
+   "id": 25,
+   "name": "Combat Books Avalon",
+   "category": "fighting"
+  },
+  {
+   "id": 26,
+   "name": "Combat Books Book",
+   "category": "fighting"
+  },
+  {
+   "id": 27,
+   "name": "Combat Books Crystal",
+   "category": "fighting"
+  },
+  {
+   "id": 28,
+   "name": "Combat Books Hell",
+   "category": "fighting"
+  },
+  {
+   "id": 29,
+   "name": "Combat Books Keeper",
+   "category": "fighting"
+  },
+  {
+   "id": 30,
+   "name": "Combat Books Morgana",
+   "category": "fighting"
+  },
+  {
+   "id": 31,
+   "name": "Combat Bows",
+   "category": "fighting"
+  },
+  {
+   "id": 32,
+   "name": "Combat Bows Avalon",
+   "category": "fighting"
+  },
+  {
+   "id": 33,
+   "name": "Combat Bows Bow",
+   "category": "fighting"
+  },
+  {
+   "id": 34,
+   "name": "Combat Bows Crystal",
+   "category": "fighting"
+  },
+  {
+   "id": 35,
+   "name": "Combat Bows Hell",
+   "category": "fighting"
+  },
+  {
+   "id": 36,
+   "name": "Combat Bows Keeper",
+   "category": "fighting"
+  },
+  {
+   "id": 37,
+   "name": "Combat Bows Long",
+   "category": "fighting"
+  },
+  {
+   "id": 38,
+   "name": "Combat Bows Undead",
+   "category": "fighting"
+  },
+  {
+   "id": 39,
+   "name": "Combat Bows War",
+   "category": "fighting"
+  },
+  {
+   "id": 40,
+   "name": "Combat Cloth",
+   "category": "fighting"
+  },
+  {
+   "id": 41,
+   "name": "Combat Cloth Armors",
+   "category": "fighting"
+  },
+  {
+   "id": 42,
+   "name": "Combat Cloth Armors Avalon",
+   "category": "fighting"
+  },
+  {
+   "id": 43,
+   "name": "Combat Cloth Armors Fey",
+   "category": "fighting"
+  },
+  {
+   "id": 44,
+   "name": "Combat Cloth Armors Hell",
+   "category": "fighting"
+  },
+  {
+   "id": 45,
+   "name": "Combat Cloth Armors Keeper",
+   "category": "fighting"
+  },
+  {
+   "id": 46,
+   "name": "Combat Cloth Armors Morgana",
+   "category": "fighting"
+  },
+  {
+   "id": 47,
+   "name": "Combat Cloth Armors Royal",
+   "category": "fighting"
+  },
+  {
+   "id": 48,
+   "name": "Combat Cloth Armors Set1",
+   "category": "fighting"
+  },
+  {
+   "id": 49,
+   "name": "Combat Cloth Armors Set2",
+   "category": "fighting"
+  },
+  {
+   "id": 50,
+   "name": "Combat Cloth Armors Set3",
+   "category": "fighting"
+  },
+  {
+   "id": 51,
+   "name": "Combat Cloth Heads",
+   "category": "fighting"
+  },
+  {
+   "id": 52,
+   "name": "Combat Cloth Heads Avalon",
+   "category": "fighting"
+  },
+  {
+   "id": 53,
+   "name": "Combat Cloth Heads Fey",
+   "category": "fighting"
+  },
+  {
+   "id": 54,
+   "name": "Combat Cloth Heads Hell",
+   "category": "fighting"
+  },
+  {
+   "id": 55,
+   "name": "Combat Cloth Heads Keeper",
+   "category": "fighting"
+  },
+  {
+   "id": 56,
+   "name": "Combat Cloth Heads Morgana",
+   "category": "fighting"
+  },
+  {
+   "id": 57,
+   "name": "Combat Cloth Heads Royal",
+   "category": "fighting"
+  },
+  {
+   "id": 58,
+   "name": "Combat Cloth Heads Set1",
+   "category": "fighting"
+  },
+  {
+   "id": 59,
+   "name": "Combat Cloth Heads Set2",
+   "category": "fighting"
+  },
+  {
+   "id": 60,
+   "name": "Combat Cloth Heads Set3",
+   "category": "fighting"
+  },
+  {
+   "id": 61,
+   "name": "Combat Cloth Shoes",
+   "category": "fighting"
+  },
+  {
+   "id": 62,
+   "name": "Combat Cloth Shoes Avalon",
+   "category": "fighting"
+  },
+  {
+   "id": 63,
+   "name": "Combat Cloth Shoes Fey",
+   "category": "fighting"
+  },
+  {
+   "id": 64,
+   "name": "Combat Cloth Shoes Hell",
+   "category": "fighting"
+  },
+  {
+   "id": 65,
+   "name": "Combat Cloth Shoes Keeper",
+   "category": "fighting"
+  },
+  {
+   "id": 66,
+   "name": "Combat Cloth Shoes Morgana",
+   "category": "fighting"
+  },
+  {
+   "id": 67,
+   "name": "Combat Cloth Shoes Royal",
+   "category": "fighting"
+  },
+  {
+   "id": 68,
+   "name": "Combat Cloth Shoes Set1",
+   "category": "fighting"
+  },
+  {
+   "id": 69,
+   "name": "Combat Cloth Shoes Set2",
+   "category": "fighting"
+  },
+  {
+   "id": 70,
+   "name": "Combat Cloth Shoes Set3",
+   "category": "fighting"
+  },
+  {
+   "id": 71,
+   "name": "Combat Crossbows",
+   "category": "fighting"
+  },
+  {
+   "id": 72,
+   "name": "Combat Crossbows Avalon",
+   "category": "fighting"
+  },
+  {
+   "id": 73,
+   "name": "Combat Crossbows Crossbow",
+   "category": "fighting"
+  },
+  {
+   "id": 74,
+   "name": "Combat Crossbows Crystal",
+   "category": "fighting"
+  },
+  {
+   "id": 75,
+   "name": "Combat Crossbows Hell",
+   "category": "fighting"
+  },
+  {
+   "id": 76,
+   "name": "Combat Crossbows Large",
+   "category": "fighting"
+  },
+  {
+   "id": 77,
+   "name": "Combat Crossbows Morgana",
+   "category": "fighting"
+  },
+  {
+   "id": 78,
+   "name": "Combat Crossbows Onehand",
+   "category": "fighting"
+  },
+  {
+   "id": 79,
+   "name": "Combat Crossbows Undead",
+   "category": "fighting"
+  },
+  {
+   "id": 80,
+   "name": "Combat Cursedstaffs",
+   "category": "fighting"
+  },
+  {
+   "id": 81,
+   "name": "Combat Cursedstaffs Avalon",
+   "category": "fighting"
+  },
+  {
+   "id": 82,
+   "name": "Combat Cursedstaffs Crystal",
+   "category": "fighting"
+  },
+  {
+   "id": 83,
+   "name": "Combat Cursedstaffs Cursed",
+   "category": "fighting"
+  },
+  {
+   "id": 84,
+   "name": "Combat Cursedstaffs Demonic",
+   "category": "fighting"
+  },
+  {
+   "id": 85,
+   "name": "Combat Cursedstaffs Great",
+   "category": "fighting"
+  },
+  {
+   "id": 86,
+   "name": "Combat Cursedstaffs Hell",
+   "category": "fighting"
+  },
+  {
+   "id": 87,
+   "name": "Combat Cursedstaffs Morgana",
+   "category": "fighting"
+  },
+  {
+   "id": 88,
+   "name": "Combat Cursedstaffs Undead",
+   "category": "fighting"
+  },
+  {
+   "id": 89,
+   "name": "Combat Daggers",
+   "category": "fighting"
+  },
+  {
+   "id": 90,
+   "name": "Combat Daggers Avalon",
+   "category": "fighting"
+  },
+  {
+   "id": 91,
+   "name": "Combat Daggers Claws",
+   "category": "fighting"
+  },
+  {
+   "id": 92,
+   "name": "Combat Daggers Crystal",
+   "category": "fighting"
+  },
+  {
+   "id": 93,
+   "name": "Combat Daggers Dagger",
+   "category": "fighting"
+  },
+  {
+   "id": 94,
+   "name": "Combat Daggers Hell",
+   "category": "fighting"
+  },
+  {
+   "id": 95,
+   "name": "Combat Daggers Morgana",
+   "category": "fighting"
+  },
+  {
+   "id": 96,
+   "name": "Combat Daggers Pair",
+   "category": "fighting"
+  },
+  {
+   "id": 97,
+   "name": "Combat Daggers Undead",
+   "category": "fighting"
+  },
+  {
+   "id": 98,
+   "name": "Combat Firestaffs",
+   "category": "fighting"
+  },
+  {
+   "id": 99,
+   "name": "Combat Firestaffs Avalon",
+   "category": "fighting"
+  },
+  {
+   "id": 100,
+   "name": "Combat Firestaffs Crystal",
+   "category": "fighting"
+  },
+  {
+   "id": 101,
+   "name": "Combat Firestaffs Fire",
+   "category": "fighting"
+  },
+  {
+   "id": 102,
+   "name": "Combat Firestaffs Great",
+   "category": "fighting"
+  },
+  {
+   "id": 103,
+   "name": "Combat Firestaffs Hell",
+   "category": "fighting"
+  },
+  {
+   "id": 104,
+   "name": "Combat Firestaffs Inferno",
+   "category": "fighting"
+  },
+  {
+   "id": 105,
+   "name": "Combat Firestaffs Keeper",
+   "category": "fighting"
+  },
+  {
+   "id": 106,
+   "name": "Combat Firestaffs Morgana",
+   "category": "fighting"
+  },
+  {
+   "id": 107,
+   "name": "Combat Froststaffs",
+   "category": "fighting"
+  },
+  {
+   "id": 108,
+   "name": "Combat Froststaffs Avalon",
+   "category": "fighting"
+  },
+  {
+   "id": 109,
+   "name": "Combat Froststaffs Crystal",
+   "category": "fighting"
+  },
+  {
+   "id": 110,
+   "name": "Combat Froststaffs Frost",
+   "category": "fighting"
+  },
+  {
+   "id": 111,
+   "name": "Combat Froststaffs Glacial",
+   "category": "fighting"
+  },
+  {
+   "id": 112,
+   "name": "Combat Froststaffs Great",
+   "category": "fighting"
+  },
+  {
+   "id": 113,
+   "name": "Combat Froststaffs Hell",
+   "category": "fighting"
+  },
+  {
+   "id": 114,
+   "name": "Combat Froststaffs Keeper",
+   "category": "fighting"
+  },
+  {
+   "id": 115,
+   "name": "Combat Froststaffs Undead",
+   "category": "fighting"
+  },
+  {
+   "id": 116,
+   "name": "Combat Hammers",
+   "category": "fighting"
+  },
+  {
+   "id": 117,
+   "name": "Combat Hammers Avalon",
+   "category": "fighting"
+  },
+  {
+   "id": 118,
+   "name": "Combat Hammers Crystal",
+   "category": "fighting"
+  },
+  {
+   "id": 119,
+   "name": "Combat Hammers Great",
+   "category": "fighting"
+  },
+  {
+   "id": 120,
+   "name": "Combat Hammers Hammer",
+   "category": "fighting"
+  },
+  {
+   "id": 121,
+   "name": "Combat Hammers Hell",
+   "category": "fighting"
+  },
+  {
+   "id": 122,
+   "name": "Combat Hammers Keeper",
+   "category": "fighting"
+  },
+  {
+   "id": 123,
+   "name": "Combat Hammers Pole",
+   "category": "fighting"
+  },
+  {
+   "id": 124,
+   "name": "Combat Hammers Undead",
+   "category": "fighting"
+  },
+  {
+   "id": 125,
+   "name": "Combat Holystaffs",
+   "category": "fighting"
+  },
+  {
+   "id": 126,
+   "name": "Combat Holystaffs Avalon",
+   "category": "fighting"
+  },
+  {
+   "id": 127,
+   "name": "Combat Holystaffs Crystal",
+   "category": "fighting"
+  },
+  {
+   "id": 128,
+   "name": "Combat Holystaffs Divine",
+   "category": "fighting"
+  },
+  {
+   "id": 129,
+   "name": "Combat Holystaffs Great",
+   "category": "fighting"
+  },
+  {
+   "id": 130,
+   "name": "Combat Holystaffs Hell",
+   "category": "fighting"
+  },
+  {
+   "id": 131,
+   "name": "Combat Holystaffs Holy",
+   "category": "fighting"
+  },
+  {
+   "id": 132,
+   "name": "Combat Holystaffs Morgana",
+   "category": "fighting"
+  },
+  {
+   "id": 133,
+   "name": "Combat Holystaffs Undead",
+   "category": "fighting"
+  },
+  {
+   "id": 134,
+   "name": "Combat Hunter",
+   "category": "fighting"
+  },
+  {
+   "id": 135,
+   "name": "Combat Knuckles",
+   "category": "fighting"
+  },
+  {
+   "id": 136,
+   "name": "Combat Knuckles Avalon",
+   "category": "fighting"
+  },
+  {
+   "id": 137,
+   "name": "Combat Knuckles Crystal",
+   "category": "fighting"
+  },
+  {
+   "id": 138,
+   "name": "Combat Knuckles Hell",
+   "category": "fighting"
+  },
+  {
+   "id": 139,
+   "name": "Combat Knuckles Keeper",
+   "category": "fighting"
+  },
+  {
+   "id": 140,
+   "name": "Combat Knuckles Morgana",
+   "category": "fighting"
+  },
+  {
+   "id": 141,
+   "name": "Combat Knuckles Set1",
+   "category": "fighting"
+  },
+  {
+   "id": 142,
+   "name": "Combat Knuckles Set2",
+   "category": "fighting"
+  },
+  {
+   "id": 143,
+   "name": "Combat Knuckles Set3",
+   "category": "fighting"
+  },
+  {
+   "id": 144,
+   "name": "Combat Leather",
+   "category": "fighting"
+  },
+  {
+   "id": 145,
+   "name": "Combat Leather Armors",
+   "category": "fighting"
+  },
+  {
+   "id": 146,
+   "name": "Combat Leather Armors Avalon",
+   "category": "fighting"
+  },
+  {
+   "id": 147,
+   "name": "Combat Leather Armors Fey",
+   "category": "fighting"
+  },
+  {
+   "id": 148,
+   "name": "Combat Leather Armors Hell",
+   "category": "fighting"
+  },
+  {
+   "id": 149,
+   "name": "Combat Leather Armors Morgana",
+   "category": "fighting"
+  },
+  {
+   "id": 150,
+   "name": "Combat Leather Armors Royal",
+   "category": "fighting"
+  },
+  {
+   "id": 151,
+   "name": "Combat Leather Armors Set1",
+   "category": "fighting"
+  },
+  {
+   "id": 152,
+   "name": "Combat Leather Armors Set2",
+   "category": "fighting"
+  },
+  {
+   "id": 153,
+   "name": "Combat Leather Armors Set3",
+   "category": "fighting"
+  },
+  {
+   "id": 154,
+   "name": "Combat Leather Armors Undead",
+   "category": "fighting"
+  },
+  {
+   "id": 155,
+   "name": "Combat Leather Heads",
+   "category": "fighting"
+  },
+  {
+   "id": 156,
+   "name": "Combat Leather Heads Avalon",
+   "category": "fighting"
+  },
+  {
+   "id": 157,
+   "name": "Combat Leather Heads Fey",
+   "category": "fighting"
+  },
+  {
+   "id": 158,
+   "name": "Combat Leather Heads Hell",
+   "category": "fighting"
+  },
+  {
+   "id": 159,
+   "name": "Combat Leather Heads Morgana",
+   "category": "fighting"
+  },
+  {
+   "id": 160,
+   "name": "Combat Leather Heads Royal",
+   "category": "fighting"
+  },
+  {
+   "id": 161,
+   "name": "Combat Leather Heads Set1",
+   "category": "fighting"
+  },
+  {
+   "id": 162,
+   "name": "Combat Leather Heads Set2",
+   "category": "fighting"
+  },
+  {
+   "id": 163,
+   "name": "Combat Leather Heads Set3",
+   "category": "fighting"
+  },
+  {
+   "id": 164,
+   "name": "Combat Leather Heads Undead",
+   "category": "fighting"
+  },
+  {
+   "id": 165,
+   "name": "Combat Leather Shoes",
+   "category": "fighting"
+  },
+  {
+   "id": 166,
+   "name": "Combat Leather Shoes Avalon",
+   "category": "fighting"
+  },
+  {
+   "id": 167,
+   "name": "Combat Leather Shoes Fey",
+   "category": "fighting"
+  },
+  {
+   "id": 168,
+   "name": "Combat Leather Shoes Hell",
+   "category": "fighting"
+  },
+  {
+   "id": 169,
+   "name": "Combat Leather Shoes Morgana",
+   "category": "fighting"
+  },
+  {
+   "id": 170,
+   "name": "Combat Leather Shoes Royal",
+   "category": "fighting"
+  },
+  {
+   "id": 171,
+   "name": "Combat Leather Shoes Set1",
+   "category": "fighting"
+  },
+  {
+   "id": 172,
+   "name": "Combat Leather Shoes Set2",
+   "category": "fighting"
+  },
+  {
+   "id": 173,
+   "name": "Combat Leather Shoes Set3",
+   "category": "fighting"
+  },
+  {
+   "id": 174,
+   "name": "Combat Leather Shoes Undead",
+   "category": "fighting"
+  },
+  {
+   "id": 175,
+   "name": "Combat Maces",
+   "category": "fighting"
+  },
+  {
+   "id": 176,
+   "name": "Combat Maces Avalon",
+   "category": "fighting"
+  },
+  {
+   "id": 177,
+   "name": "Combat Maces Crystal",
+   "category": "fighting"
+  },
+  {
+   "id": 178,
+   "name": "Combat Maces Flail",
+   "category": "fighting"
+  },
+  {
+   "id": 179,
+   "name": "Combat Maces Heavy",
+   "category": "fighting"
+  },
+  {
+   "id": 180,
+   "name": "Combat Maces Hell",
+   "category": "fighting"
+  },
+  {
+   "id": 181,
+   "name": "Combat Maces Keeper",
+   "category": "fighting"
+  },
+  {
+   "id": 182,
+   "name": "Combat Maces Mace",
+   "category": "fighting"
+  },
+  {
+   "id": 183,
+   "name": "Combat Maces Morgana",
+   "category": "fighting"
+  },
+  {
+   "id": 184,
+   "name": "Combat Mage",
+   "category": "fighting"
+  },
+  {
+   "id": 185,
+   "name": "Combat Naturestaffs",
+   "category": "fighting"
+  },
+  {
+   "id": 186,
+   "name": "Combat Naturestaffs Avalon",
+   "category": "fighting"
+  },
+  {
+   "id": 187,
+   "name": "Combat Naturestaffs Crystal",
+   "category": "fighting"
+  },
+  {
+   "id": 188,
+   "name": "Combat Naturestaffs Great",
+   "category": "fighting"
+  },
+  {
+   "id": 189,
+   "name": "Combat Naturestaffs Hell",
+   "category": "fighting"
+  },
+  {
+   "id": 190,
+   "name": "Combat Naturestaffs Keeper",
+   "category": "fighting"
+  },
+  {
+   "id": 191,
+   "name": "Combat Naturestaffs Keeper2",
+   "category": "fighting"
+  },
+  {
+   "id": 192,
+   "name": "Combat Naturestaffs Nature",
+   "category": "fighting"
+  },
+  {
+   "id": 193,
+   "name": "Combat Naturestaffs Wild",
+   "category": "fighting"
+  },
+  {
+   "id": 194,
+   "name": "Combat Plate",
+   "category": "fighting"
+  },
+  {
+   "id": 195,
+   "name": "Combat Plate Armors",
+   "category": "fighting"
+  },
+  {
+   "id": 196,
+   "name": "Combat Plate Armors Avalon",
+   "category": "fighting"
+  },
+  {
+   "id": 197,
+   "name": "Combat Plate Armors Fey",
+   "category": "fighting"
+  },
+  {
+   "id": 198,
+   "name": "Combat Plate Armors Hell",
+   "category": "fighting"
+  },
+  {
+   "id": 199,
+   "name": "Combat Plate Armors Keeper",
+   "category": "fighting"
+  },
+  {
+   "id": 200,
+   "name": "Combat Plate Armors Royal",
+   "category": "fighting"
+  },
+  {
+   "id": 201,
+   "name": "Combat Plate Armors Set1",
+   "category": "fighting"
+  },
+  {
+   "id": 202,
+   "name": "Combat Plate Armors Set2",
+   "category": "fighting"
+  },
+  {
+   "id": 203,
+   "name": "Combat Plate Armors Set3",
+   "category": "fighting"
+  },
+  {
+   "id": 204,
+   "name": "Combat Plate Armors Undead",
+   "category": "fighting"
+  },
+  {
+   "id": 205,
+   "name": "Combat Plate Heads",
+   "category": "fighting"
+  },
+  {
+   "id": 206,
+   "name": "Combat Plate Heads Avalon",
+   "category": "fighting"
+  },
+  {
+   "id": 207,
+   "name": "Combat Plate Heads Fey",
+   "category": "fighting"
+  },
+  {
+   "id": 208,
+   "name": "Combat Plate Heads Hell",
+   "category": "fighting"
+  },
+  {
+   "id": 209,
+   "name": "Combat Plate Heads Keeper",
+   "category": "fighting"
+  },
+  {
+   "id": 210,
+   "name": "Combat Plate Heads Royal",
+   "category": "fighting"
+  },
+  {
+   "id": 211,
+   "name": "Combat Plate Heads Set1",
+   "category": "fighting"
+  },
+  {
+   "id": 212,
+   "name": "Combat Plate Heads Set2",
+   "category": "fighting"
+  },
+  {
+   "id": 213,
+   "name": "Combat Plate Heads Set3",
+   "category": "fighting"
+  },
+  {
+   "id": 214,
+   "name": "Combat Plate Heads Undead",
+   "category": "fighting"
+  },
+  {
+   "id": 215,
+   "name": "Combat Plate Shoes",
+   "category": "fighting"
+  },
+  {
+   "id": 216,
+   "name": "Combat Plate Shoes Avalon",
+   "category": "fighting"
+  },
+  {
+   "id": 217,
+   "name": "Combat Plate Shoes Fey",
+   "category": "fighting"
+  },
+  {
+   "id": 218,
+   "name": "Combat Plate Shoes Hell",
+   "category": "fighting"
+  },
+  {
+   "id": 219,
+   "name": "Combat Plate Shoes Keeper",
+   "category": "fighting"
+  },
+  {
+   "id": 220,
+   "name": "Combat Plate Shoes Royal",
+   "category": "fighting"
+  },
+  {
+   "id": 221,
+   "name": "Combat Plate Shoes Set1",
+   "category": "fighting"
+  },
+  {
+   "id": 222,
+   "name": "Combat Plate Shoes Set2",
+   "category": "fighting"
+  },
+  {
+   "id": 223,
+   "name": "Combat Plate Shoes Set3",
+   "category": "fighting"
+  },
+  {
+   "id": 224,
+   "name": "Combat Plate Shoes Undead",
+   "category": "fighting"
+  },
+  {
+   "id": 225,
+   "name": "Combat Quarterstaffs",
+   "category": "fighting"
+  },
+  {
+   "id": 226,
+   "name": "Combat Quarterstaffs Avalon",
+   "category": "fighting"
+  },
+  {
+   "id": 227,
+   "name": "Combat Quarterstaffs Crystal",
+   "category": "fighting"
+  },
+  {
+   "id": 228,
+   "name": "Combat Quarterstaffs Doublebladed",
+   "category": "fighting"
+  },
+  {
+   "id": 229,
+   "name": "Combat Quarterstaffs Hell",
+   "category": "fighting"
+  },
+  {
+   "id": 230,
+   "name": "Combat Quarterstaffs Ironclad",
+   "category": "fighting"
+  },
+  {
+   "id": 231,
+   "name": "Combat Quarterstaffs Keeper",
+   "category": "fighting"
+  },
+  {
+   "id": 232,
+   "name": "Combat Quarterstaffs Morgana",
+   "category": "fighting"
+  },
+  {
+   "id": 233,
+   "name": "Combat Quarterstaffs Quarterstaff",
+   "category": "fighting"
+  },
+  {
+   "id": 234,
+   "name": "Combat Shapeshifter",
+   "category": "fighting"
+  },
+  {
+   "id": 235,
+   "name": "Combat Shapeshifter Avalon",
+   "category": "fighting"
+  },
+  {
+   "id": 236,
+   "name": "Combat Shapeshifter Crystal",
+   "category": "fighting"
+  },
+  {
+   "id": 237,
+   "name": "Combat Shapeshifter Hell",
+   "category": "fighting"
+  },
+  {
+   "id": 238,
+   "name": "Combat Shapeshifter Keeper",
+   "category": "fighting"
+  },
+  {
+   "id": 239,
+   "name": "Combat Shapeshifter Morgana",
+   "category": "fighting"
+  },
+  {
+   "id": 240,
+   "name": "Combat Shapeshifter Set1",
+   "category": "fighting"
+  },
+  {
+   "id": 241,
+   "name": "Combat Shapeshifter Set2",
+   "category": "fighting"
+  },
+  {
+   "id": 242,
+   "name": "Combat Shapeshifter Set3",
+   "category": "fighting"
+  },
+  {
+   "id": 243,
+   "name": "Combat Shields",
+   "category": "fighting"
+  },
+  {
+   "id": 244,
+   "name": "Combat Shields Avalon",
+   "category": "fighting"
+  },
+  {
+   "id": 245,
+   "name": "Combat Shields Crystal",
+   "category": "fighting"
+  },
+  {
+   "id": 246,
+   "name": "Combat Shields Hell",
+   "category": "fighting"
+  },
+  {
+   "id": 247,
+   "name": "Combat Shields Morgana",
+   "category": "fighting"
+  },
+  {
+   "id": 248,
+   "name": "Combat Shields Shield",
+   "category": "fighting"
+  },
+  {
+   "id": 249,
+   "name": "Combat Shields Undead",
+   "category": "fighting"
+  },
+  {
+   "id": 250,
+   "name": "Combat Spears",
+   "category": "fighting"
+  },
+  {
+   "id": 251,
+   "name": "Combat Spears Avalon",
+   "category": "fighting"
+  },
+  {
+   "id": 252,
+   "name": "Combat Spears Crystal",
+   "category": "fighting"
+  },
+  {
+   "id": 253,
+   "name": "Combat Spears Glaive",
+   "category": "fighting"
+  },
+  {
+   "id": 254,
+   "name": "Combat Spears Great",
+   "category": "fighting"
+  },
+  {
+   "id": 255,
+   "name": "Combat Spears Hell",
+   "category": "fighting"
+  },
+  {
+   "id": 256,
+   "name": "Combat Spears Keeper",
+   "category": "fighting"
+  },
+  {
+   "id": 257,
+   "name": "Combat Spears Spear",
+   "category": "fighting"
+  },
+  {
+   "id": 258,
+   "name": "Combat Spears Undead",
+   "category": "fighting"
+  },
+  {
+   "id": 259,
+   "name": "Combat Swords",
+   "category": "fighting"
+  },
+  {
+   "id": 260,
+   "name": "Combat Swords Avalon",
+   "category": "fighting"
+  },
+  {
+   "id": 261,
+   "name": "Combat Swords Claymore",
+   "category": "fighting"
+  },
+  {
+   "id": 262,
+   "name": "Combat Swords Crystal",
+   "category": "fighting"
+  },
+  {
+   "id": 263,
+   "name": "Combat Swords Dual",
+   "category": "fighting"
+  },
+  {
+   "id": 264,
+   "name": "Combat Swords Hell",
+   "category": "fighting"
+  },
+  {
+   "id": 265,
+   "name": "Combat Swords Morgana",
+   "category": "fighting"
+  },
+  {
+   "id": 266,
+   "name": "Combat Swords Sword",
+   "category": "fighting"
+  },
+  {
+   "id": 267,
+   "name": "Combat Swords Undead",
+   "category": "fighting"
+  },
+  {
+   "id": 268,
+   "name": "Combat Torches",
+   "category": "fighting"
+  },
+  {
+   "id": 269,
+   "name": "Combat Torches Avalon",
+   "category": "fighting"
+  },
+  {
+   "id": 270,
+   "name": "Combat Torches Crystal",
+   "category": "fighting"
+  },
+  {
+   "id": 271,
+   "name": "Combat Torches Hell",
+   "category": "fighting"
+  },
+  {
+   "id": 272,
+   "name": "Combat Torches Keeper",
+   "category": "fighting"
+  },
+  {
+   "id": 273,
+   "name": "Combat Torches Torch",
+   "category": "fighting"
+  },
+  {
+   "id": 274,
+   "name": "Combat Torches Undead",
+   "category": "fighting"
+  },
+  {
+   "id": 275,
+   "name": "Combat Trainee",
+   "category": "fighting"
+  },
+  {
+   "id": 276,
+   "name": "Combat Warrior",
+   "category": "fighting"
+  },
+  {
+   "id": 277,
+   "name": "Craft Arcanestaffs",
+   "category": "crafting"
+  },
+  {
+   "id": 278,
+   "name": "Craft Arcanestaffs Arcane",
+   "category": "crafting"
+  },
+  {
+   "id": 279,
+   "name": "Craft Arcanestaffs Avalon",
+   "category": "crafting"
+  },
+  {
+   "id": 280,
+   "name": "Craft Arcanestaffs Crystal",
+   "category": "crafting"
+  },
+  {
+   "id": 281,
+   "name": "Craft Arcanestaffs Enigmatic",
+   "category": "crafting"
+  },
+  {
+   "id": 282,
+   "name": "Craft Arcanestaffs Great",
+   "category": "crafting"
+  },
+  {
+   "id": 283,
+   "name": "Craft Arcanestaffs Hell",
+   "category": "crafting"
+  },
+  {
+   "id": 284,
+   "name": "Craft Arcanestaffs Morgana",
+   "category": "crafting"
+  },
+  {
+   "id": 285,
+   "name": "Craft Arcanestaffs Undead",
+   "category": "crafting"
+  },
+  {
+   "id": 286,
+   "name": "Craft Axes",
+   "category": "crafting"
+  },
+  {
+   "id": 287,
+   "name": "Craft Axes Avalon",
+   "category": "crafting"
+  },
+  {
+   "id": 288,
+   "name": "Craft Axes Axe",
+   "category": "crafting"
+  },
+  {
+   "id": 289,
+   "name": "Craft Axes Crystal",
+   "category": "crafting"
+  },
+  {
+   "id": 290,
+   "name": "Craft Axes Great",
+   "category": "crafting"
+  },
+  {
+   "id": 291,
+   "name": "Craft Axes Halberd",
+   "category": "crafting"
+  },
+  {
+   "id": 292,
+   "name": "Craft Axes Hell",
+   "category": "crafting"
+  },
+  {
+   "id": 293,
+   "name": "Craft Axes Keeper",
+   "category": "crafting"
+  },
+  {
+   "id": 294,
+   "name": "Craft Axes Morgana",
+   "category": "crafting"
+  },
+  {
+   "id": 295,
+   "name": "Craft Bag",
+   "category": "crafting"
+  },
+  {
+   "id": 296,
+   "name": "Craft Bag Bag",
+   "category": "crafting"
+  },
+  {
+   "id": 297,
+   "name": "Craft Bag Insight",
+   "category": "crafting"
+  },
+  {
+   "id": 298,
+   "name": "Craft Books",
+   "category": "crafting"
+  },
+  {
+   "id": 299,
+   "name": "Craft Books Avalon",
+   "category": "crafting"
+  },
+  {
+   "id": 300,
+   "name": "Craft Books Book",
+   "category": "crafting"
+  },
+  {
+   "id": 301,
+   "name": "Craft Books Crystal",
+   "category": "crafting"
+  },
+  {
+   "id": 302,
+   "name": "Craft Books Hell",
+   "category": "crafting"
+  },
+  {
+   "id": 303,
+   "name": "Craft Books Keeper",
+   "category": "crafting"
+  },
+  {
+   "id": 304,
+   "name": "Craft Books Morgana",
+   "category": "crafting"
+  },
+  {
+   "id": 305,
+   "name": "Craft Bows",
+   "category": "crafting"
+  },
+  {
+   "id": 306,
+   "name": "Craft Bows Avalon",
+   "category": "crafting"
+  },
+  {
+   "id": 307,
+   "name": "Craft Bows Bow",
+   "category": "crafting"
+  },
+  {
+   "id": 308,
+   "name": "Craft Bows Crystal",
+   "category": "crafting"
+  },
+  {
+   "id": 309,
+   "name": "Craft Bows Hell",
+   "category": "crafting"
+  },
+  {
+   "id": 310,
+   "name": "Craft Bows Keeper",
+   "category": "crafting"
+  },
+  {
+   "id": 311,
+   "name": "Craft Bows Long",
+   "category": "crafting"
+  },
+  {
+   "id": 312,
+   "name": "Craft Bows Undead",
+   "category": "crafting"
+  },
+  {
+   "id": 313,
+   "name": "Craft Bows War",
+   "category": "crafting"
+  },
+  {
+   "id": 314,
+   "name": "Craft Cape",
+   "category": "crafting"
+  },
+  {
+   "id": 315,
+   "name": "Craft Cape Cape",
+   "category": "crafting"
+  },
+  {
+   "id": 316,
+   "name": "Craft Cloth Armors",
+   "category": "crafting"
+  },
+  {
+   "id": 317,
+   "name": "Craft Cloth Armors Avalon",
+   "category": "crafting"
+  },
+  {
+   "id": 318,
+   "name": "Craft Cloth Armors Fey",
+   "category": "crafting"
+  },
+  {
+   "id": 319,
+   "name": "Craft Cloth Armors Hell",
+   "category": "crafting"
+  },
+  {
+   "id": 320,
+   "name": "Craft Cloth Armors Keeper",
+   "category": "crafting"
+  },
+  {
+   "id": 321,
+   "name": "Craft Cloth Armors Morgana",
+   "category": "crafting"
+  },
+  {
+   "id": 322,
+   "name": "Craft Cloth Armors Set1",
+   "category": "crafting"
+  },
+  {
+   "id": 323,
+   "name": "Craft Cloth Armors Set2",
+   "category": "crafting"
+  },
+  {
+   "id": 324,
+   "name": "Craft Cloth Armors Set3",
+   "category": "crafting"
+  },
+  {
+   "id": 325,
+   "name": "Craft Cloth Heads",
+   "category": "crafting"
+  },
+  {
+   "id": 326,
+   "name": "Craft Cloth Heads Avalon",
+   "category": "crafting"
+  },
+  {
+   "id": 327,
+   "name": "Craft Cloth Heads Fey",
+   "category": "crafting"
+  },
+  {
+   "id": 328,
+   "name": "Craft Cloth Heads Hell",
+   "category": "crafting"
+  },
+  {
+   "id": 329,
+   "name": "Craft Cloth Heads Keeper",
+   "category": "crafting"
+  },
+  {
+   "id": 330,
+   "name": "Craft Cloth Heads Morgana",
+   "category": "crafting"
+  },
+  {
+   "id": 331,
+   "name": "Craft Cloth Heads Set1",
+   "category": "crafting"
+  },
+  {
+   "id": 332,
+   "name": "Craft Cloth Heads Set2",
+   "category": "crafting"
+  },
+  {
+   "id": 333,
+   "name": "Craft Cloth Heads Set3",
+   "category": "crafting"
+  },
+  {
+   "id": 334,
+   "name": "Craft Cloth Shoes",
+   "category": "crafting"
+  },
+  {
+   "id": 335,
+   "name": "Craft Cloth Shoes Avalon",
+   "category": "crafting"
+  },
+  {
+   "id": 336,
+   "name": "Craft Cloth Shoes Fey",
+   "category": "crafting"
+  },
+  {
+   "id": 337,
+   "name": "Craft Cloth Shoes Hell",
+   "category": "crafting"
+  },
+  {
+   "id": 338,
+   "name": "Craft Cloth Shoes Keeper",
+   "category": "crafting"
+  },
+  {
+   "id": 339,
+   "name": "Craft Cloth Shoes Morgana",
+   "category": "crafting"
+  },
+  {
+   "id": 340,
+   "name": "Craft Cloth Shoes Set1",
+   "category": "crafting"
+  },
+  {
+   "id": 341,
+   "name": "Craft Cloth Shoes Set2",
+   "category": "crafting"
+  },
+  {
+   "id": 342,
+   "name": "Craft Cloth Shoes Set3",
+   "category": "crafting"
+  },
+  {
+   "id": 343,
+   "name": "Craft Crossbows",
+   "category": "crafting"
+  },
+  {
+   "id": 344,
+   "name": "Craft Crossbows Avalon",
+   "category": "crafting"
+  },
+  {
+   "id": 345,
+   "name": "Craft Crossbows Crossbow",
+   "category": "crafting"
+  },
+  {
+   "id": 346,
+   "name": "Craft Crossbows Crystal",
+   "category": "crafting"
+  },
+  {
+   "id": 347,
+   "name": "Craft Crossbows Hell",
+   "category": "crafting"
+  },
+  {
+   "id": 348,
+   "name": "Craft Crossbows Large",
+   "category": "crafting"
+  },
+  {
+   "id": 349,
+   "name": "Craft Crossbows Morgana",
+   "category": "crafting"
+  },
+  {
+   "id": 350,
+   "name": "Craft Crossbows Onehand",
+   "category": "crafting"
+  },
+  {
+   "id": 351,
+   "name": "Craft Crossbows Undead",
+   "category": "crafting"
+  },
+  {
+   "id": 352,
+   "name": "Craft Cursedstaffs",
+   "category": "crafting"
+  },
+  {
+   "id": 353,
+   "name": "Craft Cursedstaffs Avalon",
+   "category": "crafting"
+  },
+  {
+   "id": 354,
+   "name": "Craft Cursedstaffs Crystal",
+   "category": "crafting"
+  },
+  {
+   "id": 355,
+   "name": "Craft Cursedstaffs Cursed",
+   "category": "crafting"
+  },
+  {
+   "id": 356,
+   "name": "Craft Cursedstaffs Demonic",
+   "category": "crafting"
+  },
+  {
+   "id": 357,
+   "name": "Craft Cursedstaffs Great",
+   "category": "crafting"
+  },
+  {
+   "id": 358,
+   "name": "Craft Cursedstaffs Hell",
+   "category": "crafting"
+  },
+  {
+   "id": 359,
+   "name": "Craft Cursedstaffs Morgana",
+   "category": "crafting"
+  },
+  {
+   "id": 360,
+   "name": "Craft Cursedstaffs Undead",
+   "category": "crafting"
+  },
+  {
+   "id": 361,
+   "name": "Craft Daggers",
+   "category": "crafting"
+  },
+  {
+   "id": 362,
+   "name": "Craft Daggers Avalon",
+   "category": "crafting"
+  },
+  {
+   "id": 363,
+   "name": "Craft Daggers Claws",
+   "category": "crafting"
+  },
+  {
+   "id": 364,
+   "name": "Craft Daggers Crystal",
+   "category": "crafting"
+  },
+  {
+   "id": 365,
+   "name": "Craft Daggers Dagger",
+   "category": "crafting"
+  },
+  {
+   "id": 366,
+   "name": "Craft Daggers Hell",
+   "category": "crafting"
+  },
+  {
+   "id": 367,
+   "name": "Craft Daggers Morgana",
+   "category": "crafting"
+  },
+  {
+   "id": 368,
+   "name": "Craft Daggers Pair",
+   "category": "crafting"
+  },
+  {
+   "id": 369,
+   "name": "Craft Daggers Undead",
+   "category": "crafting"
+  },
+  {
+   "id": 370,
+   "name": "Craft Firestaffs",
+   "category": "crafting"
+  },
+  {
+   "id": 371,
+   "name": "Craft Firestaffs Avalon",
+   "category": "crafting"
+  },
+  {
+   "id": 372,
+   "name": "Craft Firestaffs Crystal",
+   "category": "crafting"
+  },
+  {
+   "id": 373,
+   "name": "Craft Firestaffs Fire",
+   "category": "crafting"
+  },
+  {
+   "id": 374,
+   "name": "Craft Firestaffs Great",
+   "category": "crafting"
+  },
+  {
+   "id": 375,
+   "name": "Craft Firestaffs Hell",
+   "category": "crafting"
+  },
+  {
+   "id": 376,
+   "name": "Craft Firestaffs Inferno",
+   "category": "crafting"
+  },
+  {
+   "id": 377,
+   "name": "Craft Firestaffs Keeper",
+   "category": "crafting"
+  },
+  {
+   "id": 378,
+   "name": "Craft Firestaffs Morgana",
+   "category": "crafting"
+  },
+  {
+   "id": 379,
+   "name": "Craft Froststaffs",
+   "category": "crafting"
+  },
+  {
+   "id": 380,
+   "name": "Craft Froststaffs Avalon",
+   "category": "crafting"
+  },
+  {
+   "id": 381,
+   "name": "Craft Froststaffs Crystal",
+   "category": "crafting"
+  },
+  {
+   "id": 382,
+   "name": "Craft Froststaffs Frost",
+   "category": "crafting"
+  },
+  {
+   "id": 383,
+   "name": "Craft Froststaffs Glacial",
+   "category": "crafting"
+  },
+  {
+   "id": 384,
+   "name": "Craft Froststaffs Great",
+   "category": "crafting"
+  },
+  {
+   "id": 385,
+   "name": "Craft Froststaffs Hell",
+   "category": "crafting"
+  },
+  {
+   "id": 386,
+   "name": "Craft Froststaffs Keeper",
+   "category": "crafting"
+  },
+  {
+   "id": 387,
+   "name": "Craft Froststaffs Undead",
+   "category": "crafting"
+  },
+  {
+   "id": 388,
+   "name": "Craft Hammers",
+   "category": "crafting"
+  },
+  {
+   "id": 389,
+   "name": "Craft Hammers Avalon",
+   "category": "crafting"
+  },
+  {
+   "id": 390,
+   "name": "Craft Hammers Crystal",
+   "category": "crafting"
+  },
+  {
+   "id": 391,
+   "name": "Craft Hammers Great",
+   "category": "crafting"
+  },
+  {
+   "id": 392,
+   "name": "Craft Hammers Hammer",
+   "category": "crafting"
+  },
+  {
+   "id": 393,
+   "name": "Craft Hammers Hell",
+   "category": "crafting"
+  },
+  {
+   "id": 394,
+   "name": "Craft Hammers Keeper",
+   "category": "crafting"
+  },
+  {
+   "id": 395,
+   "name": "Craft Hammers Pole",
+   "category": "crafting"
+  },
+  {
+   "id": 396,
+   "name": "Craft Hammers Undead",
+   "category": "crafting"
+  },
+  {
+   "id": 397,
+   "name": "Craft Holystaffs",
+   "category": "crafting"
+  },
+  {
+   "id": 398,
+   "name": "Craft Holystaffs Avalon",
+   "category": "crafting"
+  },
+  {
+   "id": 399,
+   "name": "Craft Holystaffs Crystal",
+   "category": "crafting"
+  },
+  {
+   "id": 400,
+   "name": "Craft Holystaffs Divine",
+   "category": "crafting"
+  },
+  {
+   "id": 401,
+   "name": "Craft Holystaffs Great",
+   "category": "crafting"
+  },
+  {
+   "id": 402,
+   "name": "Craft Holystaffs Hell",
+   "category": "crafting"
+  },
+  {
+   "id": 403,
+   "name": "Craft Holystaffs Holy",
+   "category": "crafting"
+  },
+  {
+   "id": 404,
+   "name": "Craft Holystaffs Morgana",
+   "category": "crafting"
+  },
+  {
+   "id": 405,
+   "name": "Craft Holystaffs Undead",
+   "category": "crafting"
+  },
+  {
+   "id": 406,
+   "name": "Craft Hunter",
+   "category": "crafting"
+  },
+  {
+   "id": 407,
+   "name": "Craft Knuckles",
+   "category": "crafting"
+  },
+  {
+   "id": 408,
+   "name": "Craft Knuckles Avalon",
+   "category": "crafting"
+  },
+  {
+   "id": 409,
+   "name": "Craft Knuckles Crystal",
+   "category": "crafting"
+  },
+  {
+   "id": 410,
+   "name": "Craft Knuckles Hell",
+   "category": "crafting"
+  },
+  {
+   "id": 411,
+   "name": "Craft Knuckles Keeper",
+   "category": "crafting"
+  },
+  {
+   "id": 412,
+   "name": "Craft Knuckles Morgana",
+   "category": "crafting"
+  },
+  {
+   "id": 413,
+   "name": "Craft Knuckles Set1",
+   "category": "crafting"
+  },
+  {
+   "id": 414,
+   "name": "Craft Knuckles Set2",
+   "category": "crafting"
+  },
+  {
+   "id": 415,
+   "name": "Craft Knuckles Set3",
+   "category": "crafting"
+  },
+  {
+   "id": 416,
+   "name": "Craft Leather Armors",
+   "category": "crafting"
+  },
+  {
+   "id": 417,
+   "name": "Craft Leather Armors Avalon",
+   "category": "crafting"
+  },
+  {
+   "id": 418,
+   "name": "Craft Leather Armors Fey",
+   "category": "crafting"
+  },
+  {
+   "id": 419,
+   "name": "Craft Leather Armors Hell",
+   "category": "crafting"
+  },
+  {
+   "id": 420,
+   "name": "Craft Leather Armors Morgana",
+   "category": "crafting"
+  },
+  {
+   "id": 421,
+   "name": "Craft Leather Armors Set1",
+   "category": "crafting"
+  },
+  {
+   "id": 422,
+   "name": "Craft Leather Armors Set2",
+   "category": "crafting"
+  },
+  {
+   "id": 423,
+   "name": "Craft Leather Armors Set3",
+   "category": "crafting"
+  },
+  {
+   "id": 424,
+   "name": "Craft Leather Armors Undead",
+   "category": "crafting"
+  },
+  {
+   "id": 425,
+   "name": "Craft Leather Heads",
+   "category": "crafting"
+  },
+  {
+   "id": 426,
+   "name": "Craft Leather Heads Avalon",
+   "category": "crafting"
+  },
+  {
+   "id": 427,
+   "name": "Craft Leather Heads Fey",
+   "category": "crafting"
+  },
+  {
+   "id": 428,
+   "name": "Craft Leather Heads Hell",
+   "category": "crafting"
+  },
+  {
+   "id": 429,
+   "name": "Craft Leather Heads Morgana",
+   "category": "crafting"
+  },
+  {
+   "id": 430,
+   "name": "Craft Leather Heads Set1",
+   "category": "crafting"
+  },
+  {
+   "id": 431,
+   "name": "Craft Leather Heads Set2",
+   "category": "crafting"
+  },
+  {
+   "id": 432,
+   "name": "Craft Leather Heads Set3",
+   "category": "crafting"
+  },
+  {
+   "id": 433,
+   "name": "Craft Leather Heads Undead",
+   "category": "crafting"
+  },
+  {
+   "id": 434,
+   "name": "Craft Leather Shoes",
+   "category": "crafting"
+  },
+  {
+   "id": 435,
+   "name": "Craft Leather Shoes Avalon",
+   "category": "crafting"
+  },
+  {
+   "id": 436,
+   "name": "Craft Leather Shoes Fey",
+   "category": "crafting"
+  },
+  {
+   "id": 437,
+   "name": "Craft Leather Shoes Hell",
+   "category": "crafting"
+  },
+  {
+   "id": 438,
+   "name": "Craft Leather Shoes Morgana",
+   "category": "crafting"
+  },
+  {
+   "id": 439,
+   "name": "Craft Leather Shoes Set1",
+   "category": "crafting"
+  },
+  {
+   "id": 440,
+   "name": "Craft Leather Shoes Set2",
+   "category": "crafting"
+  },
+  {
+   "id": 441,
+   "name": "Craft Leather Shoes Set3",
+   "category": "crafting"
+  },
+  {
+   "id": 442,
+   "name": "Craft Leather Shoes Undead",
+   "category": "crafting"
+  },
+  {
+   "id": 443,
+   "name": "Craft Maces",
+   "category": "crafting"
+  },
+  {
+   "id": 444,
+   "name": "Craft Maces Avalon",
+   "category": "crafting"
+  },
+  {
+   "id": 445,
+   "name": "Craft Maces Crystal",
+   "category": "crafting"
+  },
+  {
+   "id": 446,
+   "name": "Craft Maces Flail",
+   "category": "crafting"
+  },
+  {
+   "id": 447,
+   "name": "Craft Maces Heavy",
+   "category": "crafting"
+  },
+  {
+   "id": 448,
+   "name": "Craft Maces Hell",
+   "category": "crafting"
+  },
+  {
+   "id": 449,
+   "name": "Craft Maces Keeper",
+   "category": "crafting"
+  },
+  {
+   "id": 450,
+   "name": "Craft Maces Mace",
+   "category": "crafting"
+  },
+  {
+   "id": 451,
+   "name": "Craft Maces Morgana",
+   "category": "crafting"
+  },
+  {
+   "id": 452,
+   "name": "Craft Mage",
+   "category": "crafting"
+  },
+  {
+   "id": 453,
+   "name": "Craft Naturestaffs",
+   "category": "crafting"
+  },
+  {
+   "id": 454,
+   "name": "Craft Naturestaffs Avalon",
+   "category": "crafting"
+  },
+  {
+   "id": 455,
+   "name": "Craft Naturestaffs Crystal",
+   "category": "crafting"
+  },
+  {
+   "id": 456,
+   "name": "Craft Naturestaffs Great",
+   "category": "crafting"
+  },
+  {
+   "id": 457,
+   "name": "Craft Naturestaffs Hell",
+   "category": "crafting"
+  },
+  {
+   "id": 458,
+   "name": "Craft Naturestaffs Keeper",
+   "category": "crafting"
+  },
+  {
+   "id": 459,
+   "name": "Craft Naturestaffs Keeper2",
+   "category": "crafting"
+  },
+  {
+   "id": 460,
+   "name": "Craft Naturestaffs Nature",
+   "category": "crafting"
+  },
+  {
+   "id": 461,
+   "name": "Craft Naturestaffs Wild",
+   "category": "crafting"
+  },
+  {
+   "id": 462,
+   "name": "Craft Plate Armors",
+   "category": "crafting"
+  },
+  {
+   "id": 463,
+   "name": "Craft Plate Armors Avalon",
+   "category": "crafting"
+  },
+  {
+   "id": 464,
+   "name": "Craft Plate Armors Fey",
+   "category": "crafting"
+  },
+  {
+   "id": 465,
+   "name": "Craft Plate Armors Hell",
+   "category": "crafting"
+  },
+  {
+   "id": 466,
+   "name": "Craft Plate Armors Keeper",
+   "category": "crafting"
+  },
+  {
+   "id": 467,
+   "name": "Craft Plate Armors Set1",
+   "category": "crafting"
+  },
+  {
+   "id": 468,
+   "name": "Craft Plate Armors Set2",
+   "category": "crafting"
+  },
+  {
+   "id": 469,
+   "name": "Craft Plate Armors Set3",
+   "category": "crafting"
+  },
+  {
+   "id": 470,
+   "name": "Craft Plate Armors Undead",
+   "category": "crafting"
+  },
+  {
+   "id": 471,
+   "name": "Craft Plate Heads",
+   "category": "crafting"
+  },
+  {
+   "id": 472,
+   "name": "Craft Plate Heads Avalon",
+   "category": "crafting"
+  },
+  {
+   "id": 473,
+   "name": "Craft Plate Heads Fey",
+   "category": "crafting"
+  },
+  {
+   "id": 474,
+   "name": "Craft Plate Heads Hell",
+   "category": "crafting"
+  },
+  {
+   "id": 475,
+   "name": "Craft Plate Heads Keeper",
+   "category": "crafting"
+  },
+  {
+   "id": 476,
+   "name": "Craft Plate Heads Set1",
+   "category": "crafting"
+  },
+  {
+   "id": 477,
+   "name": "Craft Plate Heads Set2",
+   "category": "crafting"
+  },
+  {
+   "id": 478,
+   "name": "Craft Plate Heads Set3",
+   "category": "crafting"
+  },
+  {
+   "id": 479,
+   "name": "Craft Plate Heads Undead",
+   "category": "crafting"
+  },
+  {
+   "id": 480,
+   "name": "Craft Plate Shoes",
+   "category": "crafting"
+  },
+  {
+   "id": 481,
+   "name": "Craft Plate Shoes Avalon",
+   "category": "crafting"
+  },
+  {
+   "id": 482,
+   "name": "Craft Plate Shoes Fey",
+   "category": "crafting"
+  },
+  {
+   "id": 483,
+   "name": "Craft Plate Shoes Hell",
+   "category": "crafting"
+  },
+  {
+   "id": 484,
+   "name": "Craft Plate Shoes Keeper",
+   "category": "crafting"
+  },
+  {
+   "id": 485,
+   "name": "Craft Plate Shoes Set1",
+   "category": "crafting"
+  },
+  {
+   "id": 486,
+   "name": "Craft Plate Shoes Set2",
+   "category": "crafting"
+  },
+  {
+   "id": 487,
+   "name": "Craft Plate Shoes Set3",
+   "category": "crafting"
+  },
+  {
+   "id": 488,
+   "name": "Craft Plate Shoes Undead",
+   "category": "crafting"
+  },
+  {
+   "id": 489,
+   "name": "Craft Quarterstaffs",
+   "category": "crafting"
+  },
+  {
+   "id": 490,
+   "name": "Craft Quarterstaffs Avalon",
+   "category": "crafting"
+  },
+  {
+   "id": 491,
+   "name": "Craft Quarterstaffs Crystal",
+   "category": "crafting"
+  },
+  {
+   "id": 492,
+   "name": "Craft Quarterstaffs Doublebladed",
+   "category": "crafting"
+  },
+  {
+   "id": 493,
+   "name": "Craft Quarterstaffs Hell",
+   "category": "crafting"
+  },
+  {
+   "id": 494,
+   "name": "Craft Quarterstaffs Ironclad",
+   "category": "crafting"
+  },
+  {
+   "id": 495,
+   "name": "Craft Quarterstaffs Keeper",
+   "category": "crafting"
+  },
+  {
+   "id": 496,
+   "name": "Craft Quarterstaffs Morgana",
+   "category": "crafting"
+  },
+  {
+   "id": 497,
+   "name": "Craft Quarterstaffs Quarterstaff",
+   "category": "crafting"
+  },
+  {
+   "id": 498,
+   "name": "Craft Refine",
+   "category": "crafting"
+  },
+  {
+   "id": 499,
+   "name": "Craft Refine Fiber T4",
+   "category": "crafting"
+  },
+  {
+   "id": 500,
+   "name": "Craft Refine Fiber T5",
+   "category": "crafting"
+  },
+  {
+   "id": 501,
+   "name": "Craft Refine Fiber T6",
+   "category": "crafting"
+  },
+  {
+   "id": 502,
+   "name": "Craft Refine Fiber T7",
+   "category": "crafting"
+  },
+  {
+   "id": 503,
+   "name": "Craft Refine Fiber T8",
+   "category": "crafting"
+  },
+  {
+   "id": 504,
+   "name": "Craft Refine Hide T4",
+   "category": "crafting"
+  },
+  {
+   "id": 505,
+   "name": "Craft Refine Hide T5",
+   "category": "crafting"
+  },
+  {
+   "id": 506,
+   "name": "Craft Refine Hide T6",
+   "category": "crafting"
+  },
+  {
+   "id": 507,
+   "name": "Craft Refine Hide T7",
+   "category": "crafting"
+  },
+  {
+   "id": 508,
+   "name": "Craft Refine Hide T8",
+   "category": "crafting"
+  },
+  {
+   "id": 509,
+   "name": "Craft Refine Ore T4",
+   "category": "crafting"
+  },
+  {
+   "id": 510,
+   "name": "Craft Refine Ore T5",
+   "category": "crafting"
+  },
+  {
+   "id": 511,
+   "name": "Craft Refine Ore T6",
+   "category": "crafting"
+  },
+  {
+   "id": 512,
+   "name": "Craft Refine Ore T7",
+   "category": "crafting"
+  },
+  {
+   "id": 513,
+   "name": "Craft Refine Ore T8",
+   "category": "crafting"
+  },
+  {
+   "id": 514,
+   "name": "Craft Refine Rock T4",
+   "category": "crafting"
+  },
+  {
+   "id": 515,
+   "name": "Craft Refine Rock T5",
+   "category": "crafting"
+  },
+  {
+   "id": 516,
+   "name": "Craft Refine Rock T6",
+   "category": "crafting"
+  },
+  {
+   "id": 517,
+   "name": "Craft Refine Rock T7",
+   "category": "crafting"
+  },
+  {
+   "id": 518,
+   "name": "Craft Refine Rock T8",
+   "category": "crafting"
+  },
+  {
+   "id": 519,
+   "name": "Craft Refine Wood T4",
+   "category": "crafting"
+  },
+  {
+   "id": 520,
+   "name": "Craft Refine Wood T5",
+   "category": "crafting"
+  },
+  {
+   "id": 521,
+   "name": "Craft Refine Wood T6",
+   "category": "crafting"
+  },
+  {
+   "id": 522,
+   "name": "Craft Refine Wood T7",
+   "category": "crafting"
+  },
+  {
+   "id": 523,
+   "name": "Craft Refine Wood T8",
+   "category": "crafting"
+  },
+  {
+   "id": 524,
+   "name": "Craft Shapeshifter",
+   "category": "crafting"
+  },
+  {
+   "id": 525,
+   "name": "Craft Shapeshifter Avalon",
+   "category": "crafting"
+  },
+  {
+   "id": 526,
+   "name": "Craft Shapeshifter Crystal",
+   "category": "crafting"
+  },
+  {
+   "id": 527,
+   "name": "Craft Shapeshifter Hell",
+   "category": "crafting"
+  },
+  {
+   "id": 528,
+   "name": "Craft Shapeshifter Keeper",
+   "category": "crafting"
+  },
+  {
+   "id": 529,
+   "name": "Craft Shapeshifter Morgana",
+   "category": "crafting"
+  },
+  {
+   "id": 530,
+   "name": "Craft Shapeshifter Set1",
+   "category": "crafting"
+  },
+  {
+   "id": 531,
+   "name": "Craft Shapeshifter Set2",
+   "category": "crafting"
+  },
+  {
+   "id": 532,
+   "name": "Craft Shapeshifter Set3",
+   "category": "crafting"
+  },
+  {
+   "id": 533,
+   "name": "Craft Shields",
+   "category": "crafting"
+  },
+  {
+   "id": 534,
+   "name": "Craft Shields Avalon",
+   "category": "crafting"
+  },
+  {
+   "id": 535,
+   "name": "Craft Shields Crystal",
+   "category": "crafting"
+  },
+  {
+   "id": 536,
+   "name": "Craft Shields Hell",
+   "category": "crafting"
+  },
+  {
+   "id": 537,
+   "name": "Craft Shields Morgana",
+   "category": "crafting"
+  },
+  {
+   "id": 538,
+   "name": "Craft Shields Shield",
+   "category": "crafting"
+  },
+  {
+   "id": 539,
+   "name": "Craft Shields Undead",
+   "category": "crafting"
+  },
+  {
+   "id": 540,
+   "name": "Craft Spears",
+   "category": "crafting"
+  },
+  {
+   "id": 541,
+   "name": "Craft Spears Avalon",
+   "category": "crafting"
+  },
+  {
+   "id": 542,
+   "name": "Craft Spears Crystal",
+   "category": "crafting"
+  },
+  {
+   "id": 543,
+   "name": "Craft Spears Glaive",
+   "category": "crafting"
+  },
+  {
+   "id": 544,
+   "name": "Craft Spears Great",
+   "category": "crafting"
+  },
+  {
+   "id": 545,
+   "name": "Craft Spears Hell",
+   "category": "crafting"
+  },
+  {
+   "id": 546,
+   "name": "Craft Spears Keeper",
+   "category": "crafting"
+  },
+  {
+   "id": 547,
+   "name": "Craft Spears Spear",
+   "category": "crafting"
+  },
+  {
+   "id": 548,
+   "name": "Craft Spears Undead",
+   "category": "crafting"
+  },
+  {
+   "id": 549,
+   "name": "Craft Swords",
+   "category": "crafting"
+  },
+  {
+   "id": 550,
+   "name": "Craft Swords Avalon",
+   "category": "crafting"
+  },
+  {
+   "id": 551,
+   "name": "Craft Swords Claymore",
+   "category": "crafting"
+  },
+  {
+   "id": 552,
+   "name": "Craft Swords Crystal",
+   "category": "crafting"
+  },
+  {
+   "id": 553,
+   "name": "Craft Swords Dual",
+   "category": "crafting"
+  },
+  {
+   "id": 554,
+   "name": "Craft Swords Hell",
+   "category": "crafting"
+  },
+  {
+   "id": 555,
+   "name": "Craft Swords Morgana",
+   "category": "crafting"
+  },
+  {
+   "id": 556,
+   "name": "Craft Swords Sword",
+   "category": "crafting"
+  },
+  {
+   "id": 557,
+   "name": "Craft Swords Undead",
+   "category": "crafting"
+  },
+  {
+   "id": 558,
+   "name": "Craft Tool",
+   "category": "crafting"
+  },
+  {
+   "id": 559,
+   "name": "Craft Tool Axe",
+   "category": "crafting"
+  },
+  {
+   "id": 560,
+   "name": "Craft Tool Axe Armor",
+   "category": "crafting"
+  },
+  {
+   "id": 561,
+   "name": "Craft Tool Axe Head",
+   "category": "crafting"
+  },
+  {
+   "id": 562,
+   "name": "Craft Tool Axe Shoes",
+   "category": "crafting"
+  },
+  {
+   "id": 563,
+   "name": "Craft Tool Fishingrod",
+   "category": "crafting"
+  },
+  {
+   "id": 564,
+   "name": "Craft Tool Fishingrod Armor",
+   "category": "crafting"
+  },
+  {
+   "id": 565,
+   "name": "Craft Tool Fishingrod Head",
+   "category": "crafting"
+  },
+  {
+   "id": 566,
+   "name": "Craft Tool Fishingrod Shoes",
+   "category": "crafting"
+  },
+  {
+   "id": 567,
+   "name": "Craft Tool Hammer",
+   "category": "crafting"
+  },
+  {
+   "id": 568,
+   "name": "Craft Tool Hammer Armor",
+   "category": "crafting"
+  },
+  {
+   "id": 569,
+   "name": "Craft Tool Hammer Head",
+   "category": "crafting"
+  },
+  {
+   "id": 570,
+   "name": "Craft Tool Hammer Shoes",
+   "category": "crafting"
+  },
+  {
+   "id": 571,
+   "name": "Craft Tool Knife",
+   "category": "crafting"
+  },
+  {
+   "id": 572,
+   "name": "Craft Tool Knife Armor",
+   "category": "crafting"
+  },
+  {
+   "id": 573,
+   "name": "Craft Tool Knife Head",
+   "category": "crafting"
+  },
+  {
+   "id": 574,
+   "name": "Craft Tool Knife Shoes",
+   "category": "crafting"
+  },
+  {
+   "id": 575,
+   "name": "Craft Tool Pick",
+   "category": "crafting"
+  },
+  {
+   "id": 576,
+   "name": "Craft Tool Pick Armor",
+   "category": "crafting"
+  },
+  {
+   "id": 577,
+   "name": "Craft Tool Pick Head",
+   "category": "crafting"
+  },
+  {
+   "id": 578,
+   "name": "Craft Tool Pick Shoes",
+   "category": "crafting"
+  },
+  {
+   "id": 579,
+   "name": "Craft Tool Sickle",
+   "category": "crafting"
+  },
+  {
+   "id": 580,
+   "name": "Craft Tool Sickle Armor",
+   "category": "crafting"
+  },
+  {
+   "id": 581,
+   "name": "Craft Tool Sickle Head",
+   "category": "crafting"
+  },
+  {
+   "id": 582,
+   "name": "Craft Tool Sickle Shoes",
+   "category": "crafting"
+  },
+  {
+   "id": 583,
+   "name": "Craft Tool Siegehammer",
+   "category": "crafting"
+  },
+  {
+   "id": 584,
+   "name": "Craft Tool Siegehammer Siegebanner",
+   "category": "crafting"
+  },
+  {
+   "id": 585,
+   "name": "Craft Tool Siegehammer Siegehammer",
+   "category": "crafting"
+  },
+  {
+   "id": 586,
+   "name": "Craft Tool Tracking",
+   "category": "crafting"
+  },
+  {
+   "id": 587,
+   "name": "Craft Tool Tracking Tracking",
+   "category": "crafting"
+  },
+  {
+   "id": 588,
+   "name": "Craft Torches",
+   "category": "crafting"
+  },
+  {
+   "id": 589,
+   "name": "Craft Torches Avalon",
+   "category": "crafting"
+  },
+  {
+   "id": 590,
+   "name": "Craft Torches Crystal",
+   "category": "crafting"
+  },
+  {
+   "id": 591,
+   "name": "Craft Torches Hell",
+   "category": "crafting"
+  },
+  {
+   "id": 592,
+   "name": "Craft Torches Keeper",
+   "category": "crafting"
+  },
+  {
+   "id": 593,
+   "name": "Craft Torches Torch",
+   "category": "crafting"
+  },
+  {
+   "id": 594,
+   "name": "Craft Torches Undead",
+   "category": "crafting"
+  },
+  {
+   "id": 595,
+   "name": "Craft Trainee",
+   "category": "crafting"
+  },
+  {
+   "id": 596,
+   "name": "Craft Warrior",
+   "category": "crafting"
+  },
+  {
+   "id": 597,
+   "name": "Farm Alchemist",
+   "category": "farming"
+  },
+  {
+   "id": 598,
+   "name": "Farm Alchemist Acid",
+   "category": "farming"
+  },
+  {
+   "id": 599,
+   "name": "Farm Alchemist Alcohol",
+   "category": "farming"
+  },
+  {
+   "id": 600,
+   "name": "Farm Alchemist Berserk",
+   "category": "farming"
+  },
+  {
+   "id": 601,
+   "name": "Farm Alchemist Cleanse",
+   "category": "farming"
+  },
+  {
+   "id": 602,
+   "name": "Farm Alchemist Cleanse2",
+   "category": "farming"
+  },
+  {
+   "id": 603,
+   "name": "Farm Alchemist Cooldown",
+   "category": "farming"
+  },
+  {
+   "id": 604,
+   "name": "Farm Alchemist Energy",
+   "category": "farming"
+  },
+  {
+   "id": 605,
+   "name": "Farm Alchemist Gather",
+   "category": "farming"
+  },
+  {
+   "id": 606,
+   "name": "Farm Alchemist Heal",
+   "category": "farming"
+  },
+  {
+   "id": 607,
+   "name": "Farm Alchemist Lava",
+   "category": "farming"
+  },
+  {
+   "id": 608,
+   "name": "Farm Alchemist Mobreset",
+   "category": "farming"
+  },
+  {
+   "id": 609,
+   "name": "Farm Alchemist Revive",
+   "category": "farming"
+  },
+  {
+   "id": 610,
+   "name": "Farm Alchemist Slowfield",
+   "category": "farming"
+  },
+  {
+   "id": 611,
+   "name": "Farm Alchemist Stoneskin",
+   "category": "farming"
+  },
+  {
+   "id": 612,
+   "name": "Farm Alchemist Tornado",
+   "category": "farming"
+  },
+  {
+   "id": 613,
+   "name": "Farm Animals",
+   "category": "farming"
+  },
+  {
+   "id": 614,
+   "name": "Farm Animals Chicken",
+   "category": "farming"
+  },
+  {
+   "id": 615,
+   "name": "Farm Animals Cow",
+   "category": "farming"
+  },
+  {
+   "id": 616,
+   "name": "Farm Animals Goat",
+   "category": "farming"
+  },
+  {
+   "id": 617,
+   "name": "Farm Animals Goose",
+   "category": "farming"
+  },
+  {
+   "id": 618,
+   "name": "Farm Animals Horse",
+   "category": "farming"
+  },
+  {
+   "id": 619,
+   "name": "Farm Animals Ox",
+   "category": "farming"
+  },
+  {
+   "id": 620,
+   "name": "Farm Animals Pig",
+   "category": "farming"
+  },
+  {
+   "id": 621,
+   "name": "Farm Animals Rare",
+   "category": "farming"
+  },
+  {
+   "id": 622,
+   "name": "Farm Animals Sheep",
+   "category": "farming"
+  },
+  {
+   "id": 623,
+   "name": "Farm Cook",
+   "category": "farming"
+  },
+  {
+   "id": 624,
+   "name": "Farm Cook Meat",
+   "category": "farming"
+  },
+  {
+   "id": 625,
+   "name": "Farm Cook Omelette",
+   "category": "farming"
+  },
+  {
+   "id": 626,
+   "name": "Farm Cook Pie",
+   "category": "farming"
+  },
+  {
+   "id": 627,
+   "name": "Farm Cook Products",
+   "category": "farming"
+  },
+  {
+   "id": 628,
+   "name": "Farm Cook Roast",
+   "category": "farming"
+  },
+  {
+   "id": 629,
+   "name": "Farm Cook Salad",
+   "category": "farming"
+  },
+  {
+   "id": 630,
+   "name": "Farm Cook Sandwich",
+   "category": "farming"
+  },
+  {
+   "id": 631,
+   "name": "Farm Cook Soup",
+   "category": "farming"
+  },
+  {
+   "id": 632,
+   "name": "Farm Cook Stew",
+   "category": "farming"
+  },
+  {
+   "id": 633,
+   "name": "Farm Crafter",
+   "category": "farming"
+  },
+  {
+   "id": 634,
+   "name": "Farm Crops",
+   "category": "farming"
+  },
+  {
+   "id": 635,
+   "name": "Farm Crops Bean",
+   "category": "farming"
+  },
+  {
+   "id": 636,
+   "name": "Farm Crops Cabbage",
+   "category": "farming"
+  },
+  {
+   "id": 637,
+   "name": "Farm Crops Carrot",
+   "category": "farming"
+  },
+  {
+   "id": 638,
+   "name": "Farm Crops Corn",
+   "category": "farming"
+  },
+  {
+   "id": 639,
+   "name": "Farm Crops Potato",
+   "category": "farming"
+  },
+  {
+   "id": 640,
+   "name": "Farm Crops Pumpkin",
+   "category": "farming"
+  },
+  {
+   "id": 641,
+   "name": "Farm Crops Turnip",
+   "category": "farming"
+  },
+  {
+   "id": 642,
+   "name": "Farm Crops Wheat",
+   "category": "farming"
+  },
+  {
+   "id": 643,
+   "name": "Farm Farmer",
+   "category": "farming"
+  },
+  {
+   "id": 644,
+   "name": "Farm Herbs",
+   "category": "farming"
+  },
+  {
+   "id": 645,
+   "name": "Farm Herbs Agaric",
+   "category": "farming"
+  },
+  {
+   "id": 646,
+   "name": "Farm Herbs Burdock",
+   "category": "farming"
+  },
+  {
+   "id": 647,
+   "name": "Farm Herbs Comfrey",
+   "category": "farming"
+  },
+  {
+   "id": 648,
+   "name": "Farm Herbs Foxglove",
+   "category": "farming"
+  },
+  {
+   "id": 649,
+   "name": "Farm Herbs Mullein",
+   "category": "farming"
+  },
+  {
+   "id": 650,
+   "name": "Farm Herbs Teasel",
+   "category": "farming"
+  },
+  {
+   "id": 651,
+   "name": "Farm Herbs Yarrow",
+   "category": "farming"
+  },
+  {
+   "id": 652,
+   "name": "Farm Trainee",
+   "category": "farming"
+  },
+  {
+   "id": 653,
+   "name": "Gather Fiber T3",
+   "category": "gathering"
+  },
+  {
+   "id": 654,
+   "name": "Gather Fiber T4",
+   "category": "gathering"
+  },
+  {
+   "id": 655,
+   "name": "Gather Fiber T5",
+   "category": "gathering"
+  },
+  {
+   "id": 656,
+   "name": "Gather Fiber T6",
+   "category": "gathering"
+  },
+  {
+   "id": 657,
+   "name": "Gather Fiber T7",
+   "category": "gathering"
+  },
+  {
+   "id": 658,
+   "name": "Gather Fiber T8",
+   "category": "gathering"
+  },
+  {
+   "id": 659,
+   "name": "Gather Fish",
+   "category": "gathering"
+  },
+  {
+   "id": 660,
+   "name": "Gather Fish Fish",
+   "category": "gathering"
+  },
+  {
+   "id": 661,
+   "name": "Gather Hide T3",
+   "category": "gathering"
+  },
+  {
+   "id": 662,
+   "name": "Gather Hide T4",
+   "category": "gathering"
+  },
+  {
+   "id": 663,
+   "name": "Gather Hide T5",
+   "category": "gathering"
+  },
+  {
+   "id": 664,
+   "name": "Gather Hide T6",
+   "category": "gathering"
+  },
+  {
+   "id": 665,
+   "name": "Gather Hide T7",
+   "category": "gathering"
+  },
+  {
+   "id": 666,
+   "name": "Gather Hide T8",
+   "category": "gathering"
+  },
+  {
+   "id": 667,
+   "name": "Gather Ore T3",
+   "category": "gathering"
+  },
+  {
+   "id": 668,
+   "name": "Gather Ore T4",
+   "category": "gathering"
+  },
+  {
+   "id": 669,
+   "name": "Gather Ore T5",
+   "category": "gathering"
+  },
+  {
+   "id": 670,
+   "name": "Gather Ore T6",
+   "category": "gathering"
+  },
+  {
+   "id": 671,
+   "name": "Gather Ore T7",
+   "category": "gathering"
+  },
+  {
+   "id": 672,
+   "name": "Gather Ore T8",
+   "category": "gathering"
+  },
+  {
+   "id": 673,
+   "name": "Gather Rock T3",
+   "category": "gathering"
+  },
+  {
+   "id": 674,
+   "name": "Gather Rock T4",
+   "category": "gathering"
+  },
+  {
+   "id": 675,
+   "name": "Gather Rock T5",
+   "category": "gathering"
+  },
+  {
+   "id": 676,
+   "name": "Gather Rock T6",
+   "category": "gathering"
+  },
+  {
+   "id": 677,
+   "name": "Gather Rock T7",
+   "category": "gathering"
+  },
+  {
+   "id": 678,
+   "name": "Gather Rock T8",
+   "category": "gathering"
+  },
+  {
+   "id": 679,
+   "name": "Gather Trainee",
+   "category": "gathering"
+  },
+  {
+   "id": 680,
+   "name": "Gather Wood T3",
+   "category": "gathering"
+  },
+  {
+   "id": 681,
+   "name": "Gather Wood T4",
+   "category": "gathering"
+  },
+  {
+   "id": 682,
+   "name": "Gather Wood T5",
+   "category": "gathering"
+  },
+  {
+   "id": 683,
+   "name": "Gather Wood T6",
+   "category": "gathering"
+  },
+  {
+   "id": 684,
+   "name": "Gather Wood T7",
+   "category": "gathering"
+  },
+  {
+   "id": 685,
+   "name": "Gather Wood T8",
+   "category": "gathering"
+  },
+  {
+   "id": 686,
+   "name": "Start",
+   "category": "start"
+  },
+  {
+   "id": 687,
+   "name": "Tracking Direbear",
+   "category": "tracking"
+  },
+  {
+   "id": 688,
+   "name": "Tracking Eagle",
+   "category": "tracking"
+  },
+  {
+   "id": 689,
+   "name": "Tracking Elemental Rock",
+   "category": "tracking"
+  },
+  {
+   "id": 690,
+   "name": "Tracking Ent",
+   "category": "tracking"
+  },
+  {
+   "id": 691,
+   "name": "Tracking Faction Mob",
+   "category": "tracking"
+  },
+  {
+   "id": 692,
+   "name": "Tracking General",
+   "category": "tracking"
+  },
+  {
+   "id": 693,
+   "name": "Tracking Imp",
+   "category": "tracking"
+  },
+  {
+   "id": 694,
+   "name": "Tracking Panther",
+   "category": "tracking"
+  },
+  {
+   "id": 695,
+   "name": "Tracking Trainee",
+   "category": "tracking"
+  },
+  {
+   "id": 696,
+   "name": "Tracking Werewolf",
+   "category": "tracking"
+  }
+ ]
+}

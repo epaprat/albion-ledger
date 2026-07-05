@@ -7,7 +7,6 @@ import (
 	"context"
 	"log"
 	"sort"
-	"strconv"
 	"sync"
 	"sync/atomic"
 	"time"
@@ -277,14 +276,11 @@ func (s *Service) IngestEquipment(items []holdings.ItemRef) {
 	s.emitHoldings()
 }
 
-// SetSpec replaces the character spec and broadcasts it.
-func (s *Service) SetSpec(masteryLevels []int) {
-	masteries := make([]model.MasteryLevel, 0, len(masteryLevels))
-	for i, lvl := range masteryLevels {
-		masteries = append(masteries, model.MasteryLevel{Index: i, Name: masteryName(i), Level: lvl})
-	}
+// SetSpec replaces the character Destiny Board and broadcasts it (011). The handler
+// resolves node names/categories; the service just stores and emits.
+func (s *Service) SetSpec(spec model.CharacterSpec) {
 	s.mu.Lock()
-	s.spec = model.CharacterSpec{Masteries: masteries}
+	s.spec = spec
 	snap := s.spec
 	s.mu.Unlock()
 	if s.emit != nil {
@@ -587,10 +583,6 @@ func (s *Service) FlowBreakdown(kind string) []model.FlowItemStatView {
 		})
 	}
 	return out
-}
-
-func masteryName(index int) string {
-	return "Mastery #" + strconv.Itoa(index)
 }
 
 // ── Bound methods (called from the frontend) ─────────────────────────────────

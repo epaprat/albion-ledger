@@ -17,11 +17,13 @@ import (
 	"sync"
 
 	"github.com/epaprat/albion-ledger/internal/adapter/capture"
+	"github.com/epaprat/albion-ledger/internal/domain/model"
 	"github.com/epaprat/albion-ledger/internal/domain/probe"
 	"github.com/epaprat/albion-ledger/internal/holdings"
 	"github.com/epaprat/albion-ledger/internal/locations"
 	"github.com/epaprat/albion-ledger/internal/loot"
 	"github.com/epaprat/albion-ledger/internal/pending"
+	"github.com/epaprat/albion-ledger/internal/specboard"
 )
 
 // Fixed container ids for the player's own bag + equipped sets, which arrive in
@@ -67,6 +69,12 @@ type Sink interface {
 	IngestLoot(id string, index, quality, count int, ts int64, source string)
 	IngestGather(id string, index, quality, count int, ts int64, source string)
 	IngestFame(id string, fame int64, ts int64)
+	SetSpec(spec model.CharacterSpec)
+}
+
+// SpecResolver maps a Destiny Board node id to a readable name + category (011).
+type SpecResolver interface {
+	Resolve(id int) (name, category string, ok bool)
 }
 
 // Pipeline holds every piece of capture-time state that used to be a package global
@@ -109,10 +117,14 @@ type Pipeline struct {
 	// vaultCity is REBUILT per R:516 (full list); tabMeta upserts, capped.
 	vaultCity map[string]string
 	tabMeta   map[string]tabInfo
+
+	// Destiny Board (011): live skill-tree state + node-name resolver.
+	board     *specboard.Board
+	specNames SpecResolver
 }
 
 // New wires a Pipeline. locs may be nil (zones stay raw cluster ids).
-func New(sink Sink, clf *probe.Classifier, locs *locations.Locations, nowMS func() int64, debug bool) *Pipeline {
+func New(sink Sink, clf *probe.Classifier, locs *locations.Locations, specNames SpecResolver, nowMS func() int64, debug bool) *Pipeline {
 	return &Pipeline{
 		sink:               sink,
 		clf:                clf,
@@ -127,6 +139,8 @@ func New(sink Sink, clf *probe.Classifier, locs *locations.Locations, nowMS func
 		selfContainerGUIDs: map[string]string{},
 		vaultCity:          map[string]string{},
 		tabMeta:            map[string]tabInfo{},
+		board:              specboard.New(),
+		specNames:          specNames,
 	}
 }
 
