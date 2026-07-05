@@ -144,6 +144,13 @@ func main() {
 				} else {
 					log.Printf("store LoadEMVBook: %v", err)
 				}
+				// Persisted maxed set (011): E:155 only arrives on completion, not at
+				// login, so seed the level-100 branches from the last session's list.
+				if ids, err := flowStore.LoadSpecUnlocked(ctx); err == nil && len(ids) > 0 {
+					pipe.SeedSpecUnlocked(ids)
+				} else if err != nil {
+					log.Printf("store LoadSpecUnlocked: %v", err)
+				}
 				if err := flowStore.StartSession(ctx, model.CaptureSession{
 					ID: sessionID, StartedAt: nowMS(), SourceKind: srcKind, Interface: *iface,
 				}); err != nil {
@@ -173,6 +180,11 @@ func main() {
 						if err := flowStore.SaveEMVBook(ctx, book.SnapshotEMV()); err != nil {
 							log.Printf("store SaveEMVBook (periodic): %v", err)
 						}
+						if ids := svc.SpecUnlockedSnapshot(); len(ids) > 0 {
+							if err := flowStore.SaveSpecUnlocked(ctx, ids); err != nil {
+								log.Printf("store SaveSpecUnlocked (periodic): %v", err)
+							}
+						}
 					}
 				}
 				for {
@@ -201,6 +213,11 @@ func main() {
 				svc.StopFlowPersistence() // drain the final batch before the DB closes
 				if err := flowStore.SaveEMVBook(context.Background(), book.SnapshotEMV()); err != nil {
 					log.Printf("store SaveEMVBook: %v", err)
+				}
+				if ids := svc.SpecUnlockedSnapshot(); len(ids) > 0 {
+					if err := flowStore.SaveSpecUnlocked(context.Background(), ids); err != nil {
+						log.Printf("store SaveSpecUnlocked: %v", err)
+					}
 				}
 				_ = flowStore.EndSession(context.Background(), sessionID, nowMS(), model.SessionTotals{})
 				_ = flowStore.Close()

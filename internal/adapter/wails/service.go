@@ -58,6 +58,8 @@ type Service struct {
 
 	externalNudge chan struct{} // buffered(1) — K content signals the external price loop (010)
 
+	specUnlockedIDs []int // latest E:155 unlocked-node set, for persistence (011)
+
 	mu     sync.Mutex
 	items  map[int]*model.LiveViewItem // by item index
 	order  []int                       // insertion order for FIFO cap eviction
@@ -274,6 +276,20 @@ func (s *Service) IngestBankVault(owners, tabNames []string) { s.agg.SetBankVaul
 func (s *Service) IngestEquipment(items []holdings.ItemRef) {
 	s.agg.SetEquipped(items, s.nowMS())
 	s.emitHoldings()
+}
+
+// SetSpecUnlocked stores the latest unlocked-node set for background persistence (011).
+func (s *Service) SetSpecUnlocked(ids []int) {
+	s.mu.Lock()
+	s.specUnlockedIDs = append(s.specUnlockedIDs[:0], ids...)
+	s.mu.Unlock()
+}
+
+// SpecUnlockedSnapshot returns a copy of the unlocked set for the persistence flush.
+func (s *Service) SpecUnlockedSnapshot() []int {
+	s.mu.Lock()
+	defer s.mu.Unlock()
+	return append([]int(nil), s.specUnlockedIDs...)
 }
 
 // SetSpec replaces the character Destiny Board and broadcasts it (011). The handler

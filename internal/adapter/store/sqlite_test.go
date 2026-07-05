@@ -258,3 +258,30 @@ func TestEMVBookRoundTrip(t *testing.T) {
 		t.Fatalf("newer write lost: %+v", e)
 	}
 }
+
+func TestSpecUnlockedRoundTrip(t *testing.T) {
+	db, err := Open(filepath.Join(t.TempDir(), "spec.db"))
+	if err != nil {
+		t.Fatal(err)
+	}
+	defer db.Close()
+	ctx := context.Background()
+	if err := db.SaveSpecUnlocked(ctx, []int{22, 96, 172}); err != nil {
+		t.Fatal(err)
+	}
+	// REPLACE semantics: a second save wholly replaces the set.
+	if err := db.SaveSpecUnlocked(ctx, []int{96, 97}); err != nil {
+		t.Fatal(err)
+	}
+	got, err := db.LoadSpecUnlocked(ctx)
+	if err != nil {
+		t.Fatal(err)
+	}
+	set := map[int]bool{}
+	for _, id := range got {
+		set[id] = true
+	}
+	if len(got) != 2 || !set[96] || !set[97] || set[22] {
+		t.Fatalf("round-trip/replace wrong: %v", got)
+	}
+}

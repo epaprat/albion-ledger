@@ -70,6 +70,7 @@ type Sink interface {
 	IngestGather(id string, index, quality, count int, ts int64, source string)
 	IngestFame(id string, fame int64, ts int64)
 	SetSpec(spec model.CharacterSpec)
+	SetSpecUnlocked(ids []int)
 }
 
 // SpecResolver maps a Destiny Board node id to a readable name + category (011).
@@ -630,4 +631,19 @@ func firstInt64(v interface{}) (int64, bool) {
 		}
 	}
 	return 0, false
+}
+
+// SeedSpecUnlocked restores the persisted unlocked-node set at startup so maxed
+// (level-100) branches show immediately, before any E:155 arrives this session
+// (E:155 only fires on completion, not login — 011 live finding). Emits if a board
+// snapshot is already present.
+func (p *Pipeline) SeedSpecUnlocked(ids []int) {
+	if len(ids) == 0 {
+		return
+	}
+	p.specUnlocked = make(map[int]bool, len(ids))
+	for _, id := range ids {
+		p.specUnlocked[id] = true
+	}
+	p.emitSpec()
 }
