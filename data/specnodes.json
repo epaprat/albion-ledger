@@ -39,769 +39,769 @@
   },
   {
    "id": 6,
-   "name": "Combat Arcanestaffs",
+   "name": "Arcane Staff",
    "category": "Combat",
    "subcategory": "Arcanestaffs"
   },
   {
    "id": 7,
-   "name": "Combat Arcanestaffs Arcane",
+   "name": "Arcane Staff",
    "category": "Combat",
    "subcategory": "Arcanestaffs"
   },
   {
    "id": 8,
-   "name": "Combat Arcanestaffs Avalon",
+   "name": "Evensong",
    "category": "Combat",
    "subcategory": "Arcanestaffs"
   },
   {
    "id": 9,
-   "name": "Combat Arcanestaffs Crystal",
+   "name": "Astral Staff",
    "category": "Combat",
    "subcategory": "Arcanestaffs"
   },
   {
    "id": 10,
-   "name": "Combat Arcanestaffs Enigmatic",
+   "name": "Enigmatic Staff",
    "category": "Combat",
    "subcategory": "Arcanestaffs"
   },
   {
    "id": 11,
-   "name": "Combat Arcanestaffs Great",
+   "name": "Great Arcane Staff",
    "category": "Combat",
    "subcategory": "Arcanestaffs"
   },
   {
    "id": 12,
-   "name": "Combat Arcanestaffs Hell",
+   "name": "Occult Staff",
    "category": "Combat",
    "subcategory": "Arcanestaffs"
   },
   {
    "id": 13,
-   "name": "Combat Arcanestaffs Morgana",
+   "name": "Malevolent Locus",
    "category": "Combat",
    "subcategory": "Arcanestaffs"
   },
   {
    "id": 14,
-   "name": "Combat Arcanestaffs Undead",
+   "name": "Witchwork Staff",
    "category": "Combat",
    "subcategory": "Arcanestaffs"
   },
   {
    "id": 15,
-   "name": "Combat Axes",
+   "name": "Battleaxe",
    "category": "Combat",
    "subcategory": "Axes"
   },
   {
    "id": 16,
-   "name": "Combat Axes Avalon",
+   "name": "Realmbreaker",
    "category": "Combat",
    "subcategory": "Axes"
   },
   {
    "id": 17,
-   "name": "Combat Axes Axe",
+   "name": "Battleaxe",
    "category": "Combat",
    "subcategory": "Axes"
   },
   {
    "id": 18,
-   "name": "Combat Axes Crystal",
+   "name": "Crystal Reaper",
    "category": "Combat",
    "subcategory": "Axes"
   },
   {
    "id": 19,
-   "name": "Combat Axes Great",
+   "name": "The Hand of Khor",
    "category": "Combat",
    "subcategory": "Axes"
   },
   {
    "id": 20,
-   "name": "Combat Axes Halberd",
+   "name": "Halberd",
    "category": "Combat",
    "subcategory": "Axes"
   },
   {
    "id": 21,
-   "name": "Combat Axes Hell",
+   "name": "Infernal Scythe",
    "category": "Combat",
    "subcategory": "Axes"
   },
   {
    "id": 22,
-   "name": "Combat Axes Keeper",
+   "name": "Bear Paws",
    "category": "Combat",
    "subcategory": "Axes"
   },
   {
    "id": 23,
-   "name": "Combat Axes Morgana",
+   "name": "Carrioncaller",
    "category": "Combat",
    "subcategory": "Axes"
   },
   {
    "id": 24,
-   "name": "Combat Books",
+   "name": "Diary",
    "category": "Combat",
    "subcategory": "Books"
   },
   {
    "id": 25,
-   "name": "Combat Books Avalon",
+   "name": "Celestial Censer",
    "category": "Combat",
    "subcategory": "Books"
   },
   {
    "id": 26,
-   "name": "Combat Books Book",
+   "name": "Diary",
    "category": "Combat",
    "subcategory": "Books"
   },
   {
    "id": 27,
-   "name": "Combat Books Crystal",
+   "name": "Timelocked Grimoire",
    "category": "Combat",
    "subcategory": "Books"
   },
   {
    "id": 28,
-   "name": "Combat Books Hell",
+   "name": "Muisak",
    "category": "Combat",
    "subcategory": "Books"
   },
   {
    "id": 29,
-   "name": "Combat Books Keeper",
+   "name": "Taproot",
    "category": "Combat",
    "subcategory": "Books"
   },
   {
    "id": 30,
-   "name": "Combat Books Morgana",
+   "name": "Eye of Secrets",
    "category": "Combat",
    "subcategory": "Books"
   },
   {
    "id": 31,
-   "name": "Combat Bows",
+   "name": "Bow",
    "category": "Combat",
    "subcategory": "Bows"
   },
   {
    "id": 32,
-   "name": "Combat Bows Avalon",
+   "name": "Mistpiercer",
    "category": "Combat",
    "subcategory": "Bows"
   },
   {
    "id": 33,
-   "name": "Combat Bows Bow",
+   "name": "Bow",
    "category": "Combat",
    "subcategory": "Bows"
   },
   {
    "id": 34,
-   "name": "Combat Bows Crystal",
+   "name": "Skystrider Bow",
    "category": "Combat",
    "subcategory": "Bows"
   },
   {
    "id": 35,
-   "name": "Combat Bows Hell",
+   "name": "Wailing Bow",
    "category": "Combat",
    "subcategory": "Bows"
   },
   {
    "id": 36,
-   "name": "Combat Bows Keeper",
+   "name": "Bow of Badon",
    "category": "Combat",
    "subcategory": "Bows"
   },
   {
    "id": 37,
-   "name": "Combat Bows Long",
+   "name": "Longbow",
    "category": "Combat",
    "subcategory": "Bows"
   },
   {
    "id": 38,
-   "name": "Combat Bows Undead",
+   "name": "Whispering Bow",
    "category": "Combat",
    "subcategory": "Bows"
   },
   {
    "id": 39,
-   "name": "Combat Bows War",
+   "name": "Warbow",
    "category": "Combat",
    "subcategory": "Bows"
   },
   {
    "id": 40,
-   "name": "Combat Cloth",
+   "name": "Scholar Robe",
    "category": "Combat",
    "subcategory": "Cloth"
   },
   {
    "id": 41,
-   "name": "Combat Cloth Armors",
+   "name": "Scholar Robe",
    "category": "Combat",
    "subcategory": "Cloth"
   },
   {
    "id": 42,
-   "name": "Combat Cloth Armors Avalon",
+   "name": "Robe of Purity",
    "category": "Combat",
    "subcategory": "Cloth"
   },
   {
    "id": 43,
-   "name": "Combat Cloth Armors Fey",
+   "name": "Feyscale Robe",
    "category": "Combat",
    "subcategory": "Cloth"
   },
   {
    "id": 44,
-   "name": "Combat Cloth Armors Hell",
+   "name": "Fiend Robe",
    "category": "Combat",
    "subcategory": "Cloth"
   },
   {
    "id": 45,
-   "name": "Combat Cloth Armors Keeper",
+   "name": "Druid Robe",
    "category": "Combat",
    "subcategory": "Cloth"
   },
   {
    "id": 46,
-   "name": "Combat Cloth Armors Morgana",
+   "name": "Cultist Robe",
    "category": "Combat",
    "subcategory": "Cloth"
   },
   {
    "id": 47,
-   "name": "Combat Cloth Armors Royal",
+   "name": "Royal Robe",
    "category": "Combat",
    "subcategory": "Cloth"
   },
   {
    "id": 48,
-   "name": "Combat Cloth Armors Set1",
+   "name": "Scholar Robe",
    "category": "Combat",
    "subcategory": "Cloth"
   },
   {
    "id": 49,
-   "name": "Combat Cloth Armors Set2",
+   "name": "Cleric Robe",
    "category": "Combat",
    "subcategory": "Cloth"
   },
   {
    "id": 50,
-   "name": "Combat Cloth Armors Set3",
+   "name": "Mage Robe",
    "category": "Combat",
    "subcategory": "Cloth"
   },
   {
    "id": 51,
-   "name": "Combat Cloth Heads",
+   "name": "Scholar Cowl",
    "category": "Combat",
    "subcategory": "Cloth"
   },
   {
    "id": 52,
-   "name": "Combat Cloth Heads Avalon",
+   "name": "Cowl of Purity",
    "category": "Combat",
    "subcategory": "Cloth"
   },
   {
    "id": 53,
-   "name": "Combat Cloth Heads Fey",
+   "name": "Feyscale Hat",
    "category": "Combat",
    "subcategory": "Cloth"
   },
   {
    "id": 54,
-   "name": "Combat Cloth Heads Hell",
+   "name": "Fiend Cowl",
    "category": "Combat",
    "subcategory": "Cloth"
   },
   {
    "id": 55,
-   "name": "Combat Cloth Heads Keeper",
+   "name": "Druid Cowl",
    "category": "Combat",
    "subcategory": "Cloth"
   },
   {
    "id": 56,
-   "name": "Combat Cloth Heads Morgana",
+   "name": "Cultist Cowl",
    "category": "Combat",
    "subcategory": "Cloth"
   },
   {
    "id": 57,
-   "name": "Combat Cloth Heads Royal",
+   "name": "Royal Cowl",
    "category": "Combat",
    "subcategory": "Cloth"
   },
   {
    "id": 58,
-   "name": "Combat Cloth Heads Set1",
+   "name": "Scholar Cowl",
    "category": "Combat",
    "subcategory": "Cloth"
   },
   {
    "id": 59,
-   "name": "Combat Cloth Heads Set2",
+   "name": "Cleric Cowl",
    "category": "Combat",
    "subcategory": "Cloth"
   },
   {
    "id": 60,
-   "name": "Combat Cloth Heads Set3",
+   "name": "Mage Cowl",
    "category": "Combat",
    "subcategory": "Cloth"
   },
   {
    "id": 61,
-   "name": "Combat Cloth Shoes",
+   "name": "Scholar Sandals",
    "category": "Combat",
    "subcategory": "Cloth"
   },
   {
    "id": 62,
-   "name": "Combat Cloth Shoes Avalon",
+   "name": "Sandals of Purity",
    "category": "Combat",
    "subcategory": "Cloth"
   },
   {
    "id": 63,
-   "name": "Combat Cloth Shoes Fey",
+   "name": "Feyscale Sandals",
    "category": "Combat",
    "subcategory": "Cloth"
   },
   {
    "id": 64,
-   "name": "Combat Cloth Shoes Hell",
+   "name": "Fiend Sandals",
    "category": "Combat",
    "subcategory": "Cloth"
   },
   {
    "id": 65,
-   "name": "Combat Cloth Shoes Keeper",
+   "name": "Druid Sandals",
    "category": "Combat",
    "subcategory": "Cloth"
   },
   {
    "id": 66,
-   "name": "Combat Cloth Shoes Morgana",
+   "name": "Cultist Sandals",
    "category": "Combat",
    "subcategory": "Cloth"
   },
   {
    "id": 67,
-   "name": "Combat Cloth Shoes Royal",
+   "name": "Royal Sandals",
    "category": "Combat",
    "subcategory": "Cloth"
   },
   {
    "id": 68,
-   "name": "Combat Cloth Shoes Set1",
+   "name": "Scholar Sandals",
    "category": "Combat",
    "subcategory": "Cloth"
   },
   {
    "id": 69,
-   "name": "Combat Cloth Shoes Set2",
+   "name": "Cleric Sandals",
    "category": "Combat",
    "subcategory": "Cloth"
   },
   {
    "id": 70,
-   "name": "Combat Cloth Shoes Set3",
+   "name": "Mage Sandals",
    "category": "Combat",
    "subcategory": "Cloth"
   },
   {
    "id": 71,
-   "name": "Combat Crossbows",
+   "name": "Crossbow",
    "category": "Combat",
    "subcategory": "Crossbows"
   },
   {
    "id": 72,
-   "name": "Combat Crossbows Avalon",
+   "name": "Energy Shaper",
    "category": "Combat",
    "subcategory": "Crossbows"
   },
   {
    "id": 73,
-   "name": "Combat Crossbows Crossbow",
+   "name": "Crossbow",
    "category": "Combat",
    "subcategory": "Crossbows"
   },
   {
    "id": 74,
-   "name": "Combat Crossbows Crystal",
+   "name": "Arclight Blasters",
    "category": "Combat",
    "subcategory": "Crossbows"
   },
   {
    "id": 75,
-   "name": "Combat Crossbows Hell",
+   "name": "Boltcasters",
    "category": "Combat",
    "subcategory": "Crossbows"
   },
   {
    "id": 76,
-   "name": "Combat Crossbows Large",
+   "name": "Heavy Crossbow",
    "category": "Combat",
    "subcategory": "Crossbows"
   },
   {
    "id": 77,
-   "name": "Combat Crossbows Morgana",
+   "name": "Siegebow",
    "category": "Combat",
    "subcategory": "Crossbows"
   },
   {
    "id": 78,
-   "name": "Combat Crossbows Onehand",
+   "name": "Light Crossbow",
    "category": "Combat",
    "subcategory": "Crossbows"
   },
   {
    "id": 79,
-   "name": "Combat Crossbows Undead",
+   "name": "Weeping Repeater",
    "category": "Combat",
    "subcategory": "Crossbows"
   },
   {
    "id": 80,
-   "name": "Combat Cursedstaffs",
+   "name": "Cursed Staff",
    "category": "Combat",
    "subcategory": "Cursedstaffs"
   },
   {
    "id": 81,
-   "name": "Combat Cursedstaffs Avalon",
+   "name": "Shadowcaller",
    "category": "Combat",
    "subcategory": "Cursedstaffs"
   },
   {
    "id": 82,
-   "name": "Combat Cursedstaffs Crystal",
+   "name": "Rotcaller Staff",
    "category": "Combat",
    "subcategory": "Cursedstaffs"
   },
   {
    "id": 83,
-   "name": "Combat Cursedstaffs Cursed",
+   "name": "Cursed Staff",
    "category": "Combat",
    "subcategory": "Cursedstaffs"
   },
   {
    "id": 84,
-   "name": "Combat Cursedstaffs Demonic",
+   "name": "Demonic Staff",
    "category": "Combat",
    "subcategory": "Cursedstaffs"
   },
   {
    "id": 85,
-   "name": "Combat Cursedstaffs Great",
+   "name": "Great Cursed Staff",
    "category": "Combat",
    "subcategory": "Cursedstaffs"
   },
   {
    "id": 86,
-   "name": "Combat Cursedstaffs Hell",
+   "name": "Cursed Skull",
    "category": "Combat",
    "subcategory": "Cursedstaffs"
   },
   {
    "id": 87,
-   "name": "Combat Cursedstaffs Morgana",
+   "name": "Damnation Staff",
    "category": "Combat",
    "subcategory": "Cursedstaffs"
   },
   {
    "id": 88,
-   "name": "Combat Cursedstaffs Undead",
+   "name": "Lifecurse Staff",
    "category": "Combat",
    "subcategory": "Cursedstaffs"
   },
   {
    "id": 89,
-   "name": "Combat Daggers",
+   "name": "Dagger",
    "category": "Combat",
    "subcategory": "Daggers"
   },
   {
    "id": 90,
-   "name": "Combat Daggers Avalon",
+   "name": "Bridled Fury",
    "category": "Combat",
    "subcategory": "Daggers"
   },
   {
    "id": 91,
-   "name": "Combat Daggers Claws",
+   "name": "Claws",
    "category": "Combat",
    "subcategory": "Daggers"
   },
   {
    "id": 92,
-   "name": "Combat Daggers Crystal",
+   "name": "Twin Slayers",
    "category": "Combat",
    "subcategory": "Daggers"
   },
   {
    "id": 93,
-   "name": "Combat Daggers Dagger",
+   "name": "Dagger",
    "category": "Combat",
    "subcategory": "Daggers"
   },
   {
    "id": 94,
-   "name": "Combat Daggers Hell",
+   "name": "Demonfang",
    "category": "Combat",
    "subcategory": "Daggers"
   },
   {
    "id": 95,
-   "name": "Combat Daggers Morgana",
+   "name": "Bloodletter",
    "category": "Combat",
    "subcategory": "Daggers"
   },
   {
    "id": 96,
-   "name": "Combat Daggers Pair",
+   "name": "Dagger Pair",
    "category": "Combat",
    "subcategory": "Daggers"
   },
   {
    "id": 97,
-   "name": "Combat Daggers Undead",
+   "name": "Deathgivers",
    "category": "Combat",
    "subcategory": "Daggers"
   },
   {
    "id": 98,
-   "name": "Combat Firestaffs",
+   "name": "Fire Staff",
    "category": "Combat",
    "subcategory": "Firestaffs"
   },
   {
    "id": 99,
-   "name": "Combat Firestaffs Avalon",
+   "name": "Dawnsong",
    "category": "Combat",
    "subcategory": "Firestaffs"
   },
   {
    "id": 100,
-   "name": "Combat Firestaffs Crystal",
+   "name": "Flamewalker Staff",
    "category": "Combat",
    "subcategory": "Firestaffs"
   },
   {
    "id": 101,
-   "name": "Combat Firestaffs Fire",
+   "name": "Fire Staff",
    "category": "Combat",
    "subcategory": "Firestaffs"
   },
   {
    "id": 102,
-   "name": "Combat Firestaffs Great",
+   "name": "Wrath",
    "category": "Combat",
    "subcategory": "Firestaffs"
   },
   {
    "id": 103,
-   "name": "Combat Firestaffs Hell",
+   "name": "Brimstone Staff",
    "category": "Combat",
    "subcategory": "Firestaffs"
   },
   {
    "id": 104,
-   "name": "Combat Firestaffs Inferno",
+   "name": "Infernal Staff",
    "category": "Combat",
    "subcategory": "Firestaffs"
   },
   {
    "id": 105,
-   "name": "Combat Firestaffs Keeper",
+   "name": "Wildfire Staff",
    "category": "Combat",
    "subcategory": "Firestaffs"
   },
   {
    "id": 106,
-   "name": "Combat Firestaffs Morgana",
+   "name": "Blazing Staff",
    "category": "Combat",
    "subcategory": "Firestaffs"
   },
   {
    "id": 107,
-   "name": "Combat Froststaffs",
+   "name": "Frost Staff",
    "category": "Combat",
    "subcategory": "Froststaffs"
   },
   {
    "id": 108,
-   "name": "Combat Froststaffs Avalon",
+   "name": "Chillhowl",
    "category": "Combat",
    "subcategory": "Froststaffs"
   },
   {
    "id": 109,
-   "name": "Combat Froststaffs Crystal",
+   "name": "Arctic Staff",
    "category": "Combat",
    "subcategory": "Froststaffs"
   },
   {
    "id": 110,
-   "name": "Combat Froststaffs Frost",
+   "name": "Frost Staff",
    "category": "Combat",
    "subcategory": "Froststaffs"
   },
   {
    "id": 111,
-   "name": "Combat Froststaffs Glacial",
+   "name": "Glacial Staff",
    "category": "Combat",
    "subcategory": "Froststaffs"
   },
   {
    "id": 112,
-   "name": "Combat Froststaffs Great",
+   "name": "Great Frost Staff",
    "category": "Combat",
    "subcategory": "Froststaffs"
   },
   {
    "id": 113,
-   "name": "Combat Froststaffs Hell",
+   "name": "Icicle Staff",
    "category": "Combat",
    "subcategory": "Froststaffs"
   },
   {
    "id": 114,
-   "name": "Combat Froststaffs Keeper",
+   "name": "Hoarfrost Staff",
    "category": "Combat",
    "subcategory": "Froststaffs"
   },
   {
    "id": 115,
-   "name": "Combat Froststaffs Undead",
+   "name": "Permafrost Prism",
    "category": "Combat",
    "subcategory": "Froststaffs"
   },
   {
    "id": 116,
-   "name": "Combat Hammers",
+   "name": "Hammer",
    "category": "Combat",
    "subcategory": "Hammers"
   },
   {
    "id": 117,
-   "name": "Combat Hammers Avalon",
+   "name": "Hand of Justice",
    "category": "Combat",
    "subcategory": "Hammers"
   },
   {
    "id": 118,
-   "name": "Combat Hammers Crystal",
+   "name": "Truebolt Hammer",
    "category": "Combat",
    "subcategory": "Hammers"
   },
   {
    "id": 119,
-   "name": "Combat Hammers Great",
+   "name": "Great Hammer",
    "category": "Combat",
    "subcategory": "Hammers"
   },
   {
    "id": 120,
-   "name": "Combat Hammers Hammer",
+   "name": "Hammer",
    "category": "Combat",
    "subcategory": "Hammers"
   },
   {
    "id": 121,
-   "name": "Combat Hammers Hell",
+   "name": "Forge Hammers",
    "category": "Combat",
    "subcategory": "Hammers"
   },
   {
    "id": 122,
-   "name": "Combat Hammers Keeper",
+   "name": "Grovekeeper",
    "category": "Combat",
    "subcategory": "Hammers"
   },
   {
    "id": 123,
-   "name": "Combat Hammers Pole",
+   "name": "Polehammer",
    "category": "Combat",
    "subcategory": "Hammers"
   },
   {
    "id": 124,
-   "name": "Combat Hammers Undead",
+   "name": "Tombhammer",
    "category": "Combat",
    "subcategory": "Hammers"
   },
   {
    "id": 125,
-   "name": "Combat Holystaffs",
+   "name": "Holy Staff",
    "category": "Combat",
    "subcategory": "Holystaffs"
   },
   {
    "id": 126,
-   "name": "Combat Holystaffs Avalon",
+   "name": "Hallowfall",
    "category": "Combat",
    "subcategory": "Holystaffs"
   },
   {
    "id": 127,
-   "name": "Combat Holystaffs Crystal",
+   "name": "Exalted Staff",
    "category": "Combat",
    "subcategory": "Holystaffs"
   },
   {
    "id": 128,
-   "name": "Combat Holystaffs Divine",
+   "name": "Divine Staff",
    "category": "Combat",
    "subcategory": "Holystaffs"
   },
   {
    "id": 129,
-   "name": "Combat Holystaffs Great",
+   "name": "Great Holy Staff",
    "category": "Combat",
    "subcategory": "Holystaffs"
   },
   {
    "id": 130,
-   "name": "Combat Holystaffs Hell",
+   "name": "Fallen Staff",
    "category": "Combat",
    "subcategory": "Holystaffs"
   },
   {
    "id": 131,
-   "name": "Combat Holystaffs Holy",
+   "name": "Holy Staff",
    "category": "Combat",
    "subcategory": "Holystaffs"
   },
   {
    "id": 132,
-   "name": "Combat Holystaffs Morgana",
+   "name": "Lifetouch Staff",
    "category": "Combat",
    "subcategory": "Holystaffs"
   },
   {
    "id": 133,
-   "name": "Combat Holystaffs Undead",
+   "name": "Redemption Staff",
    "category": "Combat",
    "subcategory": "Holystaffs"
   },
@@ -813,841 +813,841 @@
   },
   {
    "id": 135,
-   "name": "Combat Knuckles",
+   "name": "Brawler Gloves",
    "category": "Combat",
    "subcategory": "Knuckles"
   },
   {
    "id": 136,
-   "name": "Combat Knuckles Avalon",
+   "name": "Fists of Avalon",
    "category": "Combat",
    "subcategory": "Knuckles"
   },
   {
    "id": 137,
-   "name": "Combat Knuckles Crystal",
+   "name": "Forcepulse Bracers",
    "category": "Combat",
    "subcategory": "Knuckles"
   },
   {
    "id": 138,
-   "name": "Combat Knuckles Hell",
+   "name": "Hellfire Hands",
    "category": "Combat",
    "subcategory": "Knuckles"
   },
   {
    "id": 139,
-   "name": "Combat Knuckles Keeper",
+   "name": "Ursine Maulers",
    "category": "Combat",
    "subcategory": "Knuckles"
   },
   {
    "id": 140,
-   "name": "Combat Knuckles Morgana",
+   "name": "Ravenstrike Cestus",
    "category": "Combat",
    "subcategory": "Knuckles"
   },
   {
    "id": 141,
-   "name": "Combat Knuckles Set1",
+   "name": "Brawler Gloves",
    "category": "Combat",
    "subcategory": "Knuckles"
   },
   {
    "id": 142,
-   "name": "Combat Knuckles Set2",
+   "name": "Battle Bracers",
    "category": "Combat",
    "subcategory": "Knuckles"
   },
   {
    "id": 143,
-   "name": "Combat Knuckles Set3",
+   "name": "Spiked Gauntlets",
    "category": "Combat",
    "subcategory": "Knuckles"
   },
   {
    "id": 144,
-   "name": "Combat Leather",
+   "name": "Mercenary Jacket",
    "category": "Combat",
    "subcategory": "Leather"
   },
   {
    "id": 145,
-   "name": "Combat Leather Armors",
+   "name": "Mercenary Jacket",
    "category": "Combat",
    "subcategory": "Leather"
   },
   {
    "id": 146,
-   "name": "Combat Leather Armors Avalon",
+   "name": "Jacket of Tenacity",
    "category": "Combat",
    "subcategory": "Leather"
   },
   {
    "id": 147,
-   "name": "Combat Leather Armors Fey",
+   "name": "Mistwalker Jacket",
    "category": "Combat",
    "subcategory": "Leather"
   },
   {
    "id": 148,
-   "name": "Combat Leather Armors Hell",
+   "name": "Hellion Jacket",
    "category": "Combat",
    "subcategory": "Leather"
   },
   {
    "id": 149,
-   "name": "Combat Leather Armors Morgana",
+   "name": "Stalker Jacket",
    "category": "Combat",
    "subcategory": "Leather"
   },
   {
    "id": 150,
-   "name": "Combat Leather Armors Royal",
+   "name": "Royal Jacket",
    "category": "Combat",
    "subcategory": "Leather"
   },
   {
    "id": 151,
-   "name": "Combat Leather Armors Set1",
+   "name": "Mercenary Jacket",
    "category": "Combat",
    "subcategory": "Leather"
   },
   {
    "id": 152,
-   "name": "Combat Leather Armors Set2",
+   "name": "Hunter Jacket",
    "category": "Combat",
    "subcategory": "Leather"
   },
   {
    "id": 153,
-   "name": "Combat Leather Armors Set3",
+   "name": "Assassin Jacket",
    "category": "Combat",
    "subcategory": "Leather"
   },
   {
    "id": 154,
-   "name": "Combat Leather Armors Undead",
+   "name": "Specter Jacket",
    "category": "Combat",
    "subcategory": "Leather"
   },
   {
    "id": 155,
-   "name": "Combat Leather Heads",
+   "name": "Mercenary Hood",
    "category": "Combat",
    "subcategory": "Leather"
   },
   {
    "id": 156,
-   "name": "Combat Leather Heads Avalon",
+   "name": "Hood of Tenacity",
    "category": "Combat",
    "subcategory": "Leather"
   },
   {
    "id": 157,
-   "name": "Combat Leather Heads Fey",
+   "name": "Mistwalker Hood",
    "category": "Combat",
    "subcategory": "Leather"
   },
   {
    "id": 158,
-   "name": "Combat Leather Heads Hell",
+   "name": "Hellion Hood",
    "category": "Combat",
    "subcategory": "Leather"
   },
   {
    "id": 159,
-   "name": "Combat Leather Heads Morgana",
+   "name": "Stalker Hood",
    "category": "Combat",
    "subcategory": "Leather"
   },
   {
    "id": 160,
-   "name": "Combat Leather Heads Royal",
+   "name": "Royal Hood",
    "category": "Combat",
    "subcategory": "Leather"
   },
   {
    "id": 161,
-   "name": "Combat Leather Heads Set1",
+   "name": "Mercenary Hood",
    "category": "Combat",
    "subcategory": "Leather"
   },
   {
    "id": 162,
-   "name": "Combat Leather Heads Set2",
+   "name": "Hunter Hood",
    "category": "Combat",
    "subcategory": "Leather"
   },
   {
    "id": 163,
-   "name": "Combat Leather Heads Set3",
+   "name": "Assassin Hood",
    "category": "Combat",
    "subcategory": "Leather"
   },
   {
    "id": 164,
-   "name": "Combat Leather Heads Undead",
+   "name": "Specter Hood",
    "category": "Combat",
    "subcategory": "Leather"
   },
   {
    "id": 165,
-   "name": "Combat Leather Shoes",
+   "name": "Mercenary Shoes",
    "category": "Combat",
    "subcategory": "Leather"
   },
   {
    "id": 166,
-   "name": "Combat Leather Shoes Avalon",
+   "name": "Shoes of Tenacity",
    "category": "Combat",
    "subcategory": "Leather"
   },
   {
    "id": 167,
-   "name": "Combat Leather Shoes Fey",
+   "name": "Mistwalker Shoes",
    "category": "Combat",
    "subcategory": "Leather"
   },
   {
    "id": 168,
-   "name": "Combat Leather Shoes Hell",
+   "name": "Hellion Shoes",
    "category": "Combat",
    "subcategory": "Leather"
   },
   {
    "id": 169,
-   "name": "Combat Leather Shoes Morgana",
+   "name": "Stalker Shoes",
    "category": "Combat",
    "subcategory": "Leather"
   },
   {
    "id": 170,
-   "name": "Combat Leather Shoes Royal",
+   "name": "Royal Shoes",
    "category": "Combat",
    "subcategory": "Leather"
   },
   {
    "id": 171,
-   "name": "Combat Leather Shoes Set1",
+   "name": "Mercenary Shoes",
    "category": "Combat",
    "subcategory": "Leather"
   },
   {
    "id": 172,
-   "name": "Combat Leather Shoes Set2",
+   "name": "Hunter Shoes",
    "category": "Combat",
    "subcategory": "Leather"
   },
   {
    "id": 173,
-   "name": "Combat Leather Shoes Set3",
+   "name": "Assassin Shoes",
    "category": "Combat",
    "subcategory": "Leather"
   },
   {
    "id": 174,
-   "name": "Combat Leather Shoes Undead",
+   "name": "Specter Shoes",
    "category": "Combat",
    "subcategory": "Leather"
   },
   {
    "id": 175,
-   "name": "Combat Maces",
+   "name": "Mace",
    "category": "Combat",
    "subcategory": "Maces"
   },
   {
    "id": 176,
-   "name": "Combat Maces Avalon",
+   "name": "Oathkeepers",
    "category": "Combat",
    "subcategory": "Maces"
   },
   {
    "id": 177,
-   "name": "Combat Maces Crystal",
+   "name": "Dreadstorm Monarch",
    "category": "Combat",
    "subcategory": "Maces"
   },
   {
    "id": 178,
-   "name": "Combat Maces Flail",
+   "name": "Morning Star",
    "category": "Combat",
    "subcategory": "Maces"
   },
   {
    "id": 179,
-   "name": "Combat Maces Heavy",
+   "name": "Heavy Mace",
    "category": "Combat",
    "subcategory": "Maces"
   },
   {
    "id": 180,
-   "name": "Combat Maces Hell",
+   "name": "Incubus Mace",
    "category": "Combat",
    "subcategory": "Maces"
   },
   {
    "id": 181,
-   "name": "Combat Maces Keeper",
+   "name": "Bedrock Mace",
    "category": "Combat",
    "subcategory": "Maces"
   },
   {
    "id": 182,
-   "name": "Combat Maces Mace",
+   "name": "Mace",
    "category": "Combat",
    "subcategory": "Maces"
   },
   {
    "id": 183,
-   "name": "Combat Maces Morgana",
+   "name": "Camlann Mace",
    "category": "Combat",
    "subcategory": "Maces"
   },
   {
    "id": 184,
-   "name": "Combat Mage",
+   "name": "Fire Staff",
    "category": "Combat",
    "subcategory": "Mage"
   },
   {
    "id": 185,
-   "name": "Combat Naturestaffs",
+   "name": "Nature Staff",
    "category": "Combat",
    "subcategory": "Naturestaffs"
   },
   {
    "id": 186,
-   "name": "Combat Naturestaffs Avalon",
+   "name": "Ironroot Staff",
    "category": "Combat",
    "subcategory": "Naturestaffs"
   },
   {
    "id": 187,
-   "name": "Combat Naturestaffs Crystal",
+   "name": "Forgebark Staff",
    "category": "Combat",
    "subcategory": "Naturestaffs"
   },
   {
    "id": 188,
-   "name": "Combat Naturestaffs Great",
+   "name": "Great Nature Staff",
    "category": "Combat",
    "subcategory": "Naturestaffs"
   },
   {
    "id": 189,
-   "name": "Combat Naturestaffs Hell",
+   "name": "Blight Staff",
    "category": "Combat",
    "subcategory": "Naturestaffs"
   },
   {
    "id": 190,
-   "name": "Combat Naturestaffs Keeper",
+   "name": "Druidic Staff",
    "category": "Combat",
    "subcategory": "Naturestaffs"
   },
   {
    "id": 191,
-   "name": "Combat Naturestaffs Keeper2",
+   "name": "Rampant Staff",
    "category": "Combat",
    "subcategory": "Naturestaffs"
   },
   {
    "id": 192,
-   "name": "Combat Naturestaffs Nature",
+   "name": "Nature Staff",
    "category": "Combat",
    "subcategory": "Naturestaffs"
   },
   {
    "id": 193,
-   "name": "Combat Naturestaffs Wild",
+   "name": "Wild Staff",
    "category": "Combat",
    "subcategory": "Naturestaffs"
   },
   {
    "id": 194,
-   "name": "Combat Plate",
+   "name": "Soldier Armor",
    "category": "Combat",
    "subcategory": "Plate"
   },
   {
    "id": 195,
-   "name": "Combat Plate Armors",
+   "name": "Soldier Armor",
    "category": "Combat",
    "subcategory": "Plate"
   },
   {
    "id": 196,
-   "name": "Combat Plate Armors Avalon",
+   "name": "Armor of Valor",
    "category": "Combat",
    "subcategory": "Plate"
   },
   {
    "id": 197,
-   "name": "Combat Plate Armors Fey",
+   "name": "Duskweaver Armor",
    "category": "Combat",
    "subcategory": "Plate"
   },
   {
    "id": 198,
-   "name": "Combat Plate Armors Hell",
+   "name": "Demon Armor",
    "category": "Combat",
    "subcategory": "Plate"
   },
   {
    "id": 199,
-   "name": "Combat Plate Armors Keeper",
+   "name": "Judicator Armor",
    "category": "Combat",
    "subcategory": "Plate"
   },
   {
    "id": 200,
-   "name": "Combat Plate Armors Royal",
+   "name": "Royal Armor",
    "category": "Combat",
    "subcategory": "Plate"
   },
   {
    "id": 201,
-   "name": "Combat Plate Armors Set1",
+   "name": "Soldier Armor",
    "category": "Combat",
    "subcategory": "Plate"
   },
   {
    "id": 202,
-   "name": "Combat Plate Armors Set2",
+   "name": "Knight Armor",
    "category": "Combat",
    "subcategory": "Plate"
   },
   {
    "id": 203,
-   "name": "Combat Plate Armors Set3",
+   "name": "Guardian Armor",
    "category": "Combat",
    "subcategory": "Plate"
   },
   {
    "id": 204,
-   "name": "Combat Plate Armors Undead",
+   "name": "Graveguard Armor",
    "category": "Combat",
    "subcategory": "Plate"
   },
   {
    "id": 205,
-   "name": "Combat Plate Heads",
+   "name": "Soldier Helmet",
    "category": "Combat",
    "subcategory": "Plate"
   },
   {
    "id": 206,
-   "name": "Combat Plate Heads Avalon",
+   "name": "Helmet of Valor",
    "category": "Combat",
    "subcategory": "Plate"
   },
   {
    "id": 207,
-   "name": "Combat Plate Heads Fey",
+   "name": "Duskweaver Helmet",
    "category": "Combat",
    "subcategory": "Plate"
   },
   {
    "id": 208,
-   "name": "Combat Plate Heads Hell",
+   "name": "Demon Helmet",
    "category": "Combat",
    "subcategory": "Plate"
   },
   {
    "id": 209,
-   "name": "Combat Plate Heads Keeper",
+   "name": "Judicator Helmet",
    "category": "Combat",
    "subcategory": "Plate"
   },
   {
    "id": 210,
-   "name": "Combat Plate Heads Royal",
+   "name": "Royal Helmet",
    "category": "Combat",
    "subcategory": "Plate"
   },
   {
    "id": 211,
-   "name": "Combat Plate Heads Set1",
+   "name": "Soldier Helmet",
    "category": "Combat",
    "subcategory": "Plate"
   },
   {
    "id": 212,
-   "name": "Combat Plate Heads Set2",
+   "name": "Knight Helmet",
    "category": "Combat",
    "subcategory": "Plate"
   },
   {
    "id": 213,
-   "name": "Combat Plate Heads Set3",
+   "name": "Guardian Helmet",
    "category": "Combat",
    "subcategory": "Plate"
   },
   {
    "id": 214,
-   "name": "Combat Plate Heads Undead",
+   "name": "Graveguard Helmet",
    "category": "Combat",
    "subcategory": "Plate"
   },
   {
    "id": 215,
-   "name": "Combat Plate Shoes",
+   "name": "Soldier Boots",
    "category": "Combat",
    "subcategory": "Plate"
   },
   {
    "id": 216,
-   "name": "Combat Plate Shoes Avalon",
+   "name": "Boots of Valor",
    "category": "Combat",
    "subcategory": "Plate"
   },
   {
    "id": 217,
-   "name": "Combat Plate Shoes Fey",
+   "name": "Duskweaver Boots",
    "category": "Combat",
    "subcategory": "Plate"
   },
   {
    "id": 218,
-   "name": "Combat Plate Shoes Hell",
+   "name": "Demon Boots",
    "category": "Combat",
    "subcategory": "Plate"
   },
   {
    "id": 219,
-   "name": "Combat Plate Shoes Keeper",
+   "name": "Judicator Boots",
    "category": "Combat",
    "subcategory": "Plate"
   },
   {
    "id": 220,
-   "name": "Combat Plate Shoes Royal",
+   "name": "Royal Boots",
    "category": "Combat",
    "subcategory": "Plate"
   },
   {
    "id": 221,
-   "name": "Combat Plate Shoes Set1",
+   "name": "Soldier Boots",
    "category": "Combat",
    "subcategory": "Plate"
   },
   {
    "id": 222,
-   "name": "Combat Plate Shoes Set2",
+   "name": "Knight Boots",
    "category": "Combat",
    "subcategory": "Plate"
   },
   {
    "id": 223,
-   "name": "Combat Plate Shoes Set3",
+   "name": "Guardian Boots",
    "category": "Combat",
    "subcategory": "Plate"
   },
   {
    "id": 224,
-   "name": "Combat Plate Shoes Undead",
+   "name": "Graveguard Boots",
    "category": "Combat",
    "subcategory": "Plate"
   },
   {
    "id": 225,
-   "name": "Combat Quarterstaffs",
+   "name": "Quarterstaff",
    "category": "Combat",
    "subcategory": "Quarterstaffs"
   },
   {
    "id": 226,
-   "name": "Combat Quarterstaffs Avalon",
+   "name": "Grailseeker",
    "category": "Combat",
    "subcategory": "Quarterstaffs"
   },
   {
    "id": 227,
-   "name": "Combat Quarterstaffs Crystal",
+   "name": "Phantom Twinblade",
    "category": "Combat",
    "subcategory": "Quarterstaffs"
   },
   {
    "id": 228,
-   "name": "Combat Quarterstaffs Doublebladed",
+   "name": "Double Bladed Staff",
    "category": "Combat",
    "subcategory": "Quarterstaffs"
   },
   {
    "id": 229,
-   "name": "Combat Quarterstaffs Hell",
+   "name": "Soulscythe",
    "category": "Combat",
    "subcategory": "Quarterstaffs"
   },
   {
    "id": 230,
-   "name": "Combat Quarterstaffs Ironclad",
+   "name": "Iron-clad Staff",
    "category": "Combat",
    "subcategory": "Quarterstaffs"
   },
   {
    "id": 231,
-   "name": "Combat Quarterstaffs Keeper",
+   "name": "Staff of Balance",
    "category": "Combat",
    "subcategory": "Quarterstaffs"
   },
   {
    "id": 232,
-   "name": "Combat Quarterstaffs Morgana",
+   "name": "Black Monk Staff",
    "category": "Combat",
    "subcategory": "Quarterstaffs"
   },
   {
    "id": 233,
-   "name": "Combat Quarterstaffs Quarterstaff",
+   "name": "Quarterstaff",
    "category": "Combat",
    "subcategory": "Quarterstaffs"
   },
   {
    "id": 234,
-   "name": "Combat Shapeshifter",
+   "name": "Prowling Staff",
    "category": "Combat",
    "subcategory": "Shapeshifter"
   },
   {
    "id": 235,
-   "name": "Combat Shapeshifter Avalon",
+   "name": "Lightcaller",
    "category": "Combat",
    "subcategory": "Shapeshifter"
   },
   {
    "id": 236,
-   "name": "Combat Shapeshifter Crystal",
+   "name": "Stillgaze Staff",
    "category": "Combat",
    "subcategory": "Shapeshifter"
   },
   {
    "id": 237,
-   "name": "Combat Shapeshifter Hell",
+   "name": "Hellspawn Staff",
    "category": "Combat",
    "subcategory": "Shapeshifter"
   },
   {
    "id": 238,
-   "name": "Combat Shapeshifter Keeper",
+   "name": "Earthrune Staff",
    "category": "Combat",
    "subcategory": "Shapeshifter"
   },
   {
    "id": 239,
-   "name": "Combat Shapeshifter Morgana",
+   "name": "Bloodmoon Staff",
    "category": "Combat",
    "subcategory": "Shapeshifter"
   },
   {
    "id": 240,
-   "name": "Combat Shapeshifter Set1",
+   "name": "Prowling Staff",
    "category": "Combat",
    "subcategory": "Shapeshifter"
   },
   {
    "id": 241,
-   "name": "Combat Shapeshifter Set2",
+   "name": "Rootbound Staff",
    "category": "Combat",
    "subcategory": "Shapeshifter"
   },
   {
    "id": 242,
-   "name": "Combat Shapeshifter Set3",
+   "name": "Primal Staff",
    "category": "Combat",
    "subcategory": "Shapeshifter"
   },
   {
    "id": 243,
-   "name": "Combat Shields",
+   "name": "Shield",
    "category": "Combat",
    "subcategory": "Shields"
   },
   {
    "id": 244,
-   "name": "Combat Shields Avalon",
+   "name": "Astral Aegis",
    "category": "Combat",
    "subcategory": "Shields"
   },
   {
    "id": 245,
-   "name": "Combat Shields Crystal",
+   "name": "Unbreakable Ward",
    "category": "Combat",
    "subcategory": "Shields"
   },
   {
    "id": 246,
-   "name": "Combat Shields Hell",
+   "name": "Caitiff Shield",
    "category": "Combat",
    "subcategory": "Shields"
   },
   {
    "id": 247,
-   "name": "Combat Shields Morgana",
+   "name": "Facebreaker",
    "category": "Combat",
    "subcategory": "Shields"
   },
   {
    "id": 248,
-   "name": "Combat Shields Shield",
+   "name": "Shield",
    "category": "Combat",
    "subcategory": "Shields"
   },
   {
    "id": 249,
-   "name": "Combat Shields Undead",
+   "name": "Sarcophagus",
    "category": "Combat",
    "subcategory": "Shields"
   },
   {
    "id": 250,
-   "name": "Combat Spears",
+   "name": "Spear",
    "category": "Combat",
    "subcategory": "Spears"
   },
   {
    "id": 251,
-   "name": "Combat Spears Avalon",
+   "name": "Daybreaker",
    "category": "Combat",
    "subcategory": "Spears"
   },
   {
    "id": 252,
-   "name": "Combat Spears Crystal",
+   "name": "Rift Glaive",
    "category": "Combat",
    "subcategory": "Spears"
   },
   {
    "id": 253,
-   "name": "Combat Spears Glaive",
+   "name": "Glaive",
    "category": "Combat",
    "subcategory": "Spears"
   },
   {
    "id": 254,
-   "name": "Combat Spears Great",
+   "name": "Pike",
    "category": "Combat",
    "subcategory": "Spears"
   },
   {
    "id": 255,
-   "name": "Combat Spears Hell",
+   "name": "Spirithunter",
    "category": "Combat",
    "subcategory": "Spears"
   },
   {
    "id": 256,
-   "name": "Combat Spears Keeper",
+   "name": "Heron Spear",
    "category": "Combat",
    "subcategory": "Spears"
   },
   {
    "id": 257,
-   "name": "Combat Spears Spear",
+   "name": "Spear",
    "category": "Combat",
    "subcategory": "Spears"
   },
   {
    "id": 258,
-   "name": "Combat Spears Undead",
+   "name": "Trinity Spear",
    "category": "Combat",
    "subcategory": "Spears"
   },
   {
    "id": 259,
-   "name": "Combat Swords",
+   "name": "Broadsword",
    "category": "Combat",
    "subcategory": "Swords"
   },
   {
    "id": 260,
-   "name": "Combat Swords Avalon",
+   "name": "Kingmaker",
    "category": "Combat",
    "subcategory": "Swords"
   },
   {
    "id": 261,
-   "name": "Combat Swords Claymore",
+   "name": "Claymore",
    "category": "Combat",
    "subcategory": "Swords"
   },
   {
    "id": 262,
-   "name": "Combat Swords Crystal",
+   "name": "Infinity Blade",
    "category": "Combat",
    "subcategory": "Swords"
   },
   {
    "id": 263,
-   "name": "Combat Swords Dual",
+   "name": "Dual Swords",
    "category": "Combat",
    "subcategory": "Swords"
   },
   {
    "id": 264,
-   "name": "Combat Swords Hell",
+   "name": "Carving Sword",
    "category": "Combat",
    "subcategory": "Swords"
   },
   {
    "id": 265,
-   "name": "Combat Swords Morgana",
+   "name": "Clarent Blade",
    "category": "Combat",
    "subcategory": "Swords"
   },
   {
    "id": 266,
-   "name": "Combat Swords Sword",
+   "name": "Broadsword",
    "category": "Combat",
    "subcategory": "Swords"
   },
   {
    "id": 267,
-   "name": "Combat Swords Undead",
+   "name": "Galatine Pair",
    "category": "Combat",
    "subcategory": "Swords"
   },
   {
    "id": 268,
-   "name": "Combat Torches",
+   "name": "Torch",
    "category": "Combat",
    "subcategory": "Torches"
   },
   {
    "id": 269,
-   "name": "Combat Torches Avalon",
+   "name": "Sacred Scepter",
    "category": "Combat",
    "subcategory": "Torches"
   },
   {
    "id": 270,
-   "name": "Combat Torches Crystal",
+   "name": "Blueflame Torch",
    "category": "Combat",
    "subcategory": "Torches"
   },
   {
    "id": 271,
-   "name": "Combat Torches Hell",
+   "name": "Leering Cane",
    "category": "Combat",
    "subcategory": "Torches"
   },
   {
    "id": 272,
-   "name": "Combat Torches Keeper",
+   "name": "Mistcaller",
    "category": "Combat",
    "subcategory": "Torches"
   },
   {
    "id": 273,
-   "name": "Combat Torches Torch",
+   "name": "Torch",
    "category": "Combat",
    "subcategory": "Torches"
   },
   {
    "id": 274,
-   "name": "Combat Torches Undead",
+   "name": "Cryptcandle",
    "category": "Combat",
    "subcategory": "Torches"
   },
@@ -1659,781 +1659,781 @@
   },
   {
    "id": 276,
-   "name": "Combat Warrior",
+   "name": "Broadsword",
    "category": "Combat",
    "subcategory": "Warrior"
   },
   {
    "id": 277,
-   "name": "Craft Arcanestaffs",
+   "name": "Arcane Staff",
    "category": "Crafting",
    "subcategory": "Arcanestaffs"
   },
   {
    "id": 278,
-   "name": "Craft Arcanestaffs Arcane",
+   "name": "Arcane Staff",
    "category": "Crafting",
    "subcategory": "Arcanestaffs"
   },
   {
    "id": 279,
-   "name": "Craft Arcanestaffs Avalon",
+   "name": "Evensong",
    "category": "Crafting",
    "subcategory": "Arcanestaffs"
   },
   {
    "id": 280,
-   "name": "Craft Arcanestaffs Crystal",
+   "name": "Astral Staff",
    "category": "Crafting",
    "subcategory": "Arcanestaffs"
   },
   {
    "id": 281,
-   "name": "Craft Arcanestaffs Enigmatic",
+   "name": "Enigmatic Staff",
    "category": "Crafting",
    "subcategory": "Arcanestaffs"
   },
   {
    "id": 282,
-   "name": "Craft Arcanestaffs Great",
+   "name": "Great Arcane Staff",
    "category": "Crafting",
    "subcategory": "Arcanestaffs"
   },
   {
    "id": 283,
-   "name": "Craft Arcanestaffs Hell",
+   "name": "Occult Staff",
    "category": "Crafting",
    "subcategory": "Arcanestaffs"
   },
   {
    "id": 284,
-   "name": "Craft Arcanestaffs Morgana",
+   "name": "Malevolent Locus",
    "category": "Crafting",
    "subcategory": "Arcanestaffs"
   },
   {
    "id": 285,
-   "name": "Craft Arcanestaffs Undead",
+   "name": "Witchwork Staff",
    "category": "Crafting",
    "subcategory": "Arcanestaffs"
   },
   {
    "id": 286,
-   "name": "Craft Axes",
+   "name": "Battleaxe",
    "category": "Crafting",
    "subcategory": "Axes"
   },
   {
    "id": 287,
-   "name": "Craft Axes Avalon",
+   "name": "Realmbreaker",
    "category": "Crafting",
    "subcategory": "Axes"
   },
   {
    "id": 288,
-   "name": "Craft Axes Axe",
+   "name": "Battleaxe",
    "category": "Crafting",
    "subcategory": "Axes"
   },
   {
    "id": 289,
-   "name": "Craft Axes Crystal",
+   "name": "Crystal Reaper",
    "category": "Crafting",
    "subcategory": "Axes"
   },
   {
    "id": 290,
-   "name": "Craft Axes Great",
+   "name": "The Hand of Khor",
    "category": "Crafting",
    "subcategory": "Axes"
   },
   {
    "id": 291,
-   "name": "Craft Axes Halberd",
+   "name": "Halberd",
    "category": "Crafting",
    "subcategory": "Axes"
   },
   {
    "id": 292,
-   "name": "Craft Axes Hell",
+   "name": "Infernal Scythe",
    "category": "Crafting",
    "subcategory": "Axes"
   },
   {
    "id": 293,
-   "name": "Craft Axes Keeper",
+   "name": "Bear Paws",
    "category": "Crafting",
    "subcategory": "Axes"
   },
   {
    "id": 294,
-   "name": "Craft Axes Morgana",
+   "name": "Carrioncaller",
    "category": "Crafting",
    "subcategory": "Axes"
   },
   {
    "id": 295,
-   "name": "Craft Bag",
+   "name": "Bag",
    "category": "Crafting",
    "subcategory": "Bag"
   },
   {
    "id": 296,
-   "name": "Craft Bag Bag",
+   "name": "Bag",
    "category": "Crafting",
    "subcategory": "Bag"
   },
   {
    "id": 297,
-   "name": "Craft Bag Insight",
+   "name": "Satchel of Insight",
    "category": "Crafting",
    "subcategory": "Bag"
   },
   {
    "id": 298,
-   "name": "Craft Books",
+   "name": "Diary",
    "category": "Crafting",
    "subcategory": "Books"
   },
   {
    "id": 299,
-   "name": "Craft Books Avalon",
+   "name": "Celestial Censer",
    "category": "Crafting",
    "subcategory": "Books"
   },
   {
    "id": 300,
-   "name": "Craft Books Book",
+   "name": "Diary",
    "category": "Crafting",
    "subcategory": "Books"
   },
   {
    "id": 301,
-   "name": "Craft Books Crystal",
+   "name": "Timelocked Grimoire",
    "category": "Crafting",
    "subcategory": "Books"
   },
   {
    "id": 302,
-   "name": "Craft Books Hell",
+   "name": "Muisak",
    "category": "Crafting",
    "subcategory": "Books"
   },
   {
    "id": 303,
-   "name": "Craft Books Keeper",
+   "name": "Taproot",
    "category": "Crafting",
    "subcategory": "Books"
   },
   {
    "id": 304,
-   "name": "Craft Books Morgana",
+   "name": "Eye of Secrets",
    "category": "Crafting",
    "subcategory": "Books"
   },
   {
    "id": 305,
-   "name": "Craft Bows",
+   "name": "Bow",
    "category": "Crafting",
    "subcategory": "Bows"
   },
   {
    "id": 306,
-   "name": "Craft Bows Avalon",
+   "name": "Mistpiercer",
    "category": "Crafting",
    "subcategory": "Bows"
   },
   {
    "id": 307,
-   "name": "Craft Bows Bow",
+   "name": "Bow",
    "category": "Crafting",
    "subcategory": "Bows"
   },
   {
    "id": 308,
-   "name": "Craft Bows Crystal",
+   "name": "Skystrider Bow",
    "category": "Crafting",
    "subcategory": "Bows"
   },
   {
    "id": 309,
-   "name": "Craft Bows Hell",
+   "name": "Wailing Bow",
    "category": "Crafting",
    "subcategory": "Bows"
   },
   {
    "id": 310,
-   "name": "Craft Bows Keeper",
+   "name": "Bow of Badon",
    "category": "Crafting",
    "subcategory": "Bows"
   },
   {
    "id": 311,
-   "name": "Craft Bows Long",
+   "name": "Longbow",
    "category": "Crafting",
    "subcategory": "Bows"
   },
   {
    "id": 312,
-   "name": "Craft Bows Undead",
+   "name": "Whispering Bow",
    "category": "Crafting",
    "subcategory": "Bows"
   },
   {
    "id": 313,
-   "name": "Craft Bows War",
+   "name": "Warbow",
    "category": "Crafting",
    "subcategory": "Bows"
   },
   {
    "id": 314,
-   "name": "Craft Cape",
+   "name": "Cape",
    "category": "Crafting",
    "subcategory": "Cape"
   },
   {
    "id": 315,
-   "name": "Craft Cape Cape",
+   "name": "Cape",
    "category": "Crafting",
    "subcategory": "Cape"
   },
   {
    "id": 316,
-   "name": "Craft Cloth Armors",
+   "name": "Scholar Robe",
    "category": "Crafting",
    "subcategory": "Cloth"
   },
   {
    "id": 317,
-   "name": "Craft Cloth Armors Avalon",
+   "name": "Robe of Purity",
    "category": "Crafting",
    "subcategory": "Cloth"
   },
   {
    "id": 318,
-   "name": "Craft Cloth Armors Fey",
+   "name": "Feyscale Robe",
    "category": "Crafting",
    "subcategory": "Cloth"
   },
   {
    "id": 319,
-   "name": "Craft Cloth Armors Hell",
+   "name": "Fiend Robe",
    "category": "Crafting",
    "subcategory": "Cloth"
   },
   {
    "id": 320,
-   "name": "Craft Cloth Armors Keeper",
+   "name": "Druid Robe",
    "category": "Crafting",
    "subcategory": "Cloth"
   },
   {
    "id": 321,
-   "name": "Craft Cloth Armors Morgana",
+   "name": "Cultist Robe",
    "category": "Crafting",
    "subcategory": "Cloth"
   },
   {
    "id": 322,
-   "name": "Craft Cloth Armors Set1",
+   "name": "Scholar Robe",
    "category": "Crafting",
    "subcategory": "Cloth"
   },
   {
    "id": 323,
-   "name": "Craft Cloth Armors Set2",
+   "name": "Cleric Robe",
    "category": "Crafting",
    "subcategory": "Cloth"
   },
   {
    "id": 324,
-   "name": "Craft Cloth Armors Set3",
+   "name": "Mage Robe",
    "category": "Crafting",
    "subcategory": "Cloth"
   },
   {
    "id": 325,
-   "name": "Craft Cloth Heads",
+   "name": "Scholar Cowl",
    "category": "Crafting",
    "subcategory": "Cloth"
   },
   {
    "id": 326,
-   "name": "Craft Cloth Heads Avalon",
+   "name": "Cowl of Purity",
    "category": "Crafting",
    "subcategory": "Cloth"
   },
   {
    "id": 327,
-   "name": "Craft Cloth Heads Fey",
+   "name": "Feyscale Hat",
    "category": "Crafting",
    "subcategory": "Cloth"
   },
   {
    "id": 328,
-   "name": "Craft Cloth Heads Hell",
+   "name": "Fiend Cowl",
    "category": "Crafting",
    "subcategory": "Cloth"
   },
   {
    "id": 329,
-   "name": "Craft Cloth Heads Keeper",
+   "name": "Druid Cowl",
    "category": "Crafting",
    "subcategory": "Cloth"
   },
   {
    "id": 330,
-   "name": "Craft Cloth Heads Morgana",
+   "name": "Cultist Cowl",
    "category": "Crafting",
    "subcategory": "Cloth"
   },
   {
    "id": 331,
-   "name": "Craft Cloth Heads Set1",
+   "name": "Scholar Cowl",
    "category": "Crafting",
    "subcategory": "Cloth"
   },
   {
    "id": 332,
-   "name": "Craft Cloth Heads Set2",
+   "name": "Cleric Cowl",
    "category": "Crafting",
    "subcategory": "Cloth"
   },
   {
    "id": 333,
-   "name": "Craft Cloth Heads Set3",
+   "name": "Mage Cowl",
    "category": "Crafting",
    "subcategory": "Cloth"
   },
   {
    "id": 334,
-   "name": "Craft Cloth Shoes",
+   "name": "Scholar Sandals",
    "category": "Crafting",
    "subcategory": "Cloth"
   },
   {
    "id": 335,
-   "name": "Craft Cloth Shoes Avalon",
+   "name": "Sandals of Purity",
    "category": "Crafting",
    "subcategory": "Cloth"
   },
   {
    "id": 336,
-   "name": "Craft Cloth Shoes Fey",
+   "name": "Feyscale Sandals",
    "category": "Crafting",
    "subcategory": "Cloth"
   },
   {
    "id": 337,
-   "name": "Craft Cloth Shoes Hell",
+   "name": "Fiend Sandals",
    "category": "Crafting",
    "subcategory": "Cloth"
   },
   {
    "id": 338,
-   "name": "Craft Cloth Shoes Keeper",
+   "name": "Druid Sandals",
    "category": "Crafting",
    "subcategory": "Cloth"
   },
   {
    "id": 339,
-   "name": "Craft Cloth Shoes Morgana",
+   "name": "Cultist Sandals",
    "category": "Crafting",
    "subcategory": "Cloth"
   },
   {
    "id": 340,
-   "name": "Craft Cloth Shoes Set1",
+   "name": "Scholar Sandals",
    "category": "Crafting",
    "subcategory": "Cloth"
   },
   {
    "id": 341,
-   "name": "Craft Cloth Shoes Set2",
+   "name": "Cleric Sandals",
    "category": "Crafting",
    "subcategory": "Cloth"
   },
   {
    "id": 342,
-   "name": "Craft Cloth Shoes Set3",
+   "name": "Mage Sandals",
    "category": "Crafting",
    "subcategory": "Cloth"
   },
   {
    "id": 343,
-   "name": "Craft Crossbows",
+   "name": "Crossbow",
    "category": "Crafting",
    "subcategory": "Crossbows"
   },
   {
    "id": 344,
-   "name": "Craft Crossbows Avalon",
+   "name": "Energy Shaper",
    "category": "Crafting",
    "subcategory": "Crossbows"
   },
   {
    "id": 345,
-   "name": "Craft Crossbows Crossbow",
+   "name": "Crossbow",
    "category": "Crafting",
    "subcategory": "Crossbows"
   },
   {
    "id": 346,
-   "name": "Craft Crossbows Crystal",
+   "name": "Arclight Blasters",
    "category": "Crafting",
    "subcategory": "Crossbows"
   },
   {
    "id": 347,
-   "name": "Craft Crossbows Hell",
+   "name": "Boltcasters",
    "category": "Crafting",
    "subcategory": "Crossbows"
   },
   {
    "id": 348,
-   "name": "Craft Crossbows Large",
+   "name": "Heavy Crossbow",
    "category": "Crafting",
    "subcategory": "Crossbows"
   },
   {
    "id": 349,
-   "name": "Craft Crossbows Morgana",
+   "name": "Siegebow",
    "category": "Crafting",
    "subcategory": "Crossbows"
   },
   {
    "id": 350,
-   "name": "Craft Crossbows Onehand",
+   "name": "Light Crossbow",
    "category": "Crafting",
    "subcategory": "Crossbows"
   },
   {
    "id": 351,
-   "name": "Craft Crossbows Undead",
+   "name": "Weeping Repeater",
    "category": "Crafting",
    "subcategory": "Crossbows"
   },
   {
    "id": 352,
-   "name": "Craft Cursedstaffs",
+   "name": "Cursed Staff",
    "category": "Crafting",
    "subcategory": "Cursedstaffs"
   },
   {
    "id": 353,
-   "name": "Craft Cursedstaffs Avalon",
+   "name": "Shadowcaller",
    "category": "Crafting",
    "subcategory": "Cursedstaffs"
   },
   {
    "id": 354,
-   "name": "Craft Cursedstaffs Crystal",
+   "name": "Rotcaller Staff",
    "category": "Crafting",
    "subcategory": "Cursedstaffs"
   },
   {
    "id": 355,
-   "name": "Craft Cursedstaffs Cursed",
+   "name": "Cursed Staff",
    "category": "Crafting",
    "subcategory": "Cursedstaffs"
   },
   {
    "id": 356,
-   "name": "Craft Cursedstaffs Demonic",
+   "name": "Demonic Staff",
    "category": "Crafting",
    "subcategory": "Cursedstaffs"
   },
   {
    "id": 357,
-   "name": "Craft Cursedstaffs Great",
+   "name": "Great Cursed Staff",
    "category": "Crafting",
    "subcategory": "Cursedstaffs"
   },
   {
    "id": 358,
-   "name": "Craft Cursedstaffs Hell",
+   "name": "Cursed Skull",
    "category": "Crafting",
    "subcategory": "Cursedstaffs"
   },
   {
    "id": 359,
-   "name": "Craft Cursedstaffs Morgana",
+   "name": "Damnation Staff",
    "category": "Crafting",
    "subcategory": "Cursedstaffs"
   },
   {
    "id": 360,
-   "name": "Craft Cursedstaffs Undead",
+   "name": "Lifecurse Staff",
    "category": "Crafting",
    "subcategory": "Cursedstaffs"
   },
   {
    "id": 361,
-   "name": "Craft Daggers",
+   "name": "Dagger",
    "category": "Crafting",
    "subcategory": "Daggers"
   },
   {
    "id": 362,
-   "name": "Craft Daggers Avalon",
+   "name": "Bridled Fury",
    "category": "Crafting",
    "subcategory": "Daggers"
   },
   {
    "id": 363,
-   "name": "Craft Daggers Claws",
+   "name": "Claws",
    "category": "Crafting",
    "subcategory": "Daggers"
   },
   {
    "id": 364,
-   "name": "Craft Daggers Crystal",
+   "name": "Twin Slayers",
    "category": "Crafting",
    "subcategory": "Daggers"
   },
   {
    "id": 365,
-   "name": "Craft Daggers Dagger",
+   "name": "Dagger",
    "category": "Crafting",
    "subcategory": "Daggers"
   },
   {
    "id": 366,
-   "name": "Craft Daggers Hell",
+   "name": "Demonfang",
    "category": "Crafting",
    "subcategory": "Daggers"
   },
   {
    "id": 367,
-   "name": "Craft Daggers Morgana",
+   "name": "Bloodletter",
    "category": "Crafting",
    "subcategory": "Daggers"
   },
   {
    "id": 368,
-   "name": "Craft Daggers Pair",
+   "name": "Dagger Pair",
    "category": "Crafting",
    "subcategory": "Daggers"
   },
   {
    "id": 369,
-   "name": "Craft Daggers Undead",
+   "name": "Deathgivers",
    "category": "Crafting",
    "subcategory": "Daggers"
   },
   {
    "id": 370,
-   "name": "Craft Firestaffs",
+   "name": "Fire Staff",
    "category": "Crafting",
    "subcategory": "Firestaffs"
   },
   {
    "id": 371,
-   "name": "Craft Firestaffs Avalon",
+   "name": "Dawnsong",
    "category": "Crafting",
    "subcategory": "Firestaffs"
   },
   {
    "id": 372,
-   "name": "Craft Firestaffs Crystal",
+   "name": "Flamewalker Staff",
    "category": "Crafting",
    "subcategory": "Firestaffs"
   },
   {
    "id": 373,
-   "name": "Craft Firestaffs Fire",
+   "name": "Fire Staff",
    "category": "Crafting",
    "subcategory": "Firestaffs"
   },
   {
    "id": 374,
-   "name": "Craft Firestaffs Great",
+   "name": "Wrath",
    "category": "Crafting",
    "subcategory": "Firestaffs"
   },
   {
    "id": 375,
-   "name": "Craft Firestaffs Hell",
+   "name": "Brimstone Staff",
    "category": "Crafting",
    "subcategory": "Firestaffs"
   },
   {
    "id": 376,
-   "name": "Craft Firestaffs Inferno",
+   "name": "Infernal Staff",
    "category": "Crafting",
    "subcategory": "Firestaffs"
   },
   {
    "id": 377,
-   "name": "Craft Firestaffs Keeper",
+   "name": "Wildfire Staff",
    "category": "Crafting",
    "subcategory": "Firestaffs"
   },
   {
    "id": 378,
-   "name": "Craft Firestaffs Morgana",
+   "name": "Blazing Staff",
    "category": "Crafting",
    "subcategory": "Firestaffs"
   },
   {
    "id": 379,
-   "name": "Craft Froststaffs",
+   "name": "Frost Staff",
    "category": "Crafting",
    "subcategory": "Froststaffs"
   },
   {
    "id": 380,
-   "name": "Craft Froststaffs Avalon",
+   "name": "Chillhowl",
    "category": "Crafting",
    "subcategory": "Froststaffs"
   },
   {
    "id": 381,
-   "name": "Craft Froststaffs Crystal",
+   "name": "Arctic Staff",
    "category": "Crafting",
    "subcategory": "Froststaffs"
   },
   {
    "id": 382,
-   "name": "Craft Froststaffs Frost",
+   "name": "Frost Staff",
    "category": "Crafting",
    "subcategory": "Froststaffs"
   },
   {
    "id": 383,
-   "name": "Craft Froststaffs Glacial",
+   "name": "Glacial Staff",
    "category": "Crafting",
    "subcategory": "Froststaffs"
   },
   {
    "id": 384,
-   "name": "Craft Froststaffs Great",
+   "name": "Great Frost Staff",
    "category": "Crafting",
    "subcategory": "Froststaffs"
   },
   {
    "id": 385,
-   "name": "Craft Froststaffs Hell",
+   "name": "Icicle Staff",
    "category": "Crafting",
    "subcategory": "Froststaffs"
   },
   {
    "id": 386,
-   "name": "Craft Froststaffs Keeper",
+   "name": "Hoarfrost Staff",
    "category": "Crafting",
    "subcategory": "Froststaffs"
   },
   {
    "id": 387,
-   "name": "Craft Froststaffs Undead",
+   "name": "Permafrost Prism",
    "category": "Crafting",
    "subcategory": "Froststaffs"
   },
   {
    "id": 388,
-   "name": "Craft Hammers",
+   "name": "Hammer",
    "category": "Crafting",
    "subcategory": "Hammers"
   },
   {
    "id": 389,
-   "name": "Craft Hammers Avalon",
+   "name": "Hand of Justice",
    "category": "Crafting",
    "subcategory": "Hammers"
   },
   {
    "id": 390,
-   "name": "Craft Hammers Crystal",
+   "name": "Truebolt Hammer",
    "category": "Crafting",
    "subcategory": "Hammers"
   },
   {
    "id": 391,
-   "name": "Craft Hammers Great",
+   "name": "Great Hammer",
    "category": "Crafting",
    "subcategory": "Hammers"
   },
   {
    "id": 392,
-   "name": "Craft Hammers Hammer",
+   "name": "Hammer",
    "category": "Crafting",
    "subcategory": "Hammers"
   },
   {
    "id": 393,
-   "name": "Craft Hammers Hell",
+   "name": "Forge Hammers",
    "category": "Crafting",
    "subcategory": "Hammers"
   },
   {
    "id": 394,
-   "name": "Craft Hammers Keeper",
+   "name": "Grovekeeper",
    "category": "Crafting",
    "subcategory": "Hammers"
   },
   {
    "id": 395,
-   "name": "Craft Hammers Pole",
+   "name": "Polehammer",
    "category": "Crafting",
    "subcategory": "Hammers"
   },
   {
    "id": 396,
-   "name": "Craft Hammers Undead",
+   "name": "Tombhammer",
    "category": "Crafting",
    "subcategory": "Hammers"
   },
   {
    "id": 397,
-   "name": "Craft Holystaffs",
+   "name": "Holy Staff",
    "category": "Crafting",
    "subcategory": "Holystaffs"
   },
   {
    "id": 398,
-   "name": "Craft Holystaffs Avalon",
+   "name": "Hallowfall",
    "category": "Crafting",
    "subcategory": "Holystaffs"
   },
   {
    "id": 399,
-   "name": "Craft Holystaffs Crystal",
+   "name": "Exalted Staff",
    "category": "Crafting",
    "subcategory": "Holystaffs"
   },
   {
    "id": 400,
-   "name": "Craft Holystaffs Divine",
+   "name": "Divine Staff",
    "category": "Crafting",
    "subcategory": "Holystaffs"
   },
   {
    "id": 401,
-   "name": "Craft Holystaffs Great",
+   "name": "Great Holy Staff",
    "category": "Crafting",
    "subcategory": "Holystaffs"
   },
   {
    "id": 402,
-   "name": "Craft Holystaffs Hell",
+   "name": "Fallen Staff",
    "category": "Crafting",
    "subcategory": "Holystaffs"
   },
   {
    "id": 403,
-   "name": "Craft Holystaffs Holy",
+   "name": "Holy Staff",
    "category": "Crafting",
    "subcategory": "Holystaffs"
   },
   {
    "id": 404,
-   "name": "Craft Holystaffs Morgana",
+   "name": "Lifetouch Staff",
    "category": "Crafting",
    "subcategory": "Holystaffs"
   },
   {
    "id": 405,
-   "name": "Craft Holystaffs Undead",
+   "name": "Redemption Staff",
    "category": "Crafting",
    "subcategory": "Holystaffs"
   },
@@ -2445,271 +2445,271 @@
   },
   {
    "id": 407,
-   "name": "Craft Knuckles",
+   "name": "Brawler Gloves",
    "category": "Crafting",
    "subcategory": "Knuckles"
   },
   {
    "id": 408,
-   "name": "Craft Knuckles Avalon",
+   "name": "Fists of Avalon",
    "category": "Crafting",
    "subcategory": "Knuckles"
   },
   {
    "id": 409,
-   "name": "Craft Knuckles Crystal",
+   "name": "Forcepulse Bracers",
    "category": "Crafting",
    "subcategory": "Knuckles"
   },
   {
    "id": 410,
-   "name": "Craft Knuckles Hell",
+   "name": "Hellfire Hands",
    "category": "Crafting",
    "subcategory": "Knuckles"
   },
   {
    "id": 411,
-   "name": "Craft Knuckles Keeper",
+   "name": "Ursine Maulers",
    "category": "Crafting",
    "subcategory": "Knuckles"
   },
   {
    "id": 412,
-   "name": "Craft Knuckles Morgana",
+   "name": "Ravenstrike Cestus",
    "category": "Crafting",
    "subcategory": "Knuckles"
   },
   {
    "id": 413,
-   "name": "Craft Knuckles Set1",
+   "name": "Brawler Gloves",
    "category": "Crafting",
    "subcategory": "Knuckles"
   },
   {
    "id": 414,
-   "name": "Craft Knuckles Set2",
+   "name": "Battle Bracers",
    "category": "Crafting",
    "subcategory": "Knuckles"
   },
   {
    "id": 415,
-   "name": "Craft Knuckles Set3",
+   "name": "Spiked Gauntlets",
    "category": "Crafting",
    "subcategory": "Knuckles"
   },
   {
    "id": 416,
-   "name": "Craft Leather Armors",
+   "name": "Mercenary Jacket",
    "category": "Crafting",
    "subcategory": "Leather"
   },
   {
    "id": 417,
-   "name": "Craft Leather Armors Avalon",
+   "name": "Jacket of Tenacity",
    "category": "Crafting",
    "subcategory": "Leather"
   },
   {
    "id": 418,
-   "name": "Craft Leather Armors Fey",
+   "name": "Mistwalker Jacket",
    "category": "Crafting",
    "subcategory": "Leather"
   },
   {
    "id": 419,
-   "name": "Craft Leather Armors Hell",
+   "name": "Hellion Jacket",
    "category": "Crafting",
    "subcategory": "Leather"
   },
   {
    "id": 420,
-   "name": "Craft Leather Armors Morgana",
+   "name": "Stalker Jacket",
    "category": "Crafting",
    "subcategory": "Leather"
   },
   {
    "id": 421,
-   "name": "Craft Leather Armors Set1",
+   "name": "Mercenary Jacket",
    "category": "Crafting",
    "subcategory": "Leather"
   },
   {
    "id": 422,
-   "name": "Craft Leather Armors Set2",
+   "name": "Hunter Jacket",
    "category": "Crafting",
    "subcategory": "Leather"
   },
   {
    "id": 423,
-   "name": "Craft Leather Armors Set3",
+   "name": "Assassin Jacket",
    "category": "Crafting",
    "subcategory": "Leather"
   },
   {
    "id": 424,
-   "name": "Craft Leather Armors Undead",
+   "name": "Specter Jacket",
    "category": "Crafting",
    "subcategory": "Leather"
   },
   {
    "id": 425,
-   "name": "Craft Leather Heads",
+   "name": "Mercenary Hood",
    "category": "Crafting",
    "subcategory": "Leather"
   },
   {
    "id": 426,
-   "name": "Craft Leather Heads Avalon",
+   "name": "Hood of Tenacity",
    "category": "Crafting",
    "subcategory": "Leather"
   },
   {
    "id": 427,
-   "name": "Craft Leather Heads Fey",
+   "name": "Mistwalker Hood",
    "category": "Crafting",
    "subcategory": "Leather"
   },
   {
    "id": 428,
-   "name": "Craft Leather Heads Hell",
+   "name": "Hellion Hood",
    "category": "Crafting",
    "subcategory": "Leather"
   },
   {
    "id": 429,
-   "name": "Craft Leather Heads Morgana",
+   "name": "Stalker Hood",
    "category": "Crafting",
    "subcategory": "Leather"
   },
   {
    "id": 430,
-   "name": "Craft Leather Heads Set1",
+   "name": "Mercenary Hood",
    "category": "Crafting",
    "subcategory": "Leather"
   },
   {
    "id": 431,
-   "name": "Craft Leather Heads Set2",
+   "name": "Hunter Hood",
    "category": "Crafting",
    "subcategory": "Leather"
   },
   {
    "id": 432,
-   "name": "Craft Leather Heads Set3",
+   "name": "Assassin Hood",
    "category": "Crafting",
    "subcategory": "Leather"
   },
   {
    "id": 433,
-   "name": "Craft Leather Heads Undead",
+   "name": "Specter Hood",
    "category": "Crafting",
    "subcategory": "Leather"
   },
   {
    "id": 434,
-   "name": "Craft Leather Shoes",
+   "name": "Mercenary Shoes",
    "category": "Crafting",
    "subcategory": "Leather"
   },
   {
    "id": 435,
-   "name": "Craft Leather Shoes Avalon",
+   "name": "Shoes of Tenacity",
    "category": "Crafting",
    "subcategory": "Leather"
   },
   {
    "id": 436,
-   "name": "Craft Leather Shoes Fey",
+   "name": "Mistwalker Shoes",
    "category": "Crafting",
    "subcategory": "Leather"
   },
   {
    "id": 437,
-   "name": "Craft Leather Shoes Hell",
+   "name": "Hellion Shoes",
    "category": "Crafting",
    "subcategory": "Leather"
   },
   {
    "id": 438,
-   "name": "Craft Leather Shoes Morgana",
+   "name": "Stalker Shoes",
    "category": "Crafting",
    "subcategory": "Leather"
   },
   {
    "id": 439,
-   "name": "Craft Leather Shoes Set1",
+   "name": "Mercenary Shoes",
    "category": "Crafting",
    "subcategory": "Leather"
   },
   {
    "id": 440,
-   "name": "Craft Leather Shoes Set2",
+   "name": "Hunter Shoes",
    "category": "Crafting",
    "subcategory": "Leather"
   },
   {
    "id": 441,
-   "name": "Craft Leather Shoes Set3",
+   "name": "Assassin Shoes",
    "category": "Crafting",
    "subcategory": "Leather"
   },
   {
    "id": 442,
-   "name": "Craft Leather Shoes Undead",
+   "name": "Specter Shoes",
    "category": "Crafting",
    "subcategory": "Leather"
   },
   {
    "id": 443,
-   "name": "Craft Maces",
+   "name": "Mace",
    "category": "Crafting",
    "subcategory": "Maces"
   },
   {
    "id": 444,
-   "name": "Craft Maces Avalon",
+   "name": "Oathkeepers",
    "category": "Crafting",
    "subcategory": "Maces"
   },
   {
    "id": 445,
-   "name": "Craft Maces Crystal",
+   "name": "Dreadstorm Monarch",
    "category": "Crafting",
    "subcategory": "Maces"
   },
   {
    "id": 446,
-   "name": "Craft Maces Flail",
+   "name": "Morning Star",
    "category": "Crafting",
    "subcategory": "Maces"
   },
   {
    "id": 447,
-   "name": "Craft Maces Heavy",
+   "name": "Heavy Mace",
    "category": "Crafting",
    "subcategory": "Maces"
   },
   {
    "id": 448,
-   "name": "Craft Maces Hell",
+   "name": "Incubus Mace",
    "category": "Crafting",
    "subcategory": "Maces"
   },
   {
    "id": 449,
-   "name": "Craft Maces Keeper",
+   "name": "Bedrock Mace",
    "category": "Crafting",
    "subcategory": "Maces"
   },
   {
    "id": 450,
-   "name": "Craft Maces Mace",
+   "name": "Mace",
    "category": "Crafting",
    "subcategory": "Maces"
   },
   {
    "id": 451,
-   "name": "Craft Maces Morgana",
+   "name": "Camlann Mace",
    "category": "Crafting",
    "subcategory": "Maces"
   },
@@ -2721,271 +2721,271 @@
   },
   {
    "id": 453,
-   "name": "Craft Naturestaffs",
+   "name": "Nature Staff",
    "category": "Crafting",
    "subcategory": "Naturestaffs"
   },
   {
    "id": 454,
-   "name": "Craft Naturestaffs Avalon",
+   "name": "Ironroot Staff",
    "category": "Crafting",
    "subcategory": "Naturestaffs"
   },
   {
    "id": 455,
-   "name": "Craft Naturestaffs Crystal",
+   "name": "Forgebark Staff",
    "category": "Crafting",
    "subcategory": "Naturestaffs"
   },
   {
    "id": 456,
-   "name": "Craft Naturestaffs Great",
+   "name": "Great Nature Staff",
    "category": "Crafting",
    "subcategory": "Naturestaffs"
   },
   {
    "id": 457,
-   "name": "Craft Naturestaffs Hell",
+   "name": "Blight Staff",
    "category": "Crafting",
    "subcategory": "Naturestaffs"
   },
   {
    "id": 458,
-   "name": "Craft Naturestaffs Keeper",
+   "name": "Druidic Staff",
    "category": "Crafting",
    "subcategory": "Naturestaffs"
   },
   {
    "id": 459,
-   "name": "Craft Naturestaffs Keeper2",
+   "name": "Rampant Staff",
    "category": "Crafting",
    "subcategory": "Naturestaffs"
   },
   {
    "id": 460,
-   "name": "Craft Naturestaffs Nature",
+   "name": "Nature Staff",
    "category": "Crafting",
    "subcategory": "Naturestaffs"
   },
   {
    "id": 461,
-   "name": "Craft Naturestaffs Wild",
+   "name": "Wild Staff",
    "category": "Crafting",
    "subcategory": "Naturestaffs"
   },
   {
    "id": 462,
-   "name": "Craft Plate Armors",
+   "name": "Soldier Armor",
    "category": "Crafting",
    "subcategory": "Plate"
   },
   {
    "id": 463,
-   "name": "Craft Plate Armors Avalon",
+   "name": "Armor of Valor",
    "category": "Crafting",
    "subcategory": "Plate"
   },
   {
    "id": 464,
-   "name": "Craft Plate Armors Fey",
+   "name": "Duskweaver Armor",
    "category": "Crafting",
    "subcategory": "Plate"
   },
   {
    "id": 465,
-   "name": "Craft Plate Armors Hell",
+   "name": "Demon Armor",
    "category": "Crafting",
    "subcategory": "Plate"
   },
   {
    "id": 466,
-   "name": "Craft Plate Armors Keeper",
+   "name": "Judicator Armor",
    "category": "Crafting",
    "subcategory": "Plate"
   },
   {
    "id": 467,
-   "name": "Craft Plate Armors Set1",
+   "name": "Soldier Armor",
    "category": "Crafting",
    "subcategory": "Plate"
   },
   {
    "id": 468,
-   "name": "Craft Plate Armors Set2",
+   "name": "Knight Armor",
    "category": "Crafting",
    "subcategory": "Plate"
   },
   {
    "id": 469,
-   "name": "Craft Plate Armors Set3",
+   "name": "Guardian Armor",
    "category": "Crafting",
    "subcategory": "Plate"
   },
   {
    "id": 470,
-   "name": "Craft Plate Armors Undead",
+   "name": "Graveguard Armor",
    "category": "Crafting",
    "subcategory": "Plate"
   },
   {
    "id": 471,
-   "name": "Craft Plate Heads",
+   "name": "Soldier Helmet",
    "category": "Crafting",
    "subcategory": "Plate"
   },
   {
    "id": 472,
-   "name": "Craft Plate Heads Avalon",
+   "name": "Helmet of Valor",
    "category": "Crafting",
    "subcategory": "Plate"
   },
   {
    "id": 473,
-   "name": "Craft Plate Heads Fey",
+   "name": "Duskweaver Helmet",
    "category": "Crafting",
    "subcategory": "Plate"
   },
   {
    "id": 474,
-   "name": "Craft Plate Heads Hell",
+   "name": "Demon Helmet",
    "category": "Crafting",
    "subcategory": "Plate"
   },
   {
    "id": 475,
-   "name": "Craft Plate Heads Keeper",
+   "name": "Judicator Helmet",
    "category": "Crafting",
    "subcategory": "Plate"
   },
   {
    "id": 476,
-   "name": "Craft Plate Heads Set1",
+   "name": "Soldier Helmet",
    "category": "Crafting",
    "subcategory": "Plate"
   },
   {
    "id": 477,
-   "name": "Craft Plate Heads Set2",
+   "name": "Knight Helmet",
    "category": "Crafting",
    "subcategory": "Plate"
   },
   {
    "id": 478,
-   "name": "Craft Plate Heads Set3",
+   "name": "Guardian Helmet",
    "category": "Crafting",
    "subcategory": "Plate"
   },
   {
    "id": 479,
-   "name": "Craft Plate Heads Undead",
+   "name": "Graveguard Helmet",
    "category": "Crafting",
    "subcategory": "Plate"
   },
   {
    "id": 480,
-   "name": "Craft Plate Shoes",
+   "name": "Soldier Boots",
    "category": "Crafting",
    "subcategory": "Plate"
   },
   {
    "id": 481,
-   "name": "Craft Plate Shoes Avalon",
+   "name": "Boots of Valor",
    "category": "Crafting",
    "subcategory": "Plate"
   },
   {
    "id": 482,
-   "name": "Craft Plate Shoes Fey",
+   "name": "Duskweaver Boots",
    "category": "Crafting",
    "subcategory": "Plate"
   },
   {
    "id": 483,
-   "name": "Craft Plate Shoes Hell",
+   "name": "Demon Boots",
    "category": "Crafting",
    "subcategory": "Plate"
   },
   {
    "id": 484,
-   "name": "Craft Plate Shoes Keeper",
+   "name": "Judicator Boots",
    "category": "Crafting",
    "subcategory": "Plate"
   },
   {
    "id": 485,
-   "name": "Craft Plate Shoes Set1",
+   "name": "Soldier Boots",
    "category": "Crafting",
    "subcategory": "Plate"
   },
   {
    "id": 486,
-   "name": "Craft Plate Shoes Set2",
+   "name": "Knight Boots",
    "category": "Crafting",
    "subcategory": "Plate"
   },
   {
    "id": 487,
-   "name": "Craft Plate Shoes Set3",
+   "name": "Guardian Boots",
    "category": "Crafting",
    "subcategory": "Plate"
   },
   {
    "id": 488,
-   "name": "Craft Plate Shoes Undead",
+   "name": "Graveguard Boots",
    "category": "Crafting",
    "subcategory": "Plate"
   },
   {
    "id": 489,
-   "name": "Craft Quarterstaffs",
+   "name": "Quarterstaff",
    "category": "Crafting",
    "subcategory": "Quarterstaffs"
   },
   {
    "id": 490,
-   "name": "Craft Quarterstaffs Avalon",
+   "name": "Grailseeker",
    "category": "Crafting",
    "subcategory": "Quarterstaffs"
   },
   {
    "id": 491,
-   "name": "Craft Quarterstaffs Crystal",
+   "name": "Phantom Twinblade",
    "category": "Crafting",
    "subcategory": "Quarterstaffs"
   },
   {
    "id": 492,
-   "name": "Craft Quarterstaffs Doublebladed",
+   "name": "Double Bladed Staff",
    "category": "Crafting",
    "subcategory": "Quarterstaffs"
   },
   {
    "id": 493,
-   "name": "Craft Quarterstaffs Hell",
+   "name": "Soulscythe",
    "category": "Crafting",
    "subcategory": "Quarterstaffs"
   },
   {
    "id": 494,
-   "name": "Craft Quarterstaffs Ironclad",
+   "name": "Iron-clad Staff",
    "category": "Crafting",
    "subcategory": "Quarterstaffs"
   },
   {
    "id": 495,
-   "name": "Craft Quarterstaffs Keeper",
+   "name": "Staff of Balance",
    "category": "Crafting",
    "subcategory": "Quarterstaffs"
   },
   {
    "id": 496,
-   "name": "Craft Quarterstaffs Morgana",
+   "name": "Black Monk Staff",
    "category": "Crafting",
    "subcategory": "Quarterstaffs"
   },
   {
    "id": 497,
-   "name": "Craft Quarterstaffs Quarterstaff",
+   "name": "Quarterstaff",
    "category": "Crafting",
    "subcategory": "Quarterstaffs"
   },
@@ -2997,355 +2997,355 @@
   },
   {
    "id": 499,
-   "name": "Craft Refine Fiber T4",
+   "name": "Baroque Cloth",
    "category": "Crafting",
    "subcategory": "Refine"
   },
   {
    "id": 500,
-   "name": "Craft Refine Fiber T5",
+   "name": "Baroque Cloth",
    "category": "Crafting",
    "subcategory": "Refine"
   },
   {
    "id": 501,
-   "name": "Craft Refine Fiber T6",
+   "name": "Baroque Cloth",
    "category": "Crafting",
    "subcategory": "Refine"
   },
   {
    "id": 502,
-   "name": "Craft Refine Fiber T7",
+   "name": "Baroque Cloth",
    "category": "Crafting",
    "subcategory": "Refine"
   },
   {
    "id": 503,
-   "name": "Craft Refine Fiber T8",
+   "name": "Baroque Cloth",
    "category": "Crafting",
    "subcategory": "Refine"
   },
   {
    "id": 504,
-   "name": "Craft Refine Hide T4",
+   "name": "Fortified Leather",
    "category": "Crafting",
    "subcategory": "Refine"
   },
   {
    "id": 505,
-   "name": "Craft Refine Hide T5",
+   "name": "Fortified Leather",
    "category": "Crafting",
    "subcategory": "Refine"
   },
   {
    "id": 506,
-   "name": "Craft Refine Hide T6",
+   "name": "Fortified Leather",
    "category": "Crafting",
    "subcategory": "Refine"
   },
   {
    "id": 507,
-   "name": "Craft Refine Hide T7",
+   "name": "Fortified Leather",
    "category": "Crafting",
    "subcategory": "Refine"
   },
   {
    "id": 508,
-   "name": "Craft Refine Hide T8",
+   "name": "Fortified Leather",
    "category": "Crafting",
    "subcategory": "Refine"
   },
   {
    "id": 509,
-   "name": "Craft Refine Ore T4",
+   "name": "Adamantium Steel Bar",
    "category": "Crafting",
    "subcategory": "Refine"
   },
   {
    "id": 510,
-   "name": "Craft Refine Ore T5",
+   "name": "Adamantium Steel Bar",
    "category": "Crafting",
    "subcategory": "Refine"
   },
   {
    "id": 511,
-   "name": "Craft Refine Ore T6",
+   "name": "Adamantium Steel Bar",
    "category": "Crafting",
    "subcategory": "Refine"
   },
   {
    "id": 512,
-   "name": "Craft Refine Ore T7",
+   "name": "Adamantium Steel Bar",
    "category": "Crafting",
    "subcategory": "Refine"
   },
   {
    "id": 513,
-   "name": "Craft Refine Ore T8",
+   "name": "Adamantium Steel Bar",
    "category": "Crafting",
    "subcategory": "Refine"
   },
   {
    "id": 514,
-   "name": "Craft Refine Rock T4",
+   "name": "Marble Block",
    "category": "Crafting",
    "subcategory": "Refine"
   },
   {
    "id": 515,
-   "name": "Craft Refine Rock T5",
+   "name": "Marble Block",
    "category": "Crafting",
    "subcategory": "Refine"
   },
   {
    "id": 516,
-   "name": "Craft Refine Rock T6",
+   "name": "Marble Block",
    "category": "Crafting",
    "subcategory": "Refine"
   },
   {
    "id": 517,
-   "name": "Craft Refine Rock T7",
+   "name": "Marble Block",
    "category": "Crafting",
    "subcategory": "Refine"
   },
   {
    "id": 518,
-   "name": "Craft Refine Rock T8",
+   "name": "Marble Block",
    "category": "Crafting",
    "subcategory": "Refine"
   },
   {
    "id": 519,
-   "name": "Craft Refine Wood T4",
+   "name": "Whitewood Planks",
    "category": "Crafting",
    "subcategory": "Refine"
   },
   {
    "id": 520,
-   "name": "Craft Refine Wood T5",
+   "name": "Whitewood Planks",
    "category": "Crafting",
    "subcategory": "Refine"
   },
   {
    "id": 521,
-   "name": "Craft Refine Wood T6",
+   "name": "Whitewood Planks",
    "category": "Crafting",
    "subcategory": "Refine"
   },
   {
    "id": 522,
-   "name": "Craft Refine Wood T7",
+   "name": "Whitewood Planks",
    "category": "Crafting",
    "subcategory": "Refine"
   },
   {
    "id": 523,
-   "name": "Craft Refine Wood T8",
+   "name": "Whitewood Planks",
    "category": "Crafting",
    "subcategory": "Refine"
   },
   {
    "id": 524,
-   "name": "Craft Shapeshifter",
+   "name": "Prowling Staff",
    "category": "Crafting",
    "subcategory": "Shapeshifter"
   },
   {
    "id": 525,
-   "name": "Craft Shapeshifter Avalon",
+   "name": "Lightcaller",
    "category": "Crafting",
    "subcategory": "Shapeshifter"
   },
   {
    "id": 526,
-   "name": "Craft Shapeshifter Crystal",
+   "name": "Stillgaze Staff",
    "category": "Crafting",
    "subcategory": "Shapeshifter"
   },
   {
    "id": 527,
-   "name": "Craft Shapeshifter Hell",
+   "name": "Hellspawn Staff",
    "category": "Crafting",
    "subcategory": "Shapeshifter"
   },
   {
    "id": 528,
-   "name": "Craft Shapeshifter Keeper",
+   "name": "Earthrune Staff",
    "category": "Crafting",
    "subcategory": "Shapeshifter"
   },
   {
    "id": 529,
-   "name": "Craft Shapeshifter Morgana",
+   "name": "Bloodmoon Staff",
    "category": "Crafting",
    "subcategory": "Shapeshifter"
   },
   {
    "id": 530,
-   "name": "Craft Shapeshifter Set1",
+   "name": "Prowling Staff",
    "category": "Crafting",
    "subcategory": "Shapeshifter"
   },
   {
    "id": 531,
-   "name": "Craft Shapeshifter Set2",
+   "name": "Rootbound Staff",
    "category": "Crafting",
    "subcategory": "Shapeshifter"
   },
   {
    "id": 532,
-   "name": "Craft Shapeshifter Set3",
+   "name": "Primal Staff",
    "category": "Crafting",
    "subcategory": "Shapeshifter"
   },
   {
    "id": 533,
-   "name": "Craft Shields",
+   "name": "Shield",
    "category": "Crafting",
    "subcategory": "Shields"
   },
   {
    "id": 534,
-   "name": "Craft Shields Avalon",
+   "name": "Astral Aegis",
    "category": "Crafting",
    "subcategory": "Shields"
   },
   {
    "id": 535,
-   "name": "Craft Shields Crystal",
+   "name": "Unbreakable Ward",
    "category": "Crafting",
    "subcategory": "Shields"
   },
   {
    "id": 536,
-   "name": "Craft Shields Hell",
+   "name": "Caitiff Shield",
    "category": "Crafting",
    "subcategory": "Shields"
   },
   {
    "id": 537,
-   "name": "Craft Shields Morgana",
+   "name": "Facebreaker",
    "category": "Crafting",
    "subcategory": "Shields"
   },
   {
    "id": 538,
-   "name": "Craft Shields Shield",
+   "name": "Shield",
    "category": "Crafting",
    "subcategory": "Shields"
   },
   {
    "id": 539,
-   "name": "Craft Shields Undead",
+   "name": "Sarcophagus",
    "category": "Crafting",
    "subcategory": "Shields"
   },
   {
    "id": 540,
-   "name": "Craft Spears",
+   "name": "Spear",
    "category": "Crafting",
    "subcategory": "Spears"
   },
   {
    "id": 541,
-   "name": "Craft Spears Avalon",
+   "name": "Daybreaker",
    "category": "Crafting",
    "subcategory": "Spears"
   },
   {
    "id": 542,
-   "name": "Craft Spears Crystal",
+   "name": "Rift Glaive",
    "category": "Crafting",
    "subcategory": "Spears"
   },
   {
    "id": 543,
-   "name": "Craft Spears Glaive",
+   "name": "Glaive",
    "category": "Crafting",
    "subcategory": "Spears"
   },
   {
    "id": 544,
-   "name": "Craft Spears Great",
+   "name": "Pike",
    "category": "Crafting",
    "subcategory": "Spears"
   },
   {
    "id": 545,
-   "name": "Craft Spears Hell",
+   "name": "Spirithunter",
    "category": "Crafting",
    "subcategory": "Spears"
   },
   {
    "id": 546,
-   "name": "Craft Spears Keeper",
+   "name": "Heron Spear",
    "category": "Crafting",
    "subcategory": "Spears"
   },
   {
    "id": 547,
-   "name": "Craft Spears Spear",
+   "name": "Spear",
    "category": "Crafting",
    "subcategory": "Spears"
   },
   {
    "id": 548,
-   "name": "Craft Spears Undead",
+   "name": "Trinity Spear",
    "category": "Crafting",
    "subcategory": "Spears"
   },
   {
    "id": 549,
-   "name": "Craft Swords",
+   "name": "Broadsword",
    "category": "Crafting",
    "subcategory": "Swords"
   },
   {
    "id": 550,
-   "name": "Craft Swords Avalon",
+   "name": "Kingmaker",
    "category": "Crafting",
    "subcategory": "Swords"
   },
   {
    "id": 551,
-   "name": "Craft Swords Claymore",
+   "name": "Claymore",
    "category": "Crafting",
    "subcategory": "Swords"
   },
   {
    "id": 552,
-   "name": "Craft Swords Crystal",
+   "name": "Infinity Blade",
    "category": "Crafting",
    "subcategory": "Swords"
   },
   {
    "id": 553,
-   "name": "Craft Swords Dual",
+   "name": "Dual Swords",
    "category": "Crafting",
    "subcategory": "Swords"
   },
   {
    "id": 554,
-   "name": "Craft Swords Hell",
+   "name": "Carving Sword",
    "category": "Crafting",
    "subcategory": "Swords"
   },
   {
    "id": 555,
-   "name": "Craft Swords Morgana",
+   "name": "Clarent Blade",
    "category": "Crafting",
    "subcategory": "Swords"
   },
   {
    "id": 556,
-   "name": "Craft Swords Sword",
+   "name": "Broadsword",
    "category": "Crafting",
    "subcategory": "Swords"
   },
   {
    "id": 557,
-   "name": "Craft Swords Undead",
+   "name": "Galatine Pair",
    "category": "Crafting",
    "subcategory": "Swords"
   },
@@ -3357,217 +3357,217 @@
   },
   {
    "id": 559,
-   "name": "Craft Tool Axe",
+   "name": "Axe",
    "category": "Crafting",
    "subcategory": "Tool"
   },
   {
    "id": 560,
-   "name": "Craft Tool Axe Armor",
+   "name": "Lumberjack Garb",
    "category": "Crafting",
    "subcategory": "Tool"
   },
   {
    "id": 561,
-   "name": "Craft Tool Axe Head",
+   "name": "Lumberjack Cap",
    "category": "Crafting",
    "subcategory": "Tool"
   },
   {
    "id": 562,
-   "name": "Craft Tool Axe Shoes",
+   "name": "Lumberjack Workboots",
    "category": "Crafting",
    "subcategory": "Tool"
   },
   {
    "id": 563,
-   "name": "Craft Tool Fishingrod",
+   "name": "Fishing Rod",
    "category": "Crafting",
    "subcategory": "Tool"
   },
   {
    "id": 564,
-   "name": "Craft Tool Fishingrod Armor",
+   "name": "Fisherman Garb",
    "category": "Crafting",
    "subcategory": "Tool"
   },
   {
    "id": 565,
-   "name": "Craft Tool Fishingrod Head",
+   "name": "Fisherman Cap",
    "category": "Crafting",
    "subcategory": "Tool"
   },
   {
    "id": 566,
-   "name": "Craft Tool Fishingrod Shoes",
+   "name": "Fisherman Workboots",
    "category": "Crafting",
    "subcategory": "Tool"
   },
   {
    "id": 567,
-   "name": "Craft Tool Hammer",
+   "name": "Stone Hammer",
    "category": "Crafting",
    "subcategory": "Tool"
   },
   {
    "id": 568,
-   "name": "Craft Tool Hammer Armor",
+   "name": "Quarrier Garb",
    "category": "Crafting",
    "subcategory": "Tool"
   },
   {
    "id": 569,
-   "name": "Craft Tool Hammer Head",
+   "name": "Quarrier Cap",
    "category": "Crafting",
    "subcategory": "Tool"
   },
   {
    "id": 570,
-   "name": "Craft Tool Hammer Shoes",
+   "name": "Quarrier Workboots",
    "category": "Crafting",
    "subcategory": "Tool"
   },
   {
    "id": 571,
-   "name": "Craft Tool Knife",
+   "name": "Skinning Knife",
    "category": "Crafting",
    "subcategory": "Tool"
   },
   {
    "id": 572,
-   "name": "Craft Tool Knife Armor",
+   "name": "Skinner Garb",
    "category": "Crafting",
    "subcategory": "Tool"
   },
   {
    "id": 573,
-   "name": "Craft Tool Knife Head",
+   "name": "Skinner Cap",
    "category": "Crafting",
    "subcategory": "Tool"
   },
   {
    "id": 574,
-   "name": "Craft Tool Knife Shoes",
+   "name": "Skinner Workboots",
    "category": "Crafting",
    "subcategory": "Tool"
   },
   {
    "id": 575,
-   "name": "Craft Tool Pick",
+   "name": "Pickaxe",
    "category": "Crafting",
    "subcategory": "Tool"
   },
   {
    "id": 576,
-   "name": "Craft Tool Pick Armor",
+   "name": "Miner Garb",
    "category": "Crafting",
    "subcategory": "Tool"
   },
   {
    "id": 577,
-   "name": "Craft Tool Pick Head",
+   "name": "Miner Cap",
    "category": "Crafting",
    "subcategory": "Tool"
   },
   {
    "id": 578,
-   "name": "Craft Tool Pick Shoes",
+   "name": "Miner Workboots",
    "category": "Crafting",
    "subcategory": "Tool"
   },
   {
    "id": 579,
-   "name": "Craft Tool Sickle",
+   "name": "Sickle",
    "category": "Crafting",
    "subcategory": "Tool"
   },
   {
    "id": 580,
-   "name": "Craft Tool Sickle Armor",
+   "name": "Harvester Garb",
    "category": "Crafting",
    "subcategory": "Tool"
   },
   {
    "id": 581,
-   "name": "Craft Tool Sickle Head",
+   "name": "Harvester Cap",
    "category": "Crafting",
    "subcategory": "Tool"
   },
   {
    "id": 582,
-   "name": "Craft Tool Sickle Shoes",
+   "name": "Harvester Workboots",
    "category": "Crafting",
    "subcategory": "Tool"
   },
   {
    "id": 583,
-   "name": "Craft Tool Siegehammer",
+   "name": "Siege Banner",
    "category": "Crafting",
    "subcategory": "Tool"
   },
   {
    "id": 584,
-   "name": "Craft Tool Siegehammer Siegebanner",
+   "name": "Siege Banner",
    "category": "Crafting",
    "subcategory": "Tool"
   },
   {
    "id": 585,
-   "name": "Craft Tool Siegehammer Siegehammer",
+   "name": "Siege Hammer",
    "category": "Crafting",
    "subcategory": "Tool"
   },
   {
    "id": 586,
-   "name": "Craft Tool Tracking",
+   "name": "Tracking Toolkit",
    "category": "Crafting",
    "subcategory": "Tool"
   },
   {
    "id": 587,
-   "name": "Craft Tool Tracking Tracking",
+   "name": "Tracking Toolkit",
    "category": "Crafting",
    "subcategory": "Tool"
   },
   {
    "id": 588,
-   "name": "Craft Torches",
+   "name": "Torch",
    "category": "Crafting",
    "subcategory": "Torches"
   },
   {
    "id": 589,
-   "name": "Craft Torches Avalon",
+   "name": "Sacred Scepter",
    "category": "Crafting",
    "subcategory": "Torches"
   },
   {
    "id": 590,
-   "name": "Craft Torches Crystal",
+   "name": "Blueflame Torch",
    "category": "Crafting",
    "subcategory": "Torches"
   },
   {
    "id": 591,
-   "name": "Craft Torches Hell",
+   "name": "Leering Cane",
    "category": "Crafting",
    "subcategory": "Torches"
   },
   {
    "id": 592,
-   "name": "Craft Torches Keeper",
+   "name": "Mistcaller",
    "category": "Crafting",
    "subcategory": "Torches"
   },
   {
    "id": 593,
-   "name": "Craft Torches Torch",
+   "name": "Torch",
    "category": "Crafting",
    "subcategory": "Torches"
   },
   {
    "id": 594,
-   "name": "Craft Torches Undead",
+   "name": "Cryptcandle",
    "category": "Crafting",
    "subcategory": "Torches"
   },
@@ -3585,277 +3585,277 @@
   },
   {
    "id": 597,
-   "name": "Farm Alchemist",
+   "name": "Minor Healing Potion",
    "category": "Farming",
    "subcategory": "Alchemist"
   },
   {
    "id": 598,
-   "name": "Farm Alchemist Acid",
+   "name": "Major Acid Potion",
    "category": "Farming",
    "subcategory": "Alchemist"
   },
   {
    "id": 599,
-   "name": "Farm Alchemist Alcohol",
+   "name": "Pumpkin Moonshine",
    "category": "Farming",
    "subcategory": "Alchemist"
   },
   {
    "id": 600,
-   "name": "Farm Alchemist Berserk",
+   "name": "Major Berserk Potion",
    "category": "Farming",
    "subcategory": "Alchemist"
   },
   {
    "id": 601,
-   "name": "Farm Alchemist Cleanse",
+   "name": "Invisibility Potion",
    "category": "Farming",
    "subcategory": "Alchemist"
   },
   {
    "id": 602,
-   "name": "Farm Alchemist Cleanse2",
+   "name": "Major Cleansing Potion",
    "category": "Farming",
    "subcategory": "Alchemist"
   },
   {
    "id": 603,
-   "name": "Farm Alchemist Cooldown",
+   "name": "Minor Poison Potion",
    "category": "Farming",
    "subcategory": "Alchemist"
   },
   {
    "id": 604,
-   "name": "Farm Alchemist Energy",
+   "name": "Minor Energy Potion",
    "category": "Farming",
    "subcategory": "Alchemist"
   },
   {
    "id": 605,
-   "name": "Farm Alchemist Gather",
+   "name": "Major Gathering Potion",
    "category": "Farming",
    "subcategory": "Alchemist"
   },
   {
    "id": 606,
-   "name": "Farm Alchemist Heal",
+   "name": "Minor Healing Potion",
    "category": "Farming",
    "subcategory": "Alchemist"
   },
   {
    "id": 607,
-   "name": "Farm Alchemist Lava",
+   "name": "Major Hellfire Potion",
    "category": "Farming",
    "subcategory": "Alchemist"
   },
   {
    "id": 608,
-   "name": "Farm Alchemist Mobreset",
+   "name": "Major Calming Potion",
    "category": "Farming",
    "subcategory": "Alchemist"
   },
   {
    "id": 609,
-   "name": "Farm Alchemist Revive",
+   "name": "Minor Gigantify Potion",
    "category": "Farming",
    "subcategory": "Alchemist"
   },
   {
    "id": 610,
-   "name": "Farm Alchemist Slowfield",
+   "name": "Minor Sticky Potion",
    "category": "Farming",
    "subcategory": "Alchemist"
   },
   {
    "id": 611,
-   "name": "Farm Alchemist Stoneskin",
+   "name": "Minor Resistance Potion",
    "category": "Farming",
    "subcategory": "Alchemist"
   },
   {
    "id": 612,
-   "name": "Farm Alchemist Tornado",
+   "name": "Major Tornado in a Bottle",
    "category": "Farming",
    "subcategory": "Alchemist"
   },
   {
    "id": 613,
-   "name": "Farm Animals",
+   "name": "Foal",
    "category": "Farming",
    "subcategory": "Animals"
   },
   {
    "id": 614,
-   "name": "Farm Animals Chicken",
+   "name": "Baby Chickens",
    "category": "Farming",
    "subcategory": "Animals"
   },
   {
    "id": 615,
-   "name": "Farm Animals Cow",
+   "name": "Calf",
    "category": "Farming",
    "subcategory": "Animals"
   },
   {
    "id": 616,
-   "name": "Farm Animals Goat",
+   "name": "Kid",
    "category": "Farming",
    "subcategory": "Animals"
   },
   {
    "id": 617,
-   "name": "Farm Animals Goose",
+   "name": "Gosling",
    "category": "Farming",
    "subcategory": "Animals"
   },
   {
    "id": 618,
-   "name": "Farm Animals Horse",
+   "name": "Foal",
    "category": "Farming",
    "subcategory": "Animals"
   },
   {
    "id": 619,
-   "name": "Farm Animals Ox",
+   "name": "Ox Calf",
    "category": "Farming",
    "subcategory": "Animals"
   },
   {
    "id": 620,
-   "name": "Farm Animals Pig",
+   "name": "Piglet",
    "category": "Farming",
    "subcategory": "Animals"
   },
   {
    "id": 621,
-   "name": "Farm Animals Rare",
+   "name": "Ghostwolf Pup",
    "category": "Farming",
    "subcategory": "Animals"
   },
   {
    "id": 622,
-   "name": "Farm Animals Sheep",
+   "name": "Lamb",
    "category": "Farming",
    "subcategory": "Animals"
   },
   {
    "id": 623,
-   "name": "Farm Cook",
+   "name": "Carrot Soup",
    "category": "Farming",
    "subcategory": "Cook"
   },
   {
    "id": 624,
-   "name": "Farm Cook Meat",
+   "name": "Raw Beef",
    "category": "Farming",
    "subcategory": "Cook"
   },
   {
    "id": 625,
-   "name": "Farm Cook Omelette",
+   "name": "Chicken Omelette",
    "category": "Farming",
    "subcategory": "Cook"
   },
   {
    "id": 626,
-   "name": "Farm Cook Pie",
+   "name": "Chicken Pie",
    "category": "Farming",
    "subcategory": "Cook"
   },
   {
    "id": 627,
-   "name": "Farm Cook Products",
+   "name": "Bread",
    "category": "Farming",
    "subcategory": "Cook"
   },
   {
    "id": 628,
-   "name": "Farm Cook Roast",
+   "name": "Roast Pork",
    "category": "Farming",
    "subcategory": "Cook"
   },
   {
    "id": 629,
-   "name": "Farm Cook Salad",
+   "name": "Bean Salad",
    "category": "Farming",
    "subcategory": "Cook"
   },
   {
    "id": 630,
-   "name": "Farm Cook Sandwich",
+   "name": "Beef Sandwich",
    "category": "Farming",
    "subcategory": "Cook"
   },
   {
    "id": 631,
-   "name": "Farm Cook Soup",
+   "name": "Carrot Soup",
    "category": "Farming",
    "subcategory": "Cook"
   },
   {
    "id": 632,
-   "name": "Farm Cook Stew",
+   "name": "Beef Stew",
    "category": "Farming",
    "subcategory": "Cook"
   },
   {
    "id": 633,
-   "name": "Farm Crafter",
+   "name": "Healing Potion",
    "category": "Farming",
    "subcategory": "Crafter"
   },
   {
    "id": 634,
-   "name": "Farm Crops",
+   "name": "Carrots",
    "category": "Farming",
    "subcategory": "Crops"
   },
   {
    "id": 635,
-   "name": "Farm Crops Bean",
+   "name": "Beans",
    "category": "Farming",
    "subcategory": "Crops"
   },
   {
    "id": 636,
-   "name": "Farm Crops Cabbage",
+   "name": "Cabbage",
    "category": "Farming",
    "subcategory": "Crops"
   },
   {
    "id": 637,
-   "name": "Farm Crops Carrot",
+   "name": "Carrots",
    "category": "Farming",
    "subcategory": "Crops"
   },
   {
    "id": 638,
-   "name": "Farm Crops Corn",
+   "name": "Bundle of Corn",
    "category": "Farming",
    "subcategory": "Crops"
   },
   {
    "id": 639,
-   "name": "Farm Crops Potato",
+   "name": "Potatoes",
    "category": "Farming",
    "subcategory": "Crops"
   },
   {
    "id": 640,
-   "name": "Farm Crops Pumpkin",
+   "name": "Pumpkin",
    "category": "Farming",
    "subcategory": "Crops"
   },
   {
    "id": 641,
-   "name": "Farm Crops Turnip",
+   "name": "Turnips",
    "category": "Farming",
    "subcategory": "Crops"
   },
   {
    "id": 642,
-   "name": "Farm Crops Wheat",
+   "name": "Sheaf of Wheat",
    "category": "Farming",
    "subcategory": "Crops"
   },
@@ -3867,49 +3867,49 @@
   },
   {
    "id": 644,
-   "name": "Farm Herbs",
+   "name": "Arcane Agaric",
    "category": "Farming",
    "subcategory": "Herbs"
   },
   {
    "id": 645,
-   "name": "Farm Herbs Agaric",
+   "name": "Arcane Agaric",
    "category": "Farming",
    "subcategory": "Herbs"
   },
   {
    "id": 646,
-   "name": "Farm Herbs Burdock",
+   "name": "Crenellated Burdock",
    "category": "Farming",
    "subcategory": "Herbs"
   },
   {
    "id": 647,
-   "name": "Farm Herbs Comfrey",
+   "name": "Brightleaf Comfrey",
    "category": "Farming",
    "subcategory": "Herbs"
   },
   {
    "id": 648,
-   "name": "Farm Herbs Foxglove",
+   "name": "Elusive Foxglove",
    "category": "Farming",
    "subcategory": "Herbs"
   },
   {
    "id": 649,
-   "name": "Farm Herbs Mullein",
+   "name": "Firetouched Mullein",
    "category": "Farming",
    "subcategory": "Herbs"
   },
   {
    "id": 650,
-   "name": "Farm Herbs Teasel",
+   "name": "Dragon Teasel",
    "category": "Farming",
    "subcategory": "Herbs"
   },
   {
    "id": 651,
-   "name": "Farm Herbs Yarrow",
+   "name": "Ghoul Yarrow",
    "category": "Farming",
    "subcategory": "Herbs"
   },
@@ -3927,43 +3927,43 @@
   },
   {
    "id": 654,
-   "name": "Gather Fiber T4",
+   "name": "Sickle",
    "category": "Gathering",
    "subcategory": "Fiber"
   },
   {
    "id": 655,
-   "name": "Gather Fiber T5",
+   "name": "Sickle",
    "category": "Gathering",
    "subcategory": "Fiber"
   },
   {
    "id": 656,
-   "name": "Gather Fiber T6",
+   "name": "Sickle",
    "category": "Gathering",
    "subcategory": "Fiber"
   },
   {
    "id": 657,
-   "name": "Gather Fiber T7",
+   "name": "Sickle",
    "category": "Gathering",
    "subcategory": "Fiber"
   },
   {
    "id": 658,
-   "name": "Gather Fiber T8",
+   "name": "Sickle",
    "category": "Gathering",
    "subcategory": "Fiber"
   },
   {
    "id": 659,
-   "name": "Gather Fish",
+   "name": "Fishing Rod",
    "category": "Gathering",
    "subcategory": "Fish"
   },
   {
    "id": 660,
-   "name": "Gather Fish Fish",
+   "name": "Fishing Rod",
    "category": "Gathering",
    "subcategory": "Fish"
   },
@@ -3975,31 +3975,31 @@
   },
   {
    "id": 662,
-   "name": "Gather Hide T4",
+   "name": "Skinning Knife",
    "category": "Gathering",
    "subcategory": "Hide"
   },
   {
    "id": 663,
-   "name": "Gather Hide T5",
+   "name": "Skinning Knife",
    "category": "Gathering",
    "subcategory": "Hide"
   },
   {
    "id": 664,
-   "name": "Gather Hide T6",
+   "name": "Skinning Knife",
    "category": "Gathering",
    "subcategory": "Hide"
   },
   {
    "id": 665,
-   "name": "Gather Hide T7",
+   "name": "Skinning Knife",
    "category": "Gathering",
    "subcategory": "Hide"
   },
   {
    "id": 666,
-   "name": "Gather Hide T8",
+   "name": "Skinning Knife",
    "category": "Gathering",
    "subcategory": "Hide"
   },
@@ -4011,31 +4011,31 @@
   },
   {
    "id": 668,
-   "name": "Gather Ore T4",
+   "name": "Pickaxe",
    "category": "Gathering",
    "subcategory": "Ore"
   },
   {
    "id": 669,
-   "name": "Gather Ore T5",
+   "name": "Pickaxe",
    "category": "Gathering",
    "subcategory": "Ore"
   },
   {
    "id": 670,
-   "name": "Gather Ore T6",
+   "name": "Pickaxe",
    "category": "Gathering",
    "subcategory": "Ore"
   },
   {
    "id": 671,
-   "name": "Gather Ore T7",
+   "name": "Pickaxe",
    "category": "Gathering",
    "subcategory": "Ore"
   },
   {
    "id": 672,
-   "name": "Gather Ore T8",
+   "name": "Pickaxe",
    "category": "Gathering",
    "subcategory": "Ore"
   },
@@ -4047,31 +4047,31 @@
   },
   {
    "id": 674,
-   "name": "Gather Rock T4",
+   "name": "Stone Hammer",
    "category": "Gathering",
    "subcategory": "Rock"
   },
   {
    "id": 675,
-   "name": "Gather Rock T5",
+   "name": "Stone Hammer",
    "category": "Gathering",
    "subcategory": "Rock"
   },
   {
    "id": 676,
-   "name": "Gather Rock T6",
+   "name": "Stone Hammer",
    "category": "Gathering",
    "subcategory": "Rock"
   },
   {
    "id": 677,
-   "name": "Gather Rock T7",
+   "name": "Stone Hammer",
    "category": "Gathering",
    "subcategory": "Rock"
   },
   {
    "id": 678,
-   "name": "Gather Rock T8",
+   "name": "Stone Hammer",
    "category": "Gathering",
    "subcategory": "Rock"
   },
@@ -4089,31 +4089,31 @@
   },
   {
    "id": 681,
-   "name": "Gather Wood T4",
+   "name": "Axe",
    "category": "Gathering",
    "subcategory": "Wood"
   },
   {
    "id": 682,
-   "name": "Gather Wood T5",
+   "name": "Axe",
    "category": "Gathering",
    "subcategory": "Wood"
   },
   {
    "id": 683,
-   "name": "Gather Wood T6",
+   "name": "Axe",
    "category": "Gathering",
    "subcategory": "Wood"
   },
   {
    "id": 684,
-   "name": "Gather Wood T7",
+   "name": "Axe",
    "category": "Gathering",
    "subcategory": "Wood"
   },
   {
    "id": 685,
-   "name": "Gather Wood T8",
+   "name": "Axe",
    "category": "Gathering",
    "subcategory": "Wood"
   },
@@ -4124,49 +4124,49 @@
   },
   {
    "id": 687,
-   "name": "Tracking Direbear",
+   "name": "Excellent Spirit Paws",
    "category": "Tracking",
    "subcategory": "Direbear"
   },
   {
    "id": 688,
-   "name": "Tracking Eagle",
+   "name": "Excellent Dawnfeather",
    "category": "Tracking",
    "subcategory": "Eagle"
   },
   {
    "id": 689,
-   "name": "Tracking Elemental Rock",
+   "name": "Excellent Runestone Tooth",
    "category": "Tracking",
    "subcategory": "Elemental"
   },
   {
    "id": 690,
-   "name": "Tracking Ent",
+   "name": "Excellent Sylvian Root",
    "category": "Tracking",
    "subcategory": "Ent"
   },
   {
    "id": 691,
-   "name": "Tracking Faction Mob",
+   "name": "Bag of Silver",
    "category": "Tracking",
    "subcategory": "Faction"
   },
   {
    "id": 692,
-   "name": "Tracking General",
+   "name": "Rare Animal Remains",
    "category": "Tracking",
    "subcategory": "General"
   },
   {
    "id": 693,
-   "name": "Tracking Imp",
+   "name": "Horn",
    "category": "Tracking",
    "subcategory": "Imp"
   },
   {
    "id": 694,
-   "name": "Tracking Panther",
+   "name": "Fine Shadow Claws",
    "category": "Tracking",
    "subcategory": "Panther"
   },
@@ -4178,7 +4178,7 @@
   },
   {
    "id": 696,
-   "name": "Tracking Werewolf",
+   "name": "Excellent Werewolf Fangs",
    "category": "Tracking",
    "subcategory": "Werewolf"
   }

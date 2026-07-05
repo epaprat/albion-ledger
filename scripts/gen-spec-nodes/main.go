@@ -73,6 +73,40 @@ func subcategoryOf(id string) string {
 	return humanize(parts[1])
 }
 
+// loadItemNames reads the item catalog (2nd CLI arg, default data/items.json) and
+// maps uniqueName → base display name (the "Xxx's " tier/enchant prefix stripped),
+// which is what the in-game Destiny Board shows for combat/gather/craft nodes.
+func loadItemNames(args []string) map[string]string {
+	path := "data/items.json"
+	if len(args) > 2 {
+		path = args[2]
+	}
+	raw, err := os.ReadFile(path)
+	if err != nil {
+		fmt.Fprintln(os.Stderr, "warning: items.json unavailable, using humanized ids:", err)
+		return map[string]string{}
+	}
+	var f struct {
+		Items []struct {
+			UniqueName string `json:"uniqueName"`
+			Name       string `json:"name"`
+		} `json:"items"`
+	}
+	if err := json.Unmarshal(raw, &f); err != nil {
+		fmt.Fprintln(os.Stderr, "warning: items.json parse:", err)
+		return map[string]string{}
+	}
+	m := make(map[string]string, len(f.Items))
+	for _, it := range f.Items {
+		name := it.Name
+		if idx := strings.Index(name, "'s "); idx != -1 {
+			name = name[idx+3:]
+		}
+		m[it.UniqueName] = name
+	}
+	return m
+}
+
 func main() {
 	if len(os.Args) < 2 {
 		fmt.Fprintln(os.Stderr, "usage: gen-spec-nodes <achievements.xml>")
@@ -89,7 +123,7 @@ func main() {
 	// which the wire-index alignment assumption depends on.
 	dec := xml.NewDecoder(strings.NewReader(string(raw)))
 	var version string
-	var defs []struct{ id, category string }
+	var defs []struct{ id, category, item string }
 	depthUnderParent := 0
 	for {
 		tok, err := dec.Token()
@@ -116,17 +150,19 @@ func main() {
 			if depthUnderParent > 0 {
 				continue // a reference, not a definition
 			}
-			var id, cat string
+			var id, cat, item string
 			for _, a := range se.Attr {
 				switch a.Name.Local {
 				case "id":
 					id = a.Value
 				case "category":
 					cat = a.Value
+				case "itemforsprite":
+					item = a.Value
 				}
 			}
 			if id != "" {
-				defs = append(defs, struct{ id, category string }{id, cat})
+				defs = append(defs, struct{ id, category, item string }{id, cat, item})
 			}
 		}
 	}
@@ -138,10 +174,17 @@ func main() {
 			"id = DOCUMENT-ORDER index (0-based) over <achievement>+<templateachievement> defs — the wire "+
 			"E:154 alignment assumption, live-verified per 011 quickstart. Regenerate: scripts/gen-spec-nodes.", version),
 	}
+	itemNames := loadItemNames(os.Args)
 	for i, d := range defs {
+		name := humanize(d.id)
+		if d.item != "" {
+			if n, ok := itemNames[d.item]; ok {
+				name = n // real in-game item name (e.g. "Scholar Robe")
+			}
+		}
 		out.Nodes = append(out.Nodes, node{
 			ID:          i,
-			Name:        humanize(d.id),
+			Name:        name,
 			Category:    categoryDisplay(d.category),
 			Subcategory: subcategoryOf(d.id),
 		})
