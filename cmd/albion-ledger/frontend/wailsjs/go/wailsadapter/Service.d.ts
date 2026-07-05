@@ -62,7 +62,7 @@ export function SetFlowReader(arg1:wailsadapter.FlowReader,arg2:string):Promise<
 
 export function SetSelf(arg1:number,arg2:string):Promise<void>;
 
-export function SetSpec(arg1:Array<number>):Promise<void>;
+export function SetSpec(arg1:model.CharacterSpec):Promise<void>;
 
 export function SetStatus(arg1:model.CaptureStatusView):Promise<void>;
 
