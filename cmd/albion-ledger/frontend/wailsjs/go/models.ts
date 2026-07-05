@@ -83,6 +83,7 @@ export namespace model {
 	    fame: number;
 	    category: string;
 	    subcategory: string;
+	    touched: boolean;
 	
 	    static createFrom(source: any = {}) {
 	        return new MasteryLevel(source);
@@ -97,6 +98,7 @@ export namespace model {
 	        this.fame = source["fame"];
 	        this.category = source["category"];
 	        this.subcategory = source["subcategory"];
+	        this.touched = source["touched"];
 	    }
 	}
 	export class CharacterSpec {
