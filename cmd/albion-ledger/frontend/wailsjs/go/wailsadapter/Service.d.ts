@@ -62,13 +62,17 @@ export function SetFlowReader(arg1:wailsadapter.FlowReader,arg2:string):Promise<
 
 export function SetSelf(arg1:number,arg2:string):Promise<void>;
 
-export function SetSpec(arg1:Array<number>):Promise<void>;
+export function SetSpec(arg1:model.CharacterSpec):Promise<void>;
+
+export function SetSpecUnlocked(arg1:Array<number>):Promise<void>;
 
 export function SetStatus(arg1:model.CaptureStatusView):Promise<void>;
 
 export function SetZone(arg1:string):Promise<void>;
 
 export function Spec():Promise<model.CharacterSpec>;
+
+export function SpecUnlockedSnapshot():Promise<Array<number>>;
 
 export function StartFlowPersistence(arg1:context.Context,arg2:wailsadapter.FlowStore,arg3:string):Promise<void>;
 

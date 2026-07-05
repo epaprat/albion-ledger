@@ -21,6 +21,7 @@ const (
 	TypeString  = typeString
 	TypeIntZero = typeIntZero
 	TypeArray   = typeArray
+	TypeFloat   = typeFloat
 	TypeInt64   = typeCompressedLong
 )
 

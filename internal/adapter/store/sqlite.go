@@ -57,6 +57,9 @@ CREATE TABLE IF NOT EXISTS emv_book (
   item_index INTEGER, quality INTEGER, amount INTEGER, as_of INTEGER,
   PRIMARY KEY (item_index, quality)
 );
+CREATE TABLE IF NOT EXISTS spec_unlocked (
+  node_id INTEGER PRIMARY KEY
+);
 `
 
 // SQLite is a Store backed by a local SQLite database.
@@ -404,6 +407,49 @@ func (s *SQLite) LoadEMVBook(ctx context.Context) ([]valuation.EMVEntry, error) 
 			return nil, err
 		}
 		out = append(out, e)
+	}
+	return out, rows.Err()
+}
+
+// SaveSpecUnlocked persists the Destiny Board unlocked-node set (E:155): the full
+// list so maxed (level-100) branches survive restarts, since E:155 only arrives on
+// node completion, not at login (011, live-confirmed 2026-07-05). REPLACE semantics.
+func (s *SQLite) SaveSpecUnlocked(ctx context.Context, ids []int) error {
+	tx, err := s.db.BeginTx(ctx, nil)
+	if err != nil {
+		return err
+	}
+	defer tx.Rollback()
+	if _, err := tx.ExecContext(ctx, `DELETE FROM spec_unlocked`); err != nil {
+		return err
+	}
+	stmt, err := tx.PrepareContext(ctx, `INSERT OR IGNORE INTO spec_unlocked(node_id) VALUES (?)`)
+	if err != nil {
+		return err
+	}
+	defer stmt.Close()
+	for _, id := range ids {
+		if _, err := stmt.ExecContext(ctx, id); err != nil {
+			return err
+		}
+	}
+	return tx.Commit()
+}
+
+// LoadSpecUnlocked returns the persisted unlocked-node ids.
+func (s *SQLite) LoadSpecUnlocked(ctx context.Context) ([]int, error) {
+	rows, err := s.db.QueryContext(ctx, `SELECT node_id FROM spec_unlocked`)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	var out []int
+	for rows.Next() {
+		var id int
+		if err := rows.Scan(&id); err != nil {
+			return nil, err
+		}
+		out = append(out, id)
 	}
 	return out, rows.Err()
 }

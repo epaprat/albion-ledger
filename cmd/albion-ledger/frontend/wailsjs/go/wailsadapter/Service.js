@@ -118,6 +118,10 @@ export function SetSpec(arg1) {
   return window['go']['wailsadapter']['Service']['SetSpec'](arg1);
 }
 
+export function SetSpecUnlocked(arg1) {
+  return window['go']['wailsadapter']['Service']['SetSpecUnlocked'](arg1);
+}
+
 export function SetStatus(arg1) {
   return window['go']['wailsadapter']['Service']['SetStatus'](arg1);
 }
@@ -128,6 +132,10 @@ export function SetZone(arg1) {
 
 export function Spec() {
   return window['go']['wailsadapter']['Service']['Spec']();
+}
+
+export function SpecUnlockedSnapshot() {
+  return window['go']['wailsadapter']['Service']['SpecUnlockedSnapshot']();
 }
 
 export function StartFlowPersistence(arg1, arg2, arg3) {

@@ -17,11 +17,13 @@ import (
 	"sync"
 
 	"github.com/epaprat/albion-ledger/internal/adapter/capture"
+	"github.com/epaprat/albion-ledger/internal/domain/model"
 	"github.com/epaprat/albion-ledger/internal/domain/probe"
 	"github.com/epaprat/albion-ledger/internal/holdings"
 	"github.com/epaprat/albion-ledger/internal/locations"
 	"github.com/epaprat/albion-ledger/internal/loot"
 	"github.com/epaprat/albion-ledger/internal/pending"
+	"github.com/epaprat/albion-ledger/internal/specboard"
 )
 
 // Fixed container ids for the player's own bag + equipped sets, which arrive in
@@ -67,6 +69,14 @@ type Sink interface {
 	IngestLoot(id string, index, quality, count int, ts int64, source string)
 	IngestGather(id string, index, quality, count int, ts int64, source string)
 	IngestFame(id string, fame int64, ts int64)
+	SetSpec(spec model.CharacterSpec)
+	SetSpecUnlocked(ids []int)
+}
+
+// SpecResolver maps a Destiny Board node id to a readable name + category (011).
+type SpecResolver interface {
+	Resolve(id int) (name, category, subcategory string, ok bool)
+	All() []model.SpecNodeCatalog
 }
 
 // Pipeline holds every piece of capture-time state that used to be a package global
@@ -109,10 +119,21 @@ type Pipeline struct {
 	// vaultCity is REBUILT per R:516 (full list); tabMeta upserts, capped.
 	vaultCity map[string]string
 	tabMeta   map[string]tabInfo
+
+	// Destiny Board (011): live skill-tree state + node-name resolver. The snapshot
+	// arrives as several E:154 packets per Join; specReplacePending (armed on every
+	// op-2 Join) makes the FIRST packet of a burst clear and the rest merge.
+	board              *specboard.Board
+	specNames          SpecResolver
+	specReplacePending bool
+	specUnlocked       map[int]bool // E:155 full unlocked set; ids not in board = maxed (011)
+	specUnlockedSeen   bool         // true once E:155 (or a persisted seed) is known — data is complete
+	specSnapshotSeen   bool         // true once an E:154 burst arrived — REQUIRED before maxed
+	//                                 classification (unlocked ∖ empty-board would mark ALL 100)
 }
 
 // New wires a Pipeline. locs may be nil (zones stay raw cluster ids).
-func New(sink Sink, clf *probe.Classifier, locs *locations.Locations, nowMS func() int64, debug bool) *Pipeline {
+func New(sink Sink, clf *probe.Classifier, locs *locations.Locations, specNames SpecResolver, nowMS func() int64, debug bool) *Pipeline {
 	return &Pipeline{
 		sink:               sink,
 		clf:                clf,
@@ -127,6 +148,8 @@ func New(sink Sink, clf *probe.Classifier, locs *locations.Locations, nowMS func
 		selfContainerGUIDs: map[string]string{},
 		vaultCity:          map[string]string{},
 		tabMeta:            map[string]tabInfo{},
+		board:              specboard.New(),
+		specNames:          specNames,
 	}
 }
 
@@ -181,6 +204,7 @@ func (p *Pipeline) updateSelf(params map[byte]interface{}) {
 	}
 	p.selfObjID = objID
 	p.selfName = name
+	p.specReplacePending = true // a Join re-sends the whole Destiny Board (011)
 	p.sink.SetSelf(objID, name)
 	// The Join also carries the current location/cluster (key 8) — stamp it as the zone
 	// so flow events know where they happened (per-zone analytics, 006). Open-world zones
@@ -610,4 +634,20 @@ func firstInt64(v interface{}) (int64, bool) {
 		}
 	}
 	return 0, false
+}
+
+// SeedSpecUnlocked restores the persisted unlocked-node set at startup so maxed
+// (level-100) branches show immediately, before any E:155 arrives this session
+// (E:155 only fires on completion, not login — 011 live finding). Emits if a board
+// snapshot is already present.
+func (p *Pipeline) SeedSpecUnlocked(ids []int) {
+	if len(ids) == 0 {
+		return
+	}
+	p.specUnlocked = make(map[int]bool, len(ids))
+	for _, id := range ids {
+		p.specUnlocked[id] = true
+	}
+	p.specUnlockedSeen = true
+	p.emitSpec()
 }

@@ -79,6 +79,12 @@ export namespace model {
 	    index: number;
 	    name: string;
 	    level: number;
+	    progress: number;
+	    fame: number;
+	    category: string;
+	    subcategory: string;
+	    touched: boolean;
+	    fameToMax: number;
 	
 	    static createFrom(source: any = {}) {
 	        return new MasteryLevel(source);
@@ -89,10 +95,19 @@ export namespace model {
 	        this.index = source["index"];
 	        this.name = source["name"];
 	        this.level = source["level"];
+	        this.progress = source["progress"];
+	        this.fame = source["fame"];
+	        this.category = source["category"];
+	        this.subcategory = source["subcategory"];
+	        this.touched = source["touched"];
+	        this.fameToMax = source["fameToMax"];
 	    }
 	}
 	export class CharacterSpec {
 	    masteries: MasteryLevel[];
+	    nodeCount: number;
+	    totalFame: number;
+	    complete: boolean;
 	
 	    static createFrom(source: any = {}) {
 	        return new CharacterSpec(source);
@@ -101,6 +116,9 @@ export namespace model {
 	    constructor(source: any = {}) {
 	        if ('string' === typeof source) source = JSON.parse(source);
 	        this.masteries = this.convertValues(source["masteries"], MasteryLevel);
+	        this.nodeCount = source["nodeCount"];
+	        this.totalFame = source["totalFame"];
+	        this.complete = source["complete"];
 	    }
 	
 		convertValues(a: any, classs: any, asMap: boolean = false): any {

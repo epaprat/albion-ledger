@@ -92,8 +92,11 @@ func TestEquipmentAndSpec(t *testing.T) {
 	if got := s.ListHoldings(); len(got) != 1 || got[0].Location != model.LocEquipped {
 		t.Fatalf("equipped = %+v", got)
 	}
-	s.SetSpec([]int{8, 0, 86})
-	if sp := s.Spec(); len(sp.Masteries) != 3 || sp.Masteries[2].Level != 86 {
+	s.SetSpec(model.CharacterSpec{
+		Masteries: []model.MasteryLevel{{Index: 0, Level: 8}, {Index: 2, Level: 86, Fame: 500}},
+		NodeCount: 2, TotalFame: 500,
+	})
+	if sp := s.Spec(); len(sp.Masteries) != 2 || sp.Masteries[1].Level != 86 || sp.TotalFame != 500 {
 		t.Fatalf("spec = %+v", sp)
 	}
 }

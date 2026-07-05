@@ -3,7 +3,7 @@ import { ref, computed, onMounted } from 'vue'
 import HoldingsPanel from './components/HoldingsPanel.vue'
 import FlowPanel from './components/FlowPanel.vue'
 import SessionSummaryBar from './components/SessionSummaryBar.vue'
-import { fmt, tierLabel, qLabel, srcText } from './format.js'
+import { fmt, compact, tierLabel, qLabel, srcText } from './format.js'
 
 const tab = ref('flow')
 const market = ref(new Map())        // index -> LiveViewItem
@@ -16,10 +16,50 @@ const flowZones = ref([])            // ZoneStatView[] (006 — per-zone rates)
 const flowView = ref('items')        // active FlowPanel view ('zones' gates the fetch)
 const zoneWindow = ref('session')    // time window for zone stats
 const flowSummary = ref({ active: false, netSilver: 0, silverPerHour: 0, lootValue: 0, gatherValue: 0, fame: 0, famePerHour: 0, rateReady: false, unvaluedCount: 0, eventCount: 0 })
-const spec = ref({ masteries: [] })
+const spec = ref({ masteries: [], nodeCount: 0, totalFame: 0, complete: false })
+const specFilter = ref('')
+const specHideUntouched = ref(false)
 const status = ref({ capturing: false, interface: '', encryptedRate: 0, driftAlert: '' })
 const ready = ref(false)
 
+const specOpen = ref({})              // "Category" | "Category/Sub" → collapsed?
+const toggleSpec = (key) => { specOpen.value = { ...specOpen.value, [key]: !specOpen.value[key] } }
+const specCollapsed = (key) => !!specOpen.value[key]
+const pctMaxed = (g) => g.nodes > 0 ? Math.round((g.levelsum / (g.nodes * 100)) * 100) : 0
+const levelsToGo = (g) => (g.nodes * 100) - g.levelsum
+
+// Group the flat node list into category → subcategory → rows, each with a rollup
+// (node count, summed fame, top level). Filter matches node/sub/category names.
+const specTree = computed(() => {
+  const q = specFilter.value.trim().toLowerCase()
+  const rows = (spec.value.masteries || []).filter(m => {
+    if (specHideUntouched.value && !m.touched) return false
+    if (!q) return true
+    return (m.name || '').toLowerCase().includes(q)
+      || (m.subcategory || '').toLowerCase().includes(q)
+      || (m.category || '').toLowerCase().includes(q)
+  })
+  const cats = new Map()
+  for (const m of rows) {
+    const cat = m.category || 'Other'
+    const sub = m.subcategory || '—'
+    if (!cats.has(cat)) cats.set(cat, { name: cat, nodes: 0, touched: 0, fame: 0, levelsum: 0, maxed: 0, subs: new Map() })
+    const c = cats.get(cat)
+    if (!c.subs.has(sub)) c.subs.set(sub, { name: sub, nodes: 0, touched: 0, fame: 0, levelsum: 0, maxed: 0, rows: [] })
+    const sc = c.subs.get(sub)
+    const lvl = m.level || 0
+    sc.rows.push(m); sc.nodes++; sc.fame += m.fame || 0; sc.levelsum += lvl
+    c.nodes++; c.fame += m.fame || 0; c.levelsum += lvl
+    if (m.touched) { sc.touched++; c.touched++ }
+    if (lvl >= 100) { sc.maxed++; c.maxed++ }
+  }
+  const catList = [...cats.values()].sort((a, b) => b.fame - a.fame)
+  for (const c of catList) {
+    c.subList = [...c.subs.values()].sort((a, b) => b.fame - a.fame)
+    for (const sc of c.subList) sc.rows.sort((a, b) => (b.level - a.level) || (b.fame - a.fame))
+  }
+  return catList
+})
 const marketRows = computed(() =>
   [...market.value.values()].sort((a, b) => (b.lastSeen || 0) - (a.lastSeen || 0))
 )
@@ -149,20 +189,68 @@ onMounted(async () => {
         </table>
       </section>
 
-      <!-- SPEC -->
+      <!-- SPEC (Destiny Board, 011) -->
       <section v-else>
         <div v-if="!spec.masteries || spec.masteries.length === 0" class="state">
-          <p class="big">No specs captured yet</p>
-          <p class="muted">Open your character / destiny board (or relog) so the data streams.</p>
+          <p class="big">Destiny Board not captured yet</p>
+          <p class="muted">Change zones (or relog) so your skill tree streams in.</p>
         </div>
-        <table v-else>
-          <thead><tr><th>Mastery</th><th class="num">Level</th></tr></thead>
-          <tbody>
-            <tr v-for="m in spec.masteries.filter(x => x.level > 0)" :key="m.index">
-              <td>{{ m.name }}</td><td class="num">{{ m.level }}</td>
-            </tr>
-          </tbody>
-        </table>
+        <template v-else>
+          <div class="total" role="status" aria-live="polite">
+            <span>Destiny Board</span>
+            <strong>{{ spec.nodeCount }} nodes</strong>
+            <span class="muted" v-if="spec.totalFame">· {{ compact(spec.totalFame) }} fame</span>
+            <span class="filters">
+              <label class="sr-pair" style="display:inline-flex;align-items:center;gap:5px;">
+                <input v-model="specHideUntouched" type="checkbox" /> Only started
+              </label>
+              <label class="sr-pair">Filter
+                <input v-model="specFilter" type="search" placeholder="node name…" aria-label="Filter nodes" />
+              </label>
+            </span>
+          </div>
+          <div v-if="!spec.complete" class="spec-note" role="note">
+            The game never sends maxed (level-100) skills at login — they're learned from
+            occasional broadcasts and remembered <strong>permanently</strong>. Long-idle maxed
+            skills (no elite progress yet) may show as level 0 until their next progress
+            tick; everything else is exact.
+          </div>
+          <div class="spec-tree">
+            <div v-for="c in specTree" :key="c.name" class="spec-cat">
+              <button class="spec-head cat" @click="toggleSpec(c.name)" :aria-expanded="!specCollapsed(c.name)">
+                <span class="chev" :class="{ open: !specCollapsed(c.name) }">▸</span>
+                <span class="spec-name">{{ c.name }}</span>
+                <span class="muted">· {{ spec.complete ? '' : '≥' }}{{ pctMaxed(c) }}% maxed · {{ c.maxed }}/{{ c.nodes }} at 100 · {{ fmt(levelsToGo(c)) }} lvls to go</span>
+              </button>
+              <div v-show="!specCollapsed(c.name)" class="spec-subs">
+                <div v-for="sc in c.subList" :key="sc.name" class="spec-sub">
+                  <button class="spec-head sub" @click="toggleSpec(c.name + '/' + sc.name)" :aria-expanded="!specCollapsed(c.name + '/' + sc.name)">
+                    <span class="chev" :class="{ open: !specCollapsed(c.name + '/' + sc.name) }">▸</span>
+                    <span class="spec-name">{{ sc.name }}</span>
+                    <span class="muted">· {{ spec.complete ? '' : '≥' }}{{ pctMaxed(sc) }}% maxed · {{ sc.maxed }}/{{ sc.nodes }} at 100 · {{ fmt(levelsToGo(sc)) }} lvls to go</span>
+                  </button>
+                  <table v-show="!specCollapsed(c.name + '/' + sc.name)">
+                    <caption class="sr-only">{{ c.name }} — {{ sc.name }}</caption>
+                    <thead><tr><th></th><th class="num">Lvl</th><th>Progress</th><th class="num">Fame</th><th class="num">To 100</th></tr></thead>
+                    <tbody>
+                      <tr v-for="m in sc.rows" :key="m.index" :class="{ untouched: !m.touched }">
+                        <td>{{ m.name }}</td>
+                        <td class="num">{{ m.level }}</td>
+                        <td>
+                          <span class="bar" :title="Math.round(m.progress * 100) + '%'">
+                            <span class="bar-fill" :style="{ width: Math.round(m.progress * 100) + '%' }"></span>
+                          </span>
+                        </td>
+                        <td class="num">{{ m.fame ? compact(m.fame) : '—' }}</td>
+                        <td class="num">{{ m.level >= 100 ? '✓' : (100 - (m.level || 0)) + ' lvl' }}</td>
+                      </tr>
+                    </tbody>
+                  </table>
+                </div>
+              </div>
+            </div>
+          </div>
+        </template>
       </section>
     </main>
   </div>
@@ -193,4 +281,18 @@ tbody tr:hover { background: var(--panel); }
 .badge.server_estimate { background: rgba(210,153,34,.18); color: var(--warn); }
 .badge.unknown { color: var(--muted); }
 .badge.stale { background: rgba(248,81,73,.18); color: var(--bad); margin-left: 8px; }
+.spec-note { margin: 8px 0; padding: 8px 12px; background: var(--panel); border-left: 3px solid var(--warn, #c90); border-radius: 4px; font-size: 13px; color: var(--muted); line-height: 1.4; }
+.spec-tree { display: flex; flex-direction: column; gap: 2px; }
+.spec-head { display: flex; align-items: baseline; gap: 8px; width: 100%; text-align: left; background: none; border: none; color: var(--text); cursor: pointer; padding: 7px 10px; border-radius: 6px; font: inherit; }
+.spec-head:hover { background: var(--panel); }
+.spec-head.cat { font-weight: 600; font-size: 15px; }
+.spec-head.sub { font-size: 13px; padding-left: 26px; color: var(--text); }
+.spec-name { flex: 0 0 auto; }
+.chev { display: inline-block; transition: transform .12s; font-size: 11px; color: var(--muted); }
+.chev.open { transform: rotate(90deg); }
+.spec-subs { display: flex; flex-direction: column; gap: 1px; }
+.spec-sub table { margin-left: 40px; width: calc(100% - 40px); }
+.untouched { opacity: 0.4; }
+.bar { display: inline-block; width: 120px; height: 8px; background: var(--border); border-radius: 4px; overflow: hidden; vertical-align: middle; }
+.bar-fill { display: block; height: 100%; background: var(--good); }
 </style>

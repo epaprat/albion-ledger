@@ -53,7 +53,7 @@ func newGlue(t *testing.T) (*wailsadapter.Service, *Pipeline) {
 	val := valuation.NewValuer(book, model.DefaultStaleAfterMS)
 	svc := wailsadapter.NewService(c, book, val, nil, 100, nowMS)
 
-	p := New(svc, probe.New(reg), nil, nowMS, false)
+	p := New(svc, probe.New(reg), nil, testSpecNames{}, nowMS, false)
 	p.selfContainerGUIDs = map[string]string{tBagGUID: SelfBagGUID, tEqGUID: SelfEquipGUID}
 
 	// Pre-create virtual containers (mirrors OnStartup): pinned, not-yet-observed.
@@ -360,5 +360,24 @@ func TestMoveToHoldingsKnownButTrackerUnknownDst(t *testing.T) {
 	}
 	if !inBank {
 		t.Fatal("item must land in the snapshotted bank tab (tracker TTL must not matter)")
+	}
+}
+// testSpecNames is a trivial resolver for the pipeline tests (011).
+type testSpecNames struct{}
+
+func (testSpecNames) Resolve(id int) (string, string, string, bool) {
+	switch id {
+	case 22:
+		return "Combat Axes", "Combat", "Axes", true
+	case 999:
+		return "Test Node", "Combat", "Test", true
+	}
+	return "", "", "", false
+}
+
+func (testSpecNames) All() []model.SpecNodeCatalog {
+	return []model.SpecNodeCatalog{
+		{ID: 22, Name: "Combat Axes", Category: "Combat", Subcategory: "Axes", FameToMax: 1000},
+		{ID: 999, Name: "Test Node", Category: "Combat", Subcategory: "Test", FameToMax: 1000},
 	}
 }

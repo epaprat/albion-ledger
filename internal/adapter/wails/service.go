@@ -7,7 +7,6 @@ import (
 	"context"
 	"log"
 	"sort"
-	"strconv"
 	"sync"
 	"sync/atomic"
 	"time"
@@ -58,6 +57,8 @@ type Service struct {
 	flowDropped atomic.Int64         // events dropped on a full buffer (observability, VIII)
 
 	externalNudge chan struct{} // buffered(1) — K content signals the external price loop (010)
+
+	specUnlockedIDs []int // latest E:155 unlocked-node set, for persistence (011)
 
 	mu     sync.Mutex
 	items  map[int]*model.LiveViewItem // by item index
@@ -277,14 +278,25 @@ func (s *Service) IngestEquipment(items []holdings.ItemRef) {
 	s.emitHoldings()
 }
 
-// SetSpec replaces the character spec and broadcasts it.
-func (s *Service) SetSpec(masteryLevels []int) {
-	masteries := make([]model.MasteryLevel, 0, len(masteryLevels))
-	for i, lvl := range masteryLevels {
-		masteries = append(masteries, model.MasteryLevel{Index: i, Name: masteryName(i), Level: lvl})
-	}
+// SetSpecUnlocked stores the latest unlocked-node set for background persistence (011).
+func (s *Service) SetSpecUnlocked(ids []int) {
 	s.mu.Lock()
-	s.spec = model.CharacterSpec{Masteries: masteries}
+	s.specUnlockedIDs = append(s.specUnlockedIDs[:0], ids...)
+	s.mu.Unlock()
+}
+
+// SpecUnlockedSnapshot returns a copy of the unlocked set for the persistence flush.
+func (s *Service) SpecUnlockedSnapshot() []int {
+	s.mu.Lock()
+	defer s.mu.Unlock()
+	return append([]int(nil), s.specUnlockedIDs...)
+}
+
+// SetSpec replaces the character Destiny Board and broadcasts it (011). The handler
+// resolves node names/categories; the service just stores and emits.
+func (s *Service) SetSpec(spec model.CharacterSpec) {
+	s.mu.Lock()
+	s.spec = spec
 	snap := s.spec
 	s.mu.Unlock()
 	if s.emit != nil {
@@ -587,10 +599,6 @@ func (s *Service) FlowBreakdown(kind string) []model.FlowItemStatView {
 		})
 	}
 	return out
-}
-
-func masteryName(index int) string {
-	return "Mastery #" + strconv.Itoa(index)
 }
 
 // ── Bound methods (called from the frontend) ─────────────────────────────────

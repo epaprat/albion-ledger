@@ -62,12 +62,30 @@ type HoldingsSummary struct {
 
 // MasteryLevel is one character specialization level.
 type MasteryLevel struct {
-	Index int    `json:"index"`
-	Name  string `json:"name"` // best-effort; "Mastery #<index>" fallback
-	Level int    `json:"level"`
+	Index    int     `json:"index"`
+	Name     string  `json:"name"` // resolved node name; "Node #<index>" fallback
+	Level    int     `json:"level"`
+	Progress float64 `json:"progress"` // fraction to next level [0,1] (011)
+	Fame     int64   `json:"fame"`     // accumulated fame on this node (011)
+	Category    string  `json:"category"`    // top breakdown, e.g. "Combat" (011)
+	Subcategory string  `json:"subcategory"` // mid breakdown, e.g. "Axes" (011)
+	Touched     bool    `json:"touched"`     // false = catalog node with no progress yet (011)
+	FameToMax   int64   `json:"fameToMax"`   // total fame to level 100; 0 = unknown (011)
 }
 
-// CharacterSpec is the player's specialization levels.
+// SpecNodeCatalog is one node's static identity from the name catalog (011).
+type SpecNodeCatalog struct {
+	ID          int
+	Name        string
+	Category    string
+	Subcategory string
+	FameToMax   int64 // total fame from 0 to level 100 (011); 0 = unknown
+}
+
+// CharacterSpec is the player's Destiny Board (specialization) state.
 type CharacterSpec struct {
 	Masteries []MasteryLevel `json:"masteries"`
+	NodeCount int            `json:"nodeCount"` // total nodes (011)
+	TotalFame int64          `json:"totalFame"` // summed node fame (011)
+	Complete  bool           `json:"complete"`  // true once the unlocked/maxed set (E:155) is known (011)
 }
