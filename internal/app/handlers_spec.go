@@ -40,10 +40,18 @@ func handleSpecSnapshot(p *Pipeline, _ probe.Kind, _ int, params map[byte]interf
 	for i, u := range updates {
 		nodes[i] = specboard.Node{ID: u.ID, Level: u.Level, Progress: u.Progress, Fame: u.Fame}
 	}
-	p.board.ReplaceAll(nodes)
+	// The board is sent as several E:154 packets per Join; the first after a Join
+	// clears (authority), the rest of the burst merge into it (live-seen 75+75+36).
+	if p.specReplacePending {
+		p.board.ReplaceAll(nodes)
+		p.specReplacePending = false
+	} else {
+		p.board.MergeAll(nodes)
+	}
 	p.emitSpec()
 	if p.debug {
-		log.Printf("[spec] snapshot n=%d", len(nodes))
+		p2, _ := p.board.Totals()
+		log.Printf("[spec] snapshot n=%d total=%d", len(nodes), p2)
 	}
 }
 

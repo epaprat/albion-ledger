@@ -39,6 +39,18 @@ func (b *Board) ReplaceAll(nodes []Node) {
 	}
 }
 
+// MergeAll upserts a batch WITHOUT clearing — the Destiny Board snapshot arrives as
+// SEVERAL E:154 packets per join (one per ring/category, live-seen 75+75+36), so all
+// but the first in a burst merge into the same board (011).
+func (b *Board) MergeAll(nodes []Node) {
+	for _, n := range nodes {
+		if _, ok := b.nodes[n.ID]; !ok && len(b.nodes) >= maxNodes {
+			continue
+		}
+		b.nodes[n.ID] = n
+	}
+}
+
 // Apply upserts one node from a delta (E:153). When the delta carries no level
 // (hasLevel=false) the existing level is preserved; an unknown node is created (a
 // later snapshot reconciles). Progress/Fame always take the delta's values.

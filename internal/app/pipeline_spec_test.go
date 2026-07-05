@@ -14,7 +14,7 @@ import (
 const specSelf = 73486
 
 // setSelf primes the pipeline's self identity (the spec handlers self-filter).
-func (p *Pipeline) setSelfForTest(id int) { p.selfObjID = id }
+func (p *Pipeline) setSelfForTest(id int) { p.selfObjID = id; p.specReplacePending = true }
 
 func snapshotParams(self int, ids []int16, levels []byte, progress []float32, fames []string) map[byte]interface{} {
 	return map[byte]interface{}{
@@ -63,6 +63,7 @@ func TestSpecSnapshotReplaces(t *testing.T) {
 	p.dispatch(probe.KindEvent, 154, snapshotParams(specSelf, []int16{22, 30}, []byte{5, 5}, nil, nil))
 	lvl := 9
 	p.dispatch(probe.KindEvent, 153, deltaParams(specSelf, 88, &lvl, 0.2, "[[1]]")) // node 88 appears
+	p.specReplacePending = true // a fresh Join re-sends the whole board
 	p.dispatch(probe.KindEvent, 154, snapshotParams(specSelf, []int16{22}, []byte{6}, nil, nil))
 	sp := specOf(svc)
 	if sp.NodeCount != 1 || sp.Masteries[0].Index != 22 || sp.Masteries[0].Level != 6 {
@@ -102,6 +103,7 @@ func TestSpecDeltaAndDone(t *testing.T) {
 	if specOf(svc).NodeCount != 2 {
 		t.Fatal("unknown-node delta must create a row")
 	}
+	p.specReplacePending = true // Join boundary → the snapshot reconciles
 	p.dispatch(probe.KindEvent, 154, snapshotParams(specSelf, []int16{22}, []byte{6}, nil, nil))
 	if specOf(svc).NodeCount != 1 {
 		t.Fatal("snapshot must reconcile away the phantom node")
@@ -117,5 +119,24 @@ func TestSpecHostileIgnored(t *testing.T) {
 	p.dispatch(probe.KindEvent, 154, map[byte]interface{}{0: int32(specSelf), 1: []int16{}, 252: int16(154)}) // empty ids
 	if specOf(svc).NodeCount != before {
 		t.Fatal("empty-ids snapshot must not change the view")
+	}
+}
+
+// Live 2026-07-05: the board arrives as SEVERAL E:154 packets per Join (75+75+36);
+// only the first of a burst replaces, the rest merge — else only the last survives.
+func TestSpecMultiPacketBurstMerges(t *testing.T) {
+	svc, p := newGlue(t)
+	p.updateSelf(map[byte]interface{}{0: int32(specSelf), 2: "Hero"}) // arms replace
+	p.dispatch(probe.KindEvent, 154, snapshotParams(specSelf, []int16{1, 2}, []byte{5, 5}, nil, nil))
+	p.dispatch(probe.KindEvent, 154, snapshotParams(specSelf, []int16{3, 4}, []byte{5, 5}, nil, nil))
+	p.dispatch(probe.KindEvent, 154, snapshotParams(specSelf, []int16{5}, []byte{5}, nil, nil))
+	if n := specOf(svc).NodeCount; n != 5 {
+		t.Fatalf("multi-packet burst must merge to 5, got %d", n)
+	}
+	// A fresh Join replaces the whole thing.
+	p.updateSelf(map[byte]interface{}{0: int32(specSelf), 2: "Hero"})
+	p.dispatch(probe.KindEvent, 154, snapshotParams(specSelf, []int16{9}, []byte{5}, nil, nil))
+	if n := specOf(svc).NodeCount; n != 1 {
+		t.Fatalf("new Join must replace, got %d", n)
 	}
 }

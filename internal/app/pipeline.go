@@ -118,9 +118,12 @@ type Pipeline struct {
 	vaultCity map[string]string
 	tabMeta   map[string]tabInfo
 
-	// Destiny Board (011): live skill-tree state + node-name resolver.
-	board     *specboard.Board
-	specNames SpecResolver
+	// Destiny Board (011): live skill-tree state + node-name resolver. The snapshot
+	// arrives as several E:154 packets per Join; specReplacePending (armed on every
+	// op-2 Join) makes the FIRST packet of a burst clear and the rest merge.
+	board              *specboard.Board
+	specNames          SpecResolver
+	specReplacePending bool
 }
 
 // New wires a Pipeline. locs may be nil (zones stay raw cluster ids).
@@ -195,6 +198,7 @@ func (p *Pipeline) updateSelf(params map[byte]interface{}) {
 	}
 	p.selfObjID = objID
 	p.selfName = name
+	p.specReplacePending = true // a Join re-sends the whole Destiny Board (011)
 	p.sink.SetSelf(objID, name)
 	// The Join also carries the current location/cluster (key 8) — stamp it as the zone
 	// so flow events know where they happened (per-zone analytics, 006). Open-world zones
