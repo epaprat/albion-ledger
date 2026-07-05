@@ -7,6 +7,7 @@ package app
 import (
 	"testing"
 
+	"github.com/epaprat/albion-ledger/internal/domain/model"
 	"github.com/epaprat/albion-ledger/internal/domain/probe"
 )
 
@@ -313,5 +314,41 @@ func TestMarketOrdersFeedPrices(t *testing.T) {
 	rows := svc.ListHoldings()
 	if len(rows) != 1 || rows[0].Valuation.Amount != 7 {
 		t.Fatalf("resource must price from the sell offer (7s), got %+v", rows)
+	}
+}
+
+// Live 2026-07-05 (second occurrence, from a Lounge sub-cluster): tabs opened
+// before the city was known stranded in a city-less "Bank" ghost group. A later
+// city signal must backfill them so the physical-wins merge can bite.
+func TestCityBackfillKillsGhostBankGroup(t *testing.T) {
+	svc, p := newGlue(t)
+	// Physical open with NO city known yet.
+	p.registerNewItem(32, declParams(700, 837, 1))
+	svc.IngestBankVault([]string{hexOf(0x99)}, []string{"Hammadde"})
+	p.dispatch(probe.KindEvent, 99, map[byte]interface{}{
+		0: int32(6), 1: bankGUID(0x77), 2: bankGUID(0x99), 3: []int32{700}, 252: int16(99),
+	})
+	// City arrives late (Join from a sub-cluster resolving to the city).
+	if cityOf("Fort Sterling Lounge") != "Fort Sterling" {
+		t.Fatal("sub-cluster must resolve to its royal city")
+	}
+	svc.SetCurrentCity("Fort Sterling")
+	// K summary for the same city+tab must now YIELD to the backfilled physical tab.
+	p.dispatch(probe.KindResponse, 516, locationsParams([]string{"X"}, []byte{0xAA}, []int64{0}))
+	p.vaultCity[hexOf(0xAA)] = "Fort Sterling"
+	p.dispatch(probe.KindResponse, 517, tabsParams(0xAA, []byte{0x11}, []string{"Hammadde"}))
+	p.dispatch(probe.KindResponse, 1, contentParams(0x11, []int16{920}, []int16{7}))
+
+	var hammadde, cityless int
+	for _, r := range svc.ListHoldings() {
+		if r.Group == "Hammadde" {
+			hammadde++
+		}
+		if r.Location == model.LocBank && r.City == "" {
+			cityless++
+		}
+	}
+	if hammadde != 1 || cityless != 0 {
+		t.Fatalf("ghost group survived: hammadde=%d cityless=%d", hammadde, cityless)
 	}
 }

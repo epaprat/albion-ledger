@@ -78,8 +78,25 @@ func New(cat port.Catalog, val port.Valuer, staleAfter int64) *Aggregator {
 // containers are grouped under it. "" leaves the city unknown.
 func (a *Aggregator) SetCurrentCity(city string) {
 	a.mu.Lock()
+	defer a.mu.Unlock()
 	a.currentCity = city
-	a.mu.Unlock()
+	if city == "" {
+		return
+	}
+	// Backfill (010): tabs recorded before the city was known stranded in a generic
+	// city-less "Bank" group that can never merge with the K overview's city group
+	// (live-seen twice). The city arriving NOW is where those tabs physically are —
+	// a bank must be opened in its own city.
+	for o, c := range a.bankOwnerCity {
+		if c == "" {
+			a.bankOwnerCity[o] = city
+		}
+	}
+	for _, c := range a.containers {
+		if c.location == model.LocBank && c.city == "" {
+			c.city = city
+		}
+	}
 }
 
 // SetBankVault records the bank's tab owner GUIDs and names (from BankVaultInfo).
@@ -378,23 +395,30 @@ func (a *Aggregator) List() []model.HoldingItem {
 	if len(a.containers) > 0 || a.equipped != nil {
 		nowMS = a.lastValuationRefresh()
 	}
-	appendSorted := func(items map[int]model.HoldingItem) {
+	appendSorted := func(items map[int]model.HoldingItem, loc model.Location, city, group string) {
 		rows := make([]model.HoldingItem, 0, len(items))
 		for _, it := range items {
-			// Re-value at READ time: prices can arrive AFTER a row was written
-			// (market browse pricing a bank summary — live-seen 2026-07-05); a
-			// write-time snapshot would freeze those rows unvalued forever.
+			// Re-resolve at READ time: prices can arrive AFTER a row was written
+			// (market browse pricing a bank summary) and a container's city can be
+			// backfilled late (mid-session city discovery) — write-time snapshots
+			// froze both out of existing rows (live-seen 2026-07-05).
 			it.Valuation = a.val.Value(it.Item.Index, it.Item.Quality, nowMS)
+			it.Location, it.City, it.Group = loc, city, group
 			rows = append(rows, it)
 		}
 		sort.Slice(rows, func(i, j int) bool { return rows[i].Item.DisplayName < rows[j].Item.DisplayName })
 		out = append(out, rows...)
 	}
 	for _, g := range guids {
-		appendSorted(a.containers[g].items)
+		c := a.containers[g]
+		cityName := c.city
+		if c.location == model.LocBank {
+			cityName = bankCityName(c.city)
+		}
+		appendSorted(c.items, c.location, cityName, c.tab)
 	}
 	if a.equipped != nil {
-		appendSorted(a.equipped.items)
+		appendSorted(a.equipped.items, model.LocEquipped, "", a.equipped.tab)
 	}
 	return out
 }

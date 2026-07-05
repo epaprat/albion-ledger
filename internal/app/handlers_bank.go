@@ -36,14 +36,19 @@ type tabInfo struct {
 	name string // REAL tab name from the overview
 }
 
-// isKnownCity reports whether a display name is one of the royal cities (the only
-// places with banks the K overview lists) — used to feed currentCity from a Join.
-func isKnownCity(name string) bool {
-	switch name {
-	case "Thetford", "Fort Sterling", "Lymhurst", "Bridgewatch", "Martlock", "Caerleon", "Brecilien":
-		return true
+// royalCities are the only places with K-overview banks.
+var royalCities = []string{"Thetford", "Fort Sterling", "Lymhurst", "Bridgewatch", "Martlock", "Caerleon", "Brecilien"}
+
+// cityOf maps a cluster display name to its royal city: exact match, "Bank of X",
+// or a sub-cluster prefix ("Fort Sterling Lounge" → "Fort Sterling"); "" otherwise.
+func cityOf(name string) string {
+	name = bankCityDisplay(name)
+	for _, c := range royalCities {
+		if name == c || (len(name) > len(c) && name[:len(c)] == c && name[len(c)] == ' ') {
+			return c
+		}
 	}
-	return false
+	return ""
 }
 
 // bankCityDisplay normalizes a bank cluster's display name to the CITY name the

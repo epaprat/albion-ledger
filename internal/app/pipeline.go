@@ -186,10 +186,12 @@ func (p *Pipeline) updateSelf(params map[byte]interface{}) {
 		p.sink.SetZone(name)
 		// Mid-session starts miss the city-entry notification (event 163), leaving
 		// physically-opened bank tabs city-less ("Bank" ghost group, live-seen
-		// 2026-07-05). The Join cluster already names the place: a city or bank
-		// cluster feeds the current city too, normalized to the bare city name.
-		if city := bankCityDisplay(name); city != name || isKnownCity(name) {
-			p.sink.SetCurrentCity(bankCityDisplay(name))
+		// 2026-07-05 twice — the second time from a Lounge sub-cluster whose name
+		// only STARTS with the city). Any cluster name that maps to a royal city
+		// (exact, "Bank of X", or "<City> <suffix>" like Lounge/Markets) feeds the
+		// current city.
+		if city := cityOf(name); city != "" {
+			p.sink.SetCurrentCity(city)
 		}
 	}
 	// Own-container GUID bridge (008): bag (key 54, confirmed) + equipped candidate
