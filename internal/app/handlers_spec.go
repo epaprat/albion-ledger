@@ -15,6 +15,10 @@ import (
 	"github.com/epaprat/albion-ledger/internal/specboard"
 )
 
+// maxSpecUnlocked bounds the persisted unlocked/maxed set (Principle XI). The real
+// Destiny Board is ~697 nodes; anything past the extractor's 2048 cap is hostile.
+const maxSpecUnlocked = 2048
+
 func init() {
 	register(model.CatSpecSnapshot, handleSpecSnapshot)
 	register(model.CatSpecDelta, handleSpecDelta)
@@ -37,12 +41,28 @@ func handleSpecUnlocked(p *Pipeline, _ probe.Kind, _ int, params map[byte]interf
 	if len(ids) == 0 {
 		return
 	}
-	p.specUnlocked = make(map[int]bool, len(ids))
+	// MERGE, never replace: E:155 is an INCOMPLETE unlocked list — long-idle maxed
+	// nodes (zero elite fame) are absent from it (Cultist Robe, live-proven). The
+	// seed + noteMaxed accumulate those; a wholesale replace here would delete them
+	// and the shutdown SaveSpecUnlocked would lose them permanently. Union only.
+	if p.specUnlocked == nil {
+		p.specUnlocked = make(map[int]bool, len(ids))
+	}
+	changed := false
 	for _, id := range ids {
-		p.specUnlocked[id] = true
+		if !p.specUnlocked[id] && len(p.specUnlocked) < maxSpecUnlocked {
+			p.specUnlocked[id] = true
+			changed = true
+		}
 	}
 	p.specUnlockedSeen = true
-	p.sink.SetSpecUnlocked(ids) // persist so maxed branches survive restarts
+	if changed {
+		all := make([]int, 0, len(p.specUnlocked))
+		for n := range p.specUnlocked {
+			all = append(all, n)
+		}
+		p.sink.SetSpecUnlocked(all) // persist the accumulated union
+	}
 	p.emitSpec()
 	if p.debug {
 		log.Printf("[spec] unlocked (E:155) n=%d", len(ids))
@@ -52,7 +72,14 @@ func handleSpecUnlocked(p *Pipeline, _ probe.Kind, _ int, params map[byte]interf
 // specSelfMatches gates all three messages on k0 == self (005 isSelfObj pattern).
 func (p *Pipeline) specSelfMatches(params map[byte]interface{}) bool {
 	self, ok := capture.SpecSelf(params)
-	return ok && p.isSelfObj(self)
+	if !ok {
+		return false
+	}
+	// The achievement stream is the local client's OWN board — the server never sends
+	// another player's. Before the first Join sets selfObjID, trust it (else the
+	// login-burst E:154, which can precede op-2, would be dropped and the panel would
+	// stay empty until the next zone change). Once self is known, filter strictly.
+	return p.selfObjID == 0 || self == p.selfObjID
 }
 
 // handleSpecSnapshot — E:154: full REPLACE (the authority).
@@ -93,7 +120,7 @@ func handleSpecDelta(p *Pipeline, _ probe.Kind, _ int, params map[byte]interface
 	if !ok {
 		return
 	}
-	p.board.Apply(specboard.Node{ID: u.ID, Level: u.Level, Progress: u.Progress, Fame: u.Fame}, u.HasLevel)
+	p.board.Apply(specboard.Node{ID: u.ID, Level: u.Level, Progress: u.Progress, Fame: u.Fame}, u.HasLevel, u.HasProgress, u.HasFame)
 	if u.HasLevel && u.Level >= 100 {
 		p.noteMaxed(u.ID)
 	}
@@ -131,6 +158,12 @@ func (p *Pipeline) noteMaxed(id int) {
 		p.specUnlocked = map[int]bool{}
 	}
 	if p.specUnlocked[id] {
+		return
+	}
+	// Bounded (XI): the real board is ~697 nodes; refuse growth past the board cap so
+	// a hostile level-100 E:153/E:152 stream can't grow the map — or the full-table
+	// spec_unlocked rewrite it triggers — without bound.
+	if len(p.specUnlocked) >= maxSpecUnlocked {
 		return
 	}
 	p.specUnlocked[id] = true

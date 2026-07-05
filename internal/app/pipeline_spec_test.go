@@ -217,3 +217,25 @@ func TestLevel100ObservationsJoinMaxedSet(t *testing.T) {
 		}
 	}
 }
+
+// Review A #1: E:155 is an INCOMPLETE unlocked list; a completion-triggered E:155
+// must MERGE (not replace) so seeded/observed long-idle maxed nodes survive.
+func TestSpecUnlockedMergesNeverWipes(t *testing.T) {
+	svc, p := newGlue(t)
+	p.setSelfForTest(specSelf)
+	// Seed a persisted maxed node 999 (a long-idle robe absent from E:155).
+	p.SeedSpecUnlocked([]int{999})
+	// A snapshot so classification runs; 22 in-progress.
+	p.dispatch(probe.KindEvent, 154, snapshotParams(specSelf, []int16{22}, []byte{30}, nil, nil))
+	// A completion fires E:155 WITHOUT 999 (E:155 omits idle maxed).
+	p.dispatch(probe.KindEvent, 155, map[byte]interface{}{0: int32(specSelf), 1: []int16{22}, 252: int16(155)})
+	found999 := false
+	for _, m := range specOf(svc).Masteries {
+		if m.Index == 999 {
+			found999 = m.Level == 100
+		}
+	}
+	if !found999 {
+		t.Fatal("E:155 wiped the seeded idle-maxed node 999 — must merge, not replace")
+	}
+}

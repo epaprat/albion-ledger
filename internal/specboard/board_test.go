@@ -9,7 +9,7 @@ func TestReplaceAllIsAuthority(t *testing.T) {
 		t.Fatalf("totals = %d/%d, want 2/100", n, fame)
 	}
 	// A delta then a fresh snapshot that excludes it → the delta cannot survive.
-	b.Apply(Node{ID: 9, Level: 1}, true)
+	b.Apply(Node{ID: 9, Level: 1}, true, true, true)
 	b.ReplaceAll([]Node{{ID: 1, Level: 6}})
 	list := b.List()
 	if len(list) != 1 || list[0].ID != 1 || list[0].Level != 6 {
@@ -21,17 +21,23 @@ func TestApplyUpsertPreservesLevelWhenAbsent(t *testing.T) {
 	b := New()
 	b.ReplaceAll([]Node{{ID: 1, Level: 5, Progress: 0.2}})
 	// Delta with a new progress but NO level (hasLevel=false) keeps the level.
-	b.Apply(Node{ID: 1, Progress: 0.6}, false)
+	b.Apply(Node{ID: 1, Progress: 0.6}, false, true, false)
 	if got := b.List()[0]; got.Level != 5 || got.Progress != 0.6 {
 		t.Fatalf("level must survive a level-less delta: %+v", got)
 	}
+	// A level-only delta (no progress, no fame) must NOT zero accumulated fame/progress.
+	b.ReplaceAll([]Node{{ID: 1, Level: 5, Progress: 0.6, Fame: 999}})
+	b.Apply(Node{ID: 1, Level: 6}, true, false, false)
+	if got := b.List()[0]; got.Level != 6 || got.Fame != 999 || got.Progress != 0.6 {
+		t.Fatalf("level-only delta must preserve fame/progress: %+v", got)
+	}
 	// Delta with a level updates it.
-	b.Apply(Node{ID: 1, Level: 6, Progress: 0.1}, true)
+	b.Apply(Node{ID: 1, Level: 6, Progress: 0.1}, true, true, false)
 	if got := b.List()[0]; got.Level != 6 {
 		t.Fatalf("level delta ignored: %+v", got)
 	}
 	// A delta for an unknown node creates a row (a later snapshot reconciles).
-	b.Apply(Node{ID: 77, Level: 1, Progress: 0.3}, true)
+	b.Apply(Node{ID: 77, Level: 1, Progress: 0.3}, true, true, false)
 	if _, ok := b.get(77); !ok {
 		t.Fatal("delta for unknown node must create a row")
 	}
@@ -82,7 +88,7 @@ func TestSoakBounded(t *testing.T) {
 		}
 		b.ReplaceAll(nodes)
 		for i := 0; i < 200; i++ {
-			b.Apply(Node{ID: i, Level: 1, Progress: 0.5}, true)
+			b.Apply(Node{ID: i, Level: 1, Progress: 0.5}, true, true, false)
 		}
 	}
 	if n, _ := b.Totals(); n != 700 {

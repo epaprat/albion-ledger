@@ -22,11 +22,13 @@ const maxSpecNodes = 2048
 
 // SpecNodeUpdate is one parsed node row (level -1 = "not provided").
 type SpecNodeUpdate struct {
-	ID       int
-	Level    int
-	HasLevel bool
-	Progress float64
-	Fame     int64
+	ID          int
+	Level       int
+	HasLevel    bool
+	Progress    float64
+	HasProgress bool
+	Fame        int64
+	HasFame     bool
 }
 
 // SpecSelf pulls the self object id shared by all three messages (k0). ok=false
@@ -52,10 +54,10 @@ func AchievementSnapshot(params map[byte]interface{}) ([]SpecNodeUpdate, bool) {
 			u.Level, u.HasLevel = levels[i], true
 		}
 		if i < len(progress) {
-			u.Progress = clamp01(float64(progress[i]))
+			u.Progress, u.HasProgress = clamp01(float64(progress[i])), true
 		}
 		if i < len(fames) {
-			u.Fame = parseFameWrapper(fames[i])
+			u.Fame, u.HasFame = parseFameWrapper(fames[i]), true
 		}
 		out[i] = u
 	}
@@ -73,10 +75,15 @@ func AchievementDelta(params map[byte]interface{}) (SpecNodeUpdate, bool) {
 		u.Level, u.HasLevel = lvl, true
 	}
 	if p, ok := firstFloat(params[3]); ok {
-		u.Progress = clamp01(float64(p))
+		u.Progress, u.HasProgress = clamp01(float64(p)), true
 	}
-	if s, ok := params[4].(string); ok {
-		u.Fame = parseFameWrapper(s)
+	switch f := params[4].(type) {
+	case string:
+		u.Fame, u.HasFame = parseFameWrapper(f), true
+	case []string:
+		if len(f) > 0 {
+			u.Fame, u.HasFame = parseFameWrapper(f[0]), true
+		}
 	}
 	return u, true
 }
@@ -121,10 +128,18 @@ func clamp01(f float64) float64 {
 	return f
 }
 
-// float32Slice reads a []float32 array (single wire width) tolerantly.
+// float32Slice reads a float array tolerantly across wire widths (progress has been
+// sampled as []float32, but the Photon double type would arrive []float64).
 func float32Slice(v interface{}) []float32 {
-	if a, ok := v.([]float32); ok {
+	switch a := v.(type) {
+	case []float32:
 		return a
+	case []float64:
+		out := make([]float32, len(a))
+		for i, f := range a {
+			out[i] = float32(f)
+		}
+		return out
 	}
 	return nil
 }
@@ -133,9 +148,15 @@ func firstFloat(v interface{}) (float32, bool) {
 	switch a := v.(type) {
 	case float32:
 		return a, true
+	case float64:
+		return float32(a), true
 	case []float32:
 		if len(a) > 0 {
 			return a[0], true
+		}
+	case []float64:
+		if len(a) > 0 {
+			return float32(a[0]), true
 		}
 	}
 	return 0, false

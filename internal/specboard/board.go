@@ -51,13 +51,22 @@ func (b *Board) MergeAll(nodes []Node) {
 	}
 }
 
-// Apply upserts one node from a delta (E:153). When the delta carries no level
-// (hasLevel=false) the existing level is preserved; an unknown node is created (a
-// later snapshot reconciles). Progress/Fame always take the delta's values.
-func (b *Board) Apply(n Node, hasLevel bool) {
+// Apply upserts one node from a delta (E:153). Each field the delta omits is
+// preserved from the existing node (level/progress/fame are all optional in E:153),
+// so a level-only delta never zeroes accumulated fame; an unknown node is created
+// (a later snapshot reconciles).
+func (b *Board) Apply(n Node, hasLevel, hasProgress, hasFame bool) {
 	cur, ok := b.nodes[n.ID]
-	if ok && !hasLevel {
-		n.Level = cur.Level
+	if ok {
+		if !hasLevel {
+			n.Level = cur.Level
+		}
+		if !hasProgress {
+			n.Progress = cur.Progress
+		}
+		if !hasFame {
+			n.Fame = cur.Fame
+		}
 	}
 	if !ok && len(b.nodes) >= maxNodes {
 		return
