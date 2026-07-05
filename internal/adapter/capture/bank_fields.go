@@ -46,7 +46,7 @@ func BankLocations(params map[byte]interface{}) ([]BankLocation, bool) {
 		return nil, false
 	}
 	weights, _ := intSlice(params[4])
-	values, vok := params[5].([]int64)
+	values := int64Slice(params[5]) // width-variable: small totals arrive as []int32
 	locs := make([]BankLocation, len(clusters))
 	for i, c := range clusters {
 		locs[i] = BankLocation{
@@ -56,7 +56,7 @@ func BankLocations(params map[byte]interface{}) ([]BankLocation, bool) {
 		if i < len(weights) {
 			locs[i].Weight = weights[i]
 		}
-		if vok && i < len(values) {
+		if i < len(values) {
 			locs[i].RawValue = values[i]
 		}
 	}
@@ -121,18 +121,12 @@ func BankTabContent(params map[byte]interface{}) (tabGUID string, rows []BankTab
 	if !gok || len(guid) != 16 {
 		return "", nil, false
 	}
-	idx, iok := intSlice(params[2])
-	counts, cok := intSlice(params[4])
-	if !cok { // width-variable: small-count tabs arrive as a byte array
-		if b, bok := params[4].([]byte); bok {
-			counts = make([]int, len(b))
-			for i, v := range b {
-				counts[i] = int(v)
-			}
-			cok = true
-		}
-	}
-	if !iok || !cok || len(idx) != len(counts) || len(idx) == 0 || len(idx) > maxBankTabRows {
+	// Width-variable everywhere (the classic Photon trap, live-hit three times in
+	// this feature alone): indexes, counts, qualities and values each shrink to the
+	// narrowest element type that fits the packet's values.
+	idx := byteOrIntSlice(params[2])
+	counts := byteOrIntSlice(params[4])
+	if idx == nil || counts == nil || len(idx) != len(counts) || len(idx) == 0 || len(idx) > maxBankTabRows {
 		return "", nil, false
 	}
 	qualities := byteOrIntSlice(params[7])

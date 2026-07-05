@@ -64,6 +64,12 @@ func (c *Client) Fetch(ctx context.Context, names []string) ([]port.ExternalPric
 		if err != nil {
 			return out, err
 		}
+		if resp.StatusCode != http.StatusOK {
+			resp.Body.Close()
+			// Rate limit / server error: an HTML body would otherwise surface as an
+			// opaque JSON decode error. Report the status; keep what we have.
+			return out, fmt.Errorf("aodp: status %d", resp.StatusCode)
+		}
 		var rows []wireRow
 		err = json.NewDecoder(resp.Body).Decode(&rows)
 		resp.Body.Close()

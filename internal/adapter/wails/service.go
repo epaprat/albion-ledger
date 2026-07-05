@@ -57,6 +57,8 @@ type Service struct {
 	flowStopped bool                 // guards double-close of flowStop
 	flowDropped atomic.Int64         // events dropped on a full buffer (observability, VIII)
 
+	externalNudge chan struct{} // buffered(1) — K content signals the external price loop (010)
+
 	mu     sync.Mutex
 	items  map[int]*model.LiveViewItem // by item index
 	order  []int                       // insertion order for FIFO cap eviction
@@ -70,9 +72,10 @@ func NewService(cat port.Catalog, book *valuation.Book, val port.Valuer, emit Em
 	}
 	return &Service{
 		cat: cat, book: book, val: val, emit: emit, cap: cap, nowMS: nowMS,
-		items: map[int]*model.LiveViewItem{},
-		agg:   holdings.New(cat, val, model.DefaultStaleAfterMS),
-		flow:  flow.New(val, flow.DefaultIdleMS, flow.DefaultCap),
+		items:         map[int]*model.LiveViewItem{},
+		agg:           holdings.New(cat, val, model.DefaultStaleAfterMS),
+		flow:          flow.New(val, flow.DefaultIdleMS, flow.DefaultCap),
+		externalNudge: make(chan struct{}, 1),
 	}
 }
 
@@ -94,18 +97,16 @@ func (s *Service) IngestEMV(index, quality int, value, asOf int64) {
 	}
 }
 
-// externalNudge signals that new potentially-unvalued rows arrived (K overview
-// content) so the external price loop should run soon instead of waiting out its
-// hourly timer (the startup-race left fresh vault rows unpriced for an hour —
-// live-seen 2026-07-05). Buffered(1): repeated nudges collapse.
-var externalNudge = make(chan struct{}, 1)
+// ExternalRefreshSignal exposes the per-Service nudge channel to the price loop:
+// new potentially-unvalued rows arrived (K overview content), run soon instead of
+// waiting out the hourly timer (startup-race left fresh rows unpriced for an hour —
+// live-seen 2026-07-05). Buffered(1): repeated nudges collapse. Per-instance field,
+// not a package global — cross-Service nudging leaked tokens between tests (review).
+func (s *Service) ExternalRefreshSignal() <-chan struct{} { return s.externalNudge }
 
-// ExternalRefreshSignal exposes the nudge channel to the price loop.
-func (s *Service) ExternalRefreshSignal() <-chan struct{} { return externalNudge }
-
-func nudgeExternal() {
+func (s *Service) nudgeExternal() {
 	select {
-	case externalNudge <- struct{}{}:
+	case s.externalNudge <- struct{}{}:
 	default:
 	}
 }
@@ -258,7 +259,7 @@ func (s *Service) SetCurrentCity(city string) {
 func (s *Service) IngestVaultSummaryTab(tabGUID, city, tabName string, rows []holdings.ItemRef) {
 	s.agg.SetVaultSummaryTab(tabGUID, city, tabName, rows, s.nowMS())
 	s.emitHoldings()
-	nudgeExternal() // fresh summary rows may need the external base layer soon
+	s.nudgeExternal() // fresh summary rows may need the external base layer soon
 }
 
 // IngestCityVaultValues replaces the per-city vault totals from the K overview (010).

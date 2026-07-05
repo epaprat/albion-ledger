@@ -63,6 +63,7 @@ func main() {
 	catalogPath := flag.String("catalog", "", "override item catalog file (data/items.json format)")
 	codesPath := flag.String("codes", "", "override code map file (data/codes.json format)")
 	debugFlowFlag := flag.Bool("debugflow", false, "log flow (silver/loot/gather/fame) attribution to stderr")
+	noExternal := flag.Bool("noexternal", false, "disable the community price feed (AODP) — no outbound HTTP")
 	flag.Parse()
 
 	cat, err := catalog.New(data.ItemsJSON)
@@ -145,12 +146,22 @@ func main() {
 			// items shortly after startup, then hourly. In-game observations always
 			// override; network failures degrade silently.
 			go func() {
+				if *noExternal {
+					return // explicit opt-out: zero outbound HTTP (Principle V transparency)
+				}
 				client := aodp.New("")
 				t := time.NewTimer(20 * time.Second)
 				defer t.Stop()
 				refresh := func() {
 					if n := svc.RefreshExternalPrices(ctx, client); n > 0 {
 						log.Printf("aodp: %d prices fetched", n)
+					}
+					// Periodic durability: a crash must not discard the session's learned
+					// prices — the upsert is idempotent and newest-wins (010 review).
+					if flowStore != nil {
+						if err := flowStore.SaveEMVBook(ctx, book.SnapshotEMV()); err != nil {
+							log.Printf("store SaveEMVBook (periodic): %v", err)
+						}
 					}
 				}
 				for {

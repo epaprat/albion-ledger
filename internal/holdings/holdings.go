@@ -92,9 +92,27 @@ func (a *Aggregator) SetCurrentCity(city string) {
 			a.bankOwnerCity[o] = city
 		}
 	}
+	migrated := false
 	for _, c := range a.containers {
 		if c.location == model.LocBank && c.city == "" {
 			c.city = city
+			migrated = true
+		}
+	}
+	if migrated {
+		// The generic "Bank" group's freshness belongs to the real city now, and any
+		// K-summary tab overlapping a just-migrated PHYSICAL tab must yield (the
+		// reverse-dedup can only match once the city is known).
+		if ts, ok := a.citySeen[bankCityName("")]; ok {
+			if ts > a.citySeen[city] {
+				a.citySeen[city] = ts
+			}
+			delete(a.citySeen, bankCityName(""))
+		}
+		for guid, c := range a.containers {
+			if c.location == model.LocBank && !c.summary && c.city == city {
+				a.evictSummaryOverlapsLocked(city, c.tab, guid)
+			}
 		}
 	}
 }
@@ -115,6 +133,35 @@ func (a *Aggregator) SetBankVault(owners, tabNames []string) {
 
 // SetContainer REPLACES a container's items from a full snapshot. A known bank-tab
 // owner → location bank under the current city + tab name; otherwise inventory.
+
+// evictSummaryOverlapsLocked removes K-summary containers covering the same
+// (city, tab) as a PHYSICAL container — the reverse direction of the
+// summary-yields-to-physical rule. Without it, a physical open AFTER a K browse
+// left both containers alive and Summary double-counted the tab (010 review).
+// Caller holds a.mu.
+func (a *Aggregator) evictSummaryOverlapsLocked(city, tab, keepGUID string) {
+	if city == "" {
+		return // unmatched until the city is known; the backfill re-runs this
+	}
+	for guid, c := range a.containers {
+		if guid == keepGUID || !c.summary || c.city != city || c.tab != tab {
+			continue
+		}
+		for objID := range c.items {
+			if a.objLoc[objID] == guid {
+				delete(a.objLoc, objID)
+			}
+		}
+		delete(a.containers, guid)
+		for i, g := range a.order {
+			if g == guid {
+				a.order = append(a.order[:i], a.order[i+1:]...)
+				break
+			}
+		}
+	}
+}
+
 func (a *Aggregator) SetContainer(containerGUID, ownerGUID string, slots []SlotItem, nowMS int64) model.Location {
 	a.mu.Lock()
 	defer a.mu.Unlock()
@@ -132,7 +179,11 @@ func (a *Aggregator) SetContainer(containerGUID, ownerGUID string, slots []SlotI
 		a.bankOwnerCity[ownerGUID] = city // opening the tab pins its city (most reliable)
 	}
 
+	if loc == model.LocBank {
+		a.evictSummaryOverlapsLocked(city, tab, containerGUID)
+	}
 	c := a.ensureContainer(containerGUID)
+	c.summary = false // a physical snapshot claims this container outright
 	// Drop this container's own old index entries (only those still pointing here, so
 	// we never steal an entry an object earned by moving to another container).
 	for objID := range c.items {

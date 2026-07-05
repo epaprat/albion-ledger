@@ -29,7 +29,7 @@ const (
 
 // vaultValueScale: R:516 k5 carries silver ×10000 (same fixed-point as every other
 // silver field on the wire).
-const vaultValueScale = 10000
+const vaultValueScale = silverScale
 
 type tabInfo struct {
 	city string // resolved city display name
@@ -81,7 +81,7 @@ func handleBankLocations(p *Pipeline, _ probe.Kind, _ int, params map[byte]inter
 		city := bankCityDisplay(p.zoneName(l.ClusterID))
 		p.vaultCity[l.VaultGUID] = city
 		if l.RawValue > 0 {
-			values[city] = l.RawValue / vaultValueScale
+			values[city] += l.RawValue / vaultValueScale // += : two clusters can share a display city
 		}
 	}
 	p.sink.IngestCityVaultValues(values)

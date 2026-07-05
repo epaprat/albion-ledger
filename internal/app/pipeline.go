@@ -32,8 +32,12 @@ const (
 	SelfEquipGUID = "self-equipped"
 )
 
-// emvScale: the server EMV is stored scaled by 10000 (silver = raw / 10000).
-const emvScale = 10000
+// silverScale: every silver amount on the wire is fixed-point ×10000 (EMV, vault
+// totals, market unit prices — one constant, one truth).
+const silverScale = 10000
+
+// emvScale: legacy alias for declaration EMV scaling.
+const emvScale = silverScale
 
 const objRegCap = 50_000
 

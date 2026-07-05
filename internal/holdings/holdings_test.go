@@ -318,3 +318,31 @@ func TestCityVaultValues(t *testing.T) {
 		}
 	}
 }
+
+// 010 review: reverse-direction dedup — a physical open AFTER a K summary evicts
+// the overlapping summary container (no double count, no immortal stale summary),
+// and a late city backfill re-runs the eviction.
+func TestPhysicalOpenEvictsSummary(t *testing.T) {
+	a, _ := newAgg(t)
+	a.SetCurrentCity("Martlock")
+	a.SetBankVault([]string{"ownerX"}, []string{"Main"})
+	a.SetVaultSummaryTab("vault:Martlock:Main", "Martlock", "Main", []ItemRef{{Index: 920, Count: 5}}, 1000)
+	// Physical open under a DIFFERENT guid, same (city, tab).
+	a.SetContainer("physGuid", "ownerX", []SlotItem{{ObjID: 900101, Ref: ItemRef{Index: 837}}}, 2000)
+	list := a.List()
+	if len(list) != 1 || list[0].ObjID != 900101 {
+		t.Fatalf("summary must be evicted by the physical open: %+v", list)
+	}
+
+	// City-less physical open first, summary meanwhile, then city learned late:
+	// the backfill must also kill the overlap.
+	b, _ := newAgg(t)
+	b.SetBankVault([]string{"ownerY"}, []string{"Res"}) // currentCity "" → city-less
+	b.SetContainer("physG2", "ownerY", []SlotItem{{ObjID: 900201, Ref: ItemRef{Index: 920}}}, 1000)
+	b.SetVaultSummaryTab("vault:Lymhurst:Res", "Lymhurst", "Res", []ItemRef{{Index: 837, Count: 2}}, 1500)
+	b.SetCurrentCity("Lymhurst")
+	list = b.List()
+	if len(list) != 1 || list[0].ObjID != 900201 || list[0].City != "Lymhurst" {
+		t.Fatalf("backfill must migrate + evict the summary overlap: %+v", list)
+	}
+}

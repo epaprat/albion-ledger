@@ -116,3 +116,28 @@ func TestBankTabContentFromBytes(t *testing.T) {
 		}
 	}
 }
+
+// 010 review: the width trap, third strike — location values arrive []int32 for
+// modest vault totals, and item indexes arrive []byte for low-index tabs.
+func TestBankWidthVariants(t *testing.T) {
+	params := decodeResponse(t, 3, []photon.Field{
+		{Key: 1, Type: photon.TypeArray | photon.TypeByte, Val: guid16(0xAA)},
+		{Key: 2, Type: photon.TypeArray | photon.TypeString, Val: []string{"0006"}},
+		{Key: 5, Type: photon.TypeArray | photon.TypeInteger, Val: []int32{123450000}},
+		{Key: 253, Type: photon.TypeShort, Val: int16(516)},
+	})
+	locs, ok := BankLocations(params)
+	if !ok || locs[0].RawValue != 123450000 {
+		t.Fatalf("int32-width vault value dropped: %+v ok=%v", locs, ok)
+	}
+
+	content := map[byte]interface{}{
+		0: guid16(0x11),
+		2: []byte{10, 20},  // low indexes arrive as a byte array
+		4: []byte{1, 2},
+	}
+	_, rows, ok := BankTabContent(content)
+	if !ok || len(rows) != 2 || rows[1].ItemIndex != 20 {
+		t.Fatalf("byte-width indexes rejected: %+v ok=%v", rows, ok)
+	}
+}
