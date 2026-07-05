@@ -94,6 +94,10 @@ export function ListItems() {
   return window['go']['wailsadapter']['Service']['ListItems']();
 }
 
+export function RefreshExternalPrices(arg1, arg2) {
+  return window['go']['wailsadapter']['Service']['RefreshExternalPrices'](arg1, arg2);
+}
+
 export function SetCurrentCity(arg1) {
   return window['go']['wailsadapter']['Service']['SetCurrentCity'](arg1);
 }
