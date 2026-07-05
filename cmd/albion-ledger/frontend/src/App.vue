@@ -210,10 +210,10 @@ onMounted(async () => {
             </span>
           </div>
           <div v-if="!spec.complete" class="spec-note" role="note">
-            Maxed (level-100) skills aren't sent at login — the game only broadcasts them
-            when your unlocked set changes (unlocking a new node, or the next node
-            completion). It's captured <strong>once, ever</strong>, then remembered across
-            restarts. Until then, maxed branches show as level 0 and “% maxed” is a lower bound.
+            The game never sends maxed (level-100) skills at login — they're learned from
+            occasional broadcasts and remembered <strong>permanently</strong>. Long-idle maxed
+            skills (no elite progress yet) may show as level 0 until their next progress
+            tick; everything else is exact.
           </div>
           <div class="spec-tree">
             <div v-for="c in specTree" :key="c.name" class="spec-cat">

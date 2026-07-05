@@ -198,3 +198,22 @@ func TestSeedBeforeSnapshotMarksNothingMaxed(t *testing.T) {
 		t.Fatal("complete once both known")
 	}
 }
+
+// Long-idle maxed nodes never appear in E:154/E:155 (live-proven). Any E:152/E:153
+// showing level >=100 must permanently join the unlocked (maxed) set.
+func TestLevel100ObservationsJoinMaxedSet(t *testing.T) {
+	svc, p := newGlue(t)
+	p.setSelfForTest(specSelf)
+	p.dispatch(probe.KindEvent, 154, snapshotParams(specSelf, []int16{22}, []byte{30}, nil, nil))
+	// Elite tick on a long-idle maxed node (999): E:153 with level 101.
+	lvl := 101
+	p.dispatch(probe.KindEvent, 153, deltaParams(specSelf, 999, &lvl, 0.1, "[[5]]"))
+	// Next zone join re-sends only in-progress (22) — 999 must STAY maxed.
+	p.updateSelf(map[byte]interface{}{0: int32(specSelf), 2: "Hero"})
+	p.dispatch(probe.KindEvent, 154, snapshotParams(specSelf, []int16{22}, []byte{31}, nil, nil))
+	for _, m := range specOf(svc).Masteries {
+		if m.Index == 999 && m.Level < 100 {
+			t.Fatalf("elite-observed node lost maxed status after snapshot: %+v", m)
+		}
+	}
+}

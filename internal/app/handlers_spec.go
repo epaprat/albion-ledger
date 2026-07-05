@@ -94,6 +94,9 @@ func handleSpecDelta(p *Pipeline, _ probe.Kind, _ int, params map[byte]interface
 		return
 	}
 	p.board.Apply(specboard.Node{ID: u.ID, Level: u.Level, Progress: u.Progress, Fame: u.Fame}, u.HasLevel)
+	if u.HasLevel && u.Level >= 100 {
+		p.noteMaxed(u.ID)
+	}
 	p.emitSpec()
 	if p.debug {
 		log.Printf("[spec] delta node=%d lvl=%d hasLvl=%v", u.ID, u.Level, u.HasLevel)
@@ -110,10 +113,32 @@ func handleSpecDone(p *Pipeline, _ probe.Kind, _ int, params map[byte]interface{
 		return
 	}
 	p.board.Complete(id, level)
+	if level >= 100 {
+		p.noteMaxed(id)
+	}
 	p.emitSpec()
 	if p.debug {
 		log.Printf("[spec] done node=%d lvl=%d", id, level)
 	}
+}
+
+// noteMaxed adds a node observed at level >=100 (E:152/E:153) to the persistent
+// unlocked set — long-idle maxed nodes never appear in E:154/E:155 (live-proven:
+// a 100/100 robe with zero elite fame is absent from BOTH), so any elite tick or
+// completion is captured permanently the moment it happens.
+func (p *Pipeline) noteMaxed(id int) {
+	if p.specUnlocked == nil {
+		p.specUnlocked = map[int]bool{}
+	}
+	if p.specUnlocked[id] {
+		return
+	}
+	p.specUnlocked[id] = true
+	ids := make([]int, 0, len(p.specUnlocked))
+	for n := range p.specUnlocked {
+		ids = append(ids, n)
+	}
+	p.sink.SetSpecUnlocked(ids)
 }
 
 // emitSpec builds the COMPLETE Destiny Board (every catalog node, untouched ones at
