@@ -87,4 +87,5 @@ type CharacterSpec struct {
 	Masteries []MasteryLevel `json:"masteries"`
 	NodeCount int            `json:"nodeCount"` // total nodes (011)
 	TotalFame int64          `json:"totalFame"` // summed node fame (011)
+	Complete  bool           `json:"complete"`  // true once the unlocked/maxed set (E:155) is known (011)
 }

@@ -127,6 +127,7 @@ type Pipeline struct {
 	specNames          SpecResolver
 	specReplacePending bool
 	specUnlocked       map[int]bool // E:155 full unlocked set; ids not in board = maxed (011)
+	specUnlockedSeen   bool         // true once E:155 (or a persisted seed) is known — data is complete
 }
 
 // New wires a Pipeline. locs may be nil (zones stay raw cluster ids).
@@ -645,5 +646,6 @@ func (p *Pipeline) SeedSpecUnlocked(ids []int) {
 	for _, id := range ids {
 		p.specUnlocked[id] = true
 	}
+	p.specUnlockedSeen = true
 	p.emitSpec()
 }

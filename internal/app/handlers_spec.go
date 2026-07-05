@@ -38,6 +38,7 @@ func handleSpecUnlocked(p *Pipeline, _ probe.Kind, _ int, params map[byte]interf
 	for _, id := range ids {
 		p.specUnlocked[id] = true
 	}
+	p.specUnlockedSeen = true
 	p.sink.SetSpecUnlocked(ids) // persist so maxed branches survive restarts
 	p.emitSpec()
 	if p.debug {
@@ -147,5 +148,7 @@ func (p *Pipeline) emitSpec() {
 		}
 	}
 	count, totalFame := p.board.Totals()
-	p.sink.SetSpec(model.CharacterSpec{Masteries: masteries, NodeCount: count, TotalFame: totalFame})
+	p.sink.SetSpec(model.CharacterSpec{
+		Masteries: masteries, NodeCount: count, TotalFame: totalFame, Complete: p.specUnlockedSeen,
+	})
 }

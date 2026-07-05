@@ -107,6 +107,7 @@ export namespace model {
 	    masteries: MasteryLevel[];
 	    nodeCount: number;
 	    totalFame: number;
+	    complete: boolean;
 	
 	    static createFrom(source: any = {}) {
 	        return new CharacterSpec(source);
@@ -117,6 +118,7 @@ export namespace model {
 	        this.masteries = this.convertValues(source["masteries"], MasteryLevel);
 	        this.nodeCount = source["nodeCount"];
 	        this.totalFame = source["totalFame"];
+	        this.complete = source["complete"];
 	    }
 	
 		convertValues(a: any, classs: any, asMap: boolean = false): any {

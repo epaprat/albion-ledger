@@ -16,7 +16,7 @@ const flowZones = ref([])            // ZoneStatView[] (006 — per-zone rates)
 const flowView = ref('items')        // active FlowPanel view ('zones' gates the fetch)
 const zoneWindow = ref('session')    // time window for zone stats
 const flowSummary = ref({ active: false, netSilver: 0, silverPerHour: 0, lootValue: 0, gatherValue: 0, fame: 0, famePerHour: 0, rateReady: false, unvaluedCount: 0, eventCount: 0 })
-const spec = ref({ masteries: [], nodeCount: 0, totalFame: 0 })
+const spec = ref({ masteries: [], nodeCount: 0, totalFame: 0, complete: false })
 const specFilter = ref('')
 const specHideUntouched = ref(false)
 const status = ref({ capturing: false, interface: '', encryptedRate: 0, driftAlert: '' })
@@ -209,19 +209,24 @@ onMounted(async () => {
               </label>
             </span>
           </div>
+          <div v-if="!spec.complete" class="spec-note" role="note">
+            Level-100 skills load after your first skill level-up this session (any node
+            gaining a level). Captured once, then remembered across restarts. Until then,
+            maxed branches may show as level 0 and “% maxed” is a lower bound.
+          </div>
           <div class="spec-tree">
             <div v-for="c in specTree" :key="c.name" class="spec-cat">
               <button class="spec-head cat" @click="toggleSpec(c.name)" :aria-expanded="!specCollapsed(c.name)">
                 <span class="chev" :class="{ open: !specCollapsed(c.name) }">▸</span>
                 <span class="spec-name">{{ c.name }}</span>
-                <span class="muted">· {{ pctMaxed(c) }}% maxed · {{ c.maxed }}/{{ c.nodes }} at 100 · {{ fmt(levelsToGo(c)) }} lvls to go</span>
+                <span class="muted">· {{ spec.complete ? '' : '≥' }}{{ pctMaxed(c) }}% maxed · {{ c.maxed }}/{{ c.nodes }} at 100 · {{ fmt(levelsToGo(c)) }} lvls to go</span>
               </button>
               <div v-show="!specCollapsed(c.name)" class="spec-subs">
                 <div v-for="sc in c.subList" :key="sc.name" class="spec-sub">
                   <button class="spec-head sub" @click="toggleSpec(c.name + '/' + sc.name)" :aria-expanded="!specCollapsed(c.name + '/' + sc.name)">
                     <span class="chev" :class="{ open: !specCollapsed(c.name + '/' + sc.name) }">▸</span>
                     <span class="spec-name">{{ sc.name }}</span>
-                    <span class="muted">· {{ pctMaxed(sc) }}% maxed · {{ sc.maxed }}/{{ sc.nodes }} at 100 · {{ fmt(levelsToGo(sc)) }} lvls to go</span>
+                    <span class="muted">· {{ spec.complete ? '' : '≥' }}{{ pctMaxed(sc) }}% maxed · {{ sc.maxed }}/{{ sc.nodes }} at 100 · {{ fmt(levelsToGo(sc)) }} lvls to go</span>
                   </button>
                   <table v-show="!specCollapsed(c.name + '/' + sc.name)">
                     <caption class="sr-only">{{ c.name }} — {{ sc.name }}</caption>
@@ -275,6 +280,7 @@ tbody tr:hover { background: var(--panel); }
 .badge.server_estimate { background: rgba(210,153,34,.18); color: var(--warn); }
 .badge.unknown { color: var(--muted); }
 .badge.stale { background: rgba(248,81,73,.18); color: var(--bad); margin-left: 8px; }
+.spec-note { margin: 8px 0; padding: 8px 12px; background: var(--panel); border-left: 3px solid var(--warn, #c90); border-radius: 4px; font-size: 13px; color: var(--muted); line-height: 1.4; }
 .spec-tree { display: flex; flex-direction: column; gap: 2px; }
 .spec-head { display: flex; align-items: baseline; gap: 8px; width: 100%; text-align: left; background: none; border: none; color: var(--text); cursor: pointer; padding: 7px 10px; border-radius: 6px; font: inherit; }
 .spec-head:hover { background: var(--panel); }
