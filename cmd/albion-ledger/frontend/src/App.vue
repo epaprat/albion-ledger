@@ -210,9 +210,10 @@ onMounted(async () => {
             </span>
           </div>
           <div v-if="!spec.complete" class="spec-note" role="note">
-            Level-100 skills load after your first skill level-up this session (any node
-            gaining a level). Captured once, then remembered across restarts. Until then,
-            maxed branches may show as level 0 and “% maxed” is a lower bound.
+            Maxed (level-100) skills aren't sent at login — the game only broadcasts them
+            when your unlocked set changes (unlocking a new node, or the next node
+            completion). It's captured <strong>once, ever</strong>, then remembered across
+            restarts. Until then, maxed branches show as level 0 and “% maxed” is a lower bound.
           </div>
           <div class="spec-tree">
             <div v-for="c in specTree" :key="c.name" class="spec-cat">

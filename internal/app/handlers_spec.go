@@ -27,7 +27,10 @@ func init() {
 // (level 100). The classification happens at emit time, so E:154/E:155 order in the
 // login burst doesn't matter — board membership always wins.
 func handleSpecUnlocked(p *Pipeline, _ probe.Kind, _ int, params map[byte]interface{}) {
-	if !p.specSelfMatches(params) {
+	// E:155 is the client's OWN unlocked list — the server never sends another
+	// player's, so we do NOT require k0==currentSelf (which can be briefly stale
+	// right after a zone change and would drop this rare, important event).
+	if _, ok := capture.SpecSelf(params); !ok {
 		return
 	}
 	ids := capture.SpecUnlockedIDs(params)
