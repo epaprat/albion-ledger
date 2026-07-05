@@ -81,6 +81,16 @@ func AchievementDelta(params map[byte]interface{}) (SpecNodeUpdate, bool) {
 	return u, true
 }
 
+// SpecFinishedIDs pulls the finished/maxed node id list from E:151 (layout being
+// confirmed live — try the common k1 int array; empty if it isn't there yet).
+func SpecFinishedIDs(params map[byte]interface{}) []int {
+	ids := byteOrIntSlice(params[1])
+	if len(ids) > maxSpecNodes {
+		return nil
+	}
+	return ids
+}
+
 // AchievementDone parses E:152 (level-up): node id + new level, both required.
 func AchievementDone(params map[byte]interface{}) (id, level int, ok bool) {
 	id, iok := toIntVal(params[1])

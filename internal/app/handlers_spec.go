@@ -19,6 +19,35 @@ func init() {
 	register(model.CatSpecSnapshot, handleSpecSnapshot)
 	register(model.CatSpecDelta, handleSpecDelta)
 	register(model.CatSpecDone, handleSpecDone)
+	register(model.CatSpecFull, handleSpecFull)
+}
+
+// handleSpecFull — E:151 FullAchievementInfo (finished/maxed nodes, login burst).
+// Layout unconfirmed; log its shape under -debugflow to pin it. If it carries a plain
+// node-id array at k1, treat those as level-100 completions so maxed branches stop
+// showing as untouched (011 follow-up).
+func handleSpecFull(p *Pipeline, _ probe.Kind, _ int, params map[byte]interface{}) {
+	if !p.specSelfMatches(params) {
+		return
+	}
+	ids := capture.SpecFinishedIDs(params)
+	if p.debug {
+		log.Printf("[spec] full (E:151) keys=%v finished=%d", specParamKeys(params), len(ids))
+	}
+	for _, id := range ids {
+		p.board.Complete(id, 100)
+	}
+	if len(ids) > 0 {
+		p.emitSpec()
+	}
+}
+
+func specParamKeys(params map[byte]interface{}) []int {
+	ks := make([]int, 0, len(params))
+	for k := range params {
+		ks = append(ks, int(k))
+	}
+	return ks
 }
 
 // specSelfMatches gates all three messages on k0 == self (005 isSelfObj pattern).
@@ -99,20 +128,20 @@ func (p *Pipeline) emitSpec() {
 	catalog := p.specNames.All()
 	masteries := make([]model.MasteryLevel, 0, len(catalog)+len(prog))
 	inCatalog := make(map[int]bool, len(catalog))
-	add := func(id int, name, category, subcategory string, n specboard.Node, touched bool) {
+	add := func(id int, name, category, subcategory string, n specboard.Node, touched bool, fameToMax int64) {
 		masteries = append(masteries, model.MasteryLevel{
 			Index: id, Name: name, Level: n.Level, Progress: n.Progress, Fame: n.Fame,
-			Category: category, Subcategory: subcategory, Touched: touched,
+			Category: category, Subcategory: subcategory, Touched: touched, FameToMax: fameToMax,
 		})
 	}
 	for _, c := range catalog {
 		inCatalog[c.ID] = true
-		add(c.ID, c.Name, c.Category, c.Subcategory, prog[c.ID], prog[c.ID].Level > 0 || prog[c.ID].Fame > 0)
+		add(c.ID, c.Name, c.Category, c.Subcategory, prog[c.ID], prog[c.ID].Level > 0 || prog[c.ID].Fame > 0, c.FameToMax)
 	}
 	// A live node not in the catalog (unknown id) still shows, honestly labelled.
 	for id, n := range prog {
 		if !inCatalog[id] {
-			add(id, "Node #"+strconv.Itoa(id), "Other", "", n, true)
+			add(id, "Node #"+strconv.Itoa(id), "Other", "", n, true, 0)
 		}
 	}
 	count, totalFame := p.board.Totals()

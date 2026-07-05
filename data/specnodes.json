@@ -3,37 +3,37 @@
  "nodes": [
   {
    "id": 0,
-   "name": "Adventurer Adept",
+   "name": "Adept",
    "category": "Adventurer",
    "subcategory": "Adept"
   },
   {
    "id": 1,
-   "name": "Adventurer Elder",
+   "name": "Elder",
    "category": "Adventurer",
    "subcategory": "Elder"
   },
   {
    "id": 2,
-   "name": "Adventurer Expert",
+   "name": "Expert",
    "category": "Adventurer",
    "subcategory": "Expert"
   },
   {
    "id": 3,
-   "name": "Adventurer Grandmaster",
+   "name": "Grandmaster",
    "category": "Adventurer",
    "subcategory": "Grandmaster"
   },
   {
    "id": 4,
-   "name": "Adventurer Journeyman",
+   "name": "Journeyman",
    "category": "Adventurer",
    "subcategory": "Journeyman"
   },
   {
    "id": 5,
-   "name": "Adventurer Master",
+   "name": "Master",
    "category": "Adventurer",
    "subcategory": "Master"
   },
@@ -41,205 +41,239 @@
    "id": 6,
    "name": "Arcane Staff",
    "category": "Combat",
-   "subcategory": "Arcanestaffs"
+   "subcategory": "Arcanestaffs",
+   "fameToMax": 14743573
   },
   {
    "id": 7,
    "name": "Arcane Staff",
    "category": "Combat",
-   "subcategory": "Arcanestaffs"
+   "subcategory": "Arcanestaffs",
+   "fameToMax": 101729060
   },
   {
    "id": 8,
    "name": "Evensong",
    "category": "Combat",
-   "subcategory": "Arcanestaffs"
+   "subcategory": "Arcanestaffs",
+   "fameToMax": 101729060
   },
   {
    "id": 9,
    "name": "Astral Staff",
    "category": "Combat",
-   "subcategory": "Arcanestaffs"
+   "subcategory": "Arcanestaffs",
+   "fameToMax": 101729060
   },
   {
    "id": 10,
    "name": "Enigmatic Staff",
    "category": "Combat",
-   "subcategory": "Arcanestaffs"
+   "subcategory": "Arcanestaffs",
+   "fameToMax": 101729060
   },
   {
    "id": 11,
    "name": "Great Arcane Staff",
    "category": "Combat",
-   "subcategory": "Arcanestaffs"
+   "subcategory": "Arcanestaffs",
+   "fameToMax": 101729060
   },
   {
    "id": 12,
    "name": "Occult Staff",
    "category": "Combat",
-   "subcategory": "Arcanestaffs"
+   "subcategory": "Arcanestaffs",
+   "fameToMax": 101729060
   },
   {
    "id": 13,
    "name": "Malevolent Locus",
    "category": "Combat",
-   "subcategory": "Arcanestaffs"
+   "subcategory": "Arcanestaffs",
+   "fameToMax": 101729060
   },
   {
    "id": 14,
    "name": "Witchwork Staff",
    "category": "Combat",
-   "subcategory": "Arcanestaffs"
+   "subcategory": "Arcanestaffs",
+   "fameToMax": 101729060
   },
   {
    "id": 15,
    "name": "Battleaxe",
    "category": "Combat",
-   "subcategory": "Axes"
+   "subcategory": "Axes",
+   "fameToMax": 14743573
   },
   {
    "id": 16,
    "name": "Realmbreaker",
    "category": "Combat",
-   "subcategory": "Axes"
+   "subcategory": "Axes",
+   "fameToMax": 101729060
   },
   {
    "id": 17,
    "name": "Battleaxe",
    "category": "Combat",
-   "subcategory": "Axes"
+   "subcategory": "Axes",
+   "fameToMax": 101729060
   },
   {
    "id": 18,
    "name": "Crystal Reaper",
    "category": "Combat",
-   "subcategory": "Axes"
+   "subcategory": "Axes",
+   "fameToMax": 101729060
   },
   {
    "id": 19,
    "name": "The Hand of Khor",
    "category": "Combat",
-   "subcategory": "Axes"
+   "subcategory": "Axes",
+   "fameToMax": 101729060
   },
   {
    "id": 20,
    "name": "Halberd",
    "category": "Combat",
-   "subcategory": "Axes"
+   "subcategory": "Axes",
+   "fameToMax": 101729060
   },
   {
    "id": 21,
    "name": "Infernal Scythe",
    "category": "Combat",
-   "subcategory": "Axes"
+   "subcategory": "Axes",
+   "fameToMax": 101729060
   },
   {
    "id": 22,
    "name": "Bear Paws",
    "category": "Combat",
-   "subcategory": "Axes"
+   "subcategory": "Axes",
+   "fameToMax": 101729060
   },
   {
    "id": 23,
    "name": "Carrioncaller",
    "category": "Combat",
-   "subcategory": "Axes"
+   "subcategory": "Axes",
+   "fameToMax": 101729060
   },
   {
    "id": 24,
    "name": "Diary",
    "category": "Combat",
-   "subcategory": "Books"
+   "subcategory": "Books",
+   "fameToMax": 14743573
   },
   {
    "id": 25,
    "name": "Celestial Censer",
    "category": "Combat",
-   "subcategory": "Books"
+   "subcategory": "Books",
+   "fameToMax": 101729060
   },
   {
    "id": 26,
    "name": "Diary",
    "category": "Combat",
-   "subcategory": "Books"
+   "subcategory": "Books",
+   "fameToMax": 101729060
   },
   {
    "id": 27,
    "name": "Timelocked Grimoire",
    "category": "Combat",
-   "subcategory": "Books"
+   "subcategory": "Books",
+   "fameToMax": 101729060
   },
   {
    "id": 28,
    "name": "Muisak",
    "category": "Combat",
-   "subcategory": "Books"
+   "subcategory": "Books",
+   "fameToMax": 101729060
   },
   {
    "id": 29,
    "name": "Taproot",
    "category": "Combat",
-   "subcategory": "Books"
+   "subcategory": "Books",
+   "fameToMax": 101729060
   },
   {
    "id": 30,
    "name": "Eye of Secrets",
    "category": "Combat",
-   "subcategory": "Books"
+   "subcategory": "Books",
+   "fameToMax": 101729060
   },
   {
    "id": 31,
    "name": "Bow",
    "category": "Combat",
-   "subcategory": "Bows"
+   "subcategory": "Bows",
+   "fameToMax": 14743573
   },
   {
    "id": 32,
    "name": "Mistpiercer",
    "category": "Combat",
-   "subcategory": "Bows"
+   "subcategory": "Bows",
+   "fameToMax": 101729060
   },
   {
    "id": 33,
    "name": "Bow",
    "category": "Combat",
-   "subcategory": "Bows"
+   "subcategory": "Bows",
+   "fameToMax": 101729060
   },
   {
    "id": 34,
    "name": "Skystrider Bow",
    "category": "Combat",
-   "subcategory": "Bows"
+   "subcategory": "Bows",
+   "fameToMax": 101729060
   },
   {
    "id": 35,
    "name": "Wailing Bow",
    "category": "Combat",
-   "subcategory": "Bows"
+   "subcategory": "Bows",
+   "fameToMax": 101729060
   },
   {
    "id": 36,
    "name": "Bow of Badon",
    "category": "Combat",
-   "subcategory": "Bows"
+   "subcategory": "Bows",
+   "fameToMax": 101729060
   },
   {
    "id": 37,
    "name": "Longbow",
    "category": "Combat",
-   "subcategory": "Bows"
+   "subcategory": "Bows",
+   "fameToMax": 101729060
   },
   {
    "id": 38,
    "name": "Whispering Bow",
    "category": "Combat",
-   "subcategory": "Bows"
+   "subcategory": "Bows",
+   "fameToMax": 101729060
   },
   {
    "id": 39,
    "name": "Warbow",
    "category": "Combat",
-   "subcategory": "Bows"
+   "subcategory": "Bows",
+   "fameToMax": 101729060
   },
   {
    "id": 40,
@@ -251,563 +285,656 @@
    "id": 41,
    "name": "Scholar Robe",
    "category": "Combat",
-   "subcategory": "Cloth"
+   "subcategory": "Cloth",
+   "fameToMax": 14743573
   },
   {
    "id": 42,
    "name": "Robe of Purity",
    "category": "Combat",
-   "subcategory": "Cloth"
+   "subcategory": "Cloth",
+   "fameToMax": 101729060
   },
   {
    "id": 43,
    "name": "Feyscale Robe",
    "category": "Combat",
-   "subcategory": "Cloth"
+   "subcategory": "Cloth",
+   "fameToMax": 101729060
   },
   {
    "id": 44,
    "name": "Fiend Robe",
    "category": "Combat",
-   "subcategory": "Cloth"
+   "subcategory": "Cloth",
+   "fameToMax": 101729060
   },
   {
    "id": 45,
    "name": "Druid Robe",
    "category": "Combat",
-   "subcategory": "Cloth"
+   "subcategory": "Cloth",
+   "fameToMax": 101729060
   },
   {
    "id": 46,
    "name": "Cultist Robe",
    "category": "Combat",
-   "subcategory": "Cloth"
+   "subcategory": "Cloth",
+   "fameToMax": 101729060
   },
   {
    "id": 47,
    "name": "Royal Robe",
    "category": "Combat",
-   "subcategory": "Cloth"
+   "subcategory": "Cloth",
+   "fameToMax": 101729060
   },
   {
    "id": 48,
    "name": "Scholar Robe",
    "category": "Combat",
-   "subcategory": "Cloth"
+   "subcategory": "Cloth",
+   "fameToMax": 101729060
   },
   {
    "id": 49,
    "name": "Cleric Robe",
    "category": "Combat",
-   "subcategory": "Cloth"
+   "subcategory": "Cloth",
+   "fameToMax": 101729060
   },
   {
    "id": 50,
    "name": "Mage Robe",
    "category": "Combat",
-   "subcategory": "Cloth"
+   "subcategory": "Cloth",
+   "fameToMax": 101729060
   },
   {
    "id": 51,
    "name": "Scholar Cowl",
    "category": "Combat",
-   "subcategory": "Cloth"
+   "subcategory": "Cloth",
+   "fameToMax": 14743573
   },
   {
    "id": 52,
    "name": "Cowl of Purity",
    "category": "Combat",
-   "subcategory": "Cloth"
+   "subcategory": "Cloth",
+   "fameToMax": 101729060
   },
   {
    "id": 53,
    "name": "Feyscale Hat",
    "category": "Combat",
-   "subcategory": "Cloth"
+   "subcategory": "Cloth",
+   "fameToMax": 101729060
   },
   {
    "id": 54,
    "name": "Fiend Cowl",
    "category": "Combat",
-   "subcategory": "Cloth"
+   "subcategory": "Cloth",
+   "fameToMax": 101729060
   },
   {
    "id": 55,
    "name": "Druid Cowl",
    "category": "Combat",
-   "subcategory": "Cloth"
+   "subcategory": "Cloth",
+   "fameToMax": 101729060
   },
   {
    "id": 56,
    "name": "Cultist Cowl",
    "category": "Combat",
-   "subcategory": "Cloth"
+   "subcategory": "Cloth",
+   "fameToMax": 101729060
   },
   {
    "id": 57,
    "name": "Royal Cowl",
    "category": "Combat",
-   "subcategory": "Cloth"
+   "subcategory": "Cloth",
+   "fameToMax": 101729060
   },
   {
    "id": 58,
    "name": "Scholar Cowl",
    "category": "Combat",
-   "subcategory": "Cloth"
+   "subcategory": "Cloth",
+   "fameToMax": 101729060
   },
   {
    "id": 59,
    "name": "Cleric Cowl",
    "category": "Combat",
-   "subcategory": "Cloth"
+   "subcategory": "Cloth",
+   "fameToMax": 101729060
   },
   {
    "id": 60,
    "name": "Mage Cowl",
    "category": "Combat",
-   "subcategory": "Cloth"
+   "subcategory": "Cloth",
+   "fameToMax": 101729060
   },
   {
    "id": 61,
    "name": "Scholar Sandals",
    "category": "Combat",
-   "subcategory": "Cloth"
+   "subcategory": "Cloth",
+   "fameToMax": 14743573
   },
   {
    "id": 62,
    "name": "Sandals of Purity",
    "category": "Combat",
-   "subcategory": "Cloth"
+   "subcategory": "Cloth",
+   "fameToMax": 101729060
   },
   {
    "id": 63,
    "name": "Feyscale Sandals",
    "category": "Combat",
-   "subcategory": "Cloth"
+   "subcategory": "Cloth",
+   "fameToMax": 101729060
   },
   {
    "id": 64,
    "name": "Fiend Sandals",
    "category": "Combat",
-   "subcategory": "Cloth"
+   "subcategory": "Cloth",
+   "fameToMax": 101729060
   },
   {
    "id": 65,
    "name": "Druid Sandals",
    "category": "Combat",
-   "subcategory": "Cloth"
+   "subcategory": "Cloth",
+   "fameToMax": 101729060
   },
   {
    "id": 66,
    "name": "Cultist Sandals",
    "category": "Combat",
-   "subcategory": "Cloth"
+   "subcategory": "Cloth",
+   "fameToMax": 101729060
   },
   {
    "id": 67,
    "name": "Royal Sandals",
    "category": "Combat",
-   "subcategory": "Cloth"
+   "subcategory": "Cloth",
+   "fameToMax": 101729060
   },
   {
    "id": 68,
    "name": "Scholar Sandals",
    "category": "Combat",
-   "subcategory": "Cloth"
+   "subcategory": "Cloth",
+   "fameToMax": 101729060
   },
   {
    "id": 69,
    "name": "Cleric Sandals",
    "category": "Combat",
-   "subcategory": "Cloth"
+   "subcategory": "Cloth",
+   "fameToMax": 101729060
   },
   {
    "id": 70,
    "name": "Mage Sandals",
    "category": "Combat",
-   "subcategory": "Cloth"
+   "subcategory": "Cloth",
+   "fameToMax": 101729060
   },
   {
    "id": 71,
    "name": "Crossbow",
    "category": "Combat",
-   "subcategory": "Crossbows"
+   "subcategory": "Crossbows",
+   "fameToMax": 14743573
   },
   {
    "id": 72,
    "name": "Energy Shaper",
    "category": "Combat",
-   "subcategory": "Crossbows"
+   "subcategory": "Crossbows",
+   "fameToMax": 101729060
   },
   {
    "id": 73,
    "name": "Crossbow",
    "category": "Combat",
-   "subcategory": "Crossbows"
+   "subcategory": "Crossbows",
+   "fameToMax": 101729060
   },
   {
    "id": 74,
    "name": "Arclight Blasters",
    "category": "Combat",
-   "subcategory": "Crossbows"
+   "subcategory": "Crossbows",
+   "fameToMax": 101729060
   },
   {
    "id": 75,
    "name": "Boltcasters",
    "category": "Combat",
-   "subcategory": "Crossbows"
+   "subcategory": "Crossbows",
+   "fameToMax": 101729060
   },
   {
    "id": 76,
    "name": "Heavy Crossbow",
    "category": "Combat",
-   "subcategory": "Crossbows"
+   "subcategory": "Crossbows",
+   "fameToMax": 101729060
   },
   {
    "id": 77,
    "name": "Siegebow",
    "category": "Combat",
-   "subcategory": "Crossbows"
+   "subcategory": "Crossbows",
+   "fameToMax": 101729060
   },
   {
    "id": 78,
    "name": "Light Crossbow",
    "category": "Combat",
-   "subcategory": "Crossbows"
+   "subcategory": "Crossbows",
+   "fameToMax": 101729060
   },
   {
    "id": 79,
    "name": "Weeping Repeater",
    "category": "Combat",
-   "subcategory": "Crossbows"
+   "subcategory": "Crossbows",
+   "fameToMax": 101729060
   },
   {
    "id": 80,
    "name": "Cursed Staff",
    "category": "Combat",
-   "subcategory": "Cursedstaffs"
+   "subcategory": "Cursedstaffs",
+   "fameToMax": 14743573
   },
   {
    "id": 81,
    "name": "Shadowcaller",
    "category": "Combat",
-   "subcategory": "Cursedstaffs"
+   "subcategory": "Cursedstaffs",
+   "fameToMax": 101729060
   },
   {
    "id": 82,
    "name": "Rotcaller Staff",
    "category": "Combat",
-   "subcategory": "Cursedstaffs"
+   "subcategory": "Cursedstaffs",
+   "fameToMax": 101729060
   },
   {
    "id": 83,
    "name": "Cursed Staff",
    "category": "Combat",
-   "subcategory": "Cursedstaffs"
+   "subcategory": "Cursedstaffs",
+   "fameToMax": 101729060
   },
   {
    "id": 84,
    "name": "Demonic Staff",
    "category": "Combat",
-   "subcategory": "Cursedstaffs"
+   "subcategory": "Cursedstaffs",
+   "fameToMax": 101729060
   },
   {
    "id": 85,
    "name": "Great Cursed Staff",
    "category": "Combat",
-   "subcategory": "Cursedstaffs"
+   "subcategory": "Cursedstaffs",
+   "fameToMax": 101729060
   },
   {
    "id": 86,
    "name": "Cursed Skull",
    "category": "Combat",
-   "subcategory": "Cursedstaffs"
+   "subcategory": "Cursedstaffs",
+   "fameToMax": 101729060
   },
   {
    "id": 87,
    "name": "Damnation Staff",
    "category": "Combat",
-   "subcategory": "Cursedstaffs"
+   "subcategory": "Cursedstaffs",
+   "fameToMax": 101729060
   },
   {
    "id": 88,
    "name": "Lifecurse Staff",
    "category": "Combat",
-   "subcategory": "Cursedstaffs"
+   "subcategory": "Cursedstaffs",
+   "fameToMax": 101729060
   },
   {
    "id": 89,
    "name": "Dagger",
    "category": "Combat",
-   "subcategory": "Daggers"
+   "subcategory": "Daggers",
+   "fameToMax": 14743573
   },
   {
    "id": 90,
    "name": "Bridled Fury",
    "category": "Combat",
-   "subcategory": "Daggers"
+   "subcategory": "Daggers",
+   "fameToMax": 101729060
   },
   {
    "id": 91,
    "name": "Claws",
    "category": "Combat",
-   "subcategory": "Daggers"
+   "subcategory": "Daggers",
+   "fameToMax": 101729060
   },
   {
    "id": 92,
    "name": "Twin Slayers",
    "category": "Combat",
-   "subcategory": "Daggers"
+   "subcategory": "Daggers",
+   "fameToMax": 101729060
   },
   {
    "id": 93,
    "name": "Dagger",
    "category": "Combat",
-   "subcategory": "Daggers"
+   "subcategory": "Daggers",
+   "fameToMax": 101729060
   },
   {
    "id": 94,
    "name": "Demonfang",
    "category": "Combat",
-   "subcategory": "Daggers"
+   "subcategory": "Daggers",
+   "fameToMax": 101729060
   },
   {
    "id": 95,
    "name": "Bloodletter",
    "category": "Combat",
-   "subcategory": "Daggers"
+   "subcategory": "Daggers",
+   "fameToMax": 101729060
   },
   {
    "id": 96,
    "name": "Dagger Pair",
    "category": "Combat",
-   "subcategory": "Daggers"
+   "subcategory": "Daggers",
+   "fameToMax": 101729060
   },
   {
    "id": 97,
    "name": "Deathgivers",
    "category": "Combat",
-   "subcategory": "Daggers"
+   "subcategory": "Daggers",
+   "fameToMax": 101729060
   },
   {
    "id": 98,
    "name": "Fire Staff",
    "category": "Combat",
-   "subcategory": "Firestaffs"
+   "subcategory": "Firestaffs",
+   "fameToMax": 14743573
   },
   {
    "id": 99,
    "name": "Dawnsong",
    "category": "Combat",
-   "subcategory": "Firestaffs"
+   "subcategory": "Firestaffs",
+   "fameToMax": 101729060
   },
   {
    "id": 100,
    "name": "Flamewalker Staff",
    "category": "Combat",
-   "subcategory": "Firestaffs"
+   "subcategory": "Firestaffs",
+   "fameToMax": 101729060
   },
   {
    "id": 101,
    "name": "Fire Staff",
    "category": "Combat",
-   "subcategory": "Firestaffs"
+   "subcategory": "Firestaffs",
+   "fameToMax": 101729060
   },
   {
    "id": 102,
    "name": "Wrath",
    "category": "Combat",
-   "subcategory": "Firestaffs"
+   "subcategory": "Firestaffs",
+   "fameToMax": 101729060
   },
   {
    "id": 103,
    "name": "Brimstone Staff",
    "category": "Combat",
-   "subcategory": "Firestaffs"
+   "subcategory": "Firestaffs",
+   "fameToMax": 101729060
   },
   {
    "id": 104,
    "name": "Infernal Staff",
    "category": "Combat",
-   "subcategory": "Firestaffs"
+   "subcategory": "Firestaffs",
+   "fameToMax": 101729060
   },
   {
    "id": 105,
    "name": "Wildfire Staff",
    "category": "Combat",
-   "subcategory": "Firestaffs"
+   "subcategory": "Firestaffs",
+   "fameToMax": 101729060
   },
   {
    "id": 106,
    "name": "Blazing Staff",
    "category": "Combat",
-   "subcategory": "Firestaffs"
+   "subcategory": "Firestaffs",
+   "fameToMax": 101729060
   },
   {
    "id": 107,
    "name": "Frost Staff",
    "category": "Combat",
-   "subcategory": "Froststaffs"
+   "subcategory": "Froststaffs",
+   "fameToMax": 14743573
   },
   {
    "id": 108,
    "name": "Chillhowl",
    "category": "Combat",
-   "subcategory": "Froststaffs"
+   "subcategory": "Froststaffs",
+   "fameToMax": 101729060
   },
   {
    "id": 109,
    "name": "Arctic Staff",
    "category": "Combat",
-   "subcategory": "Froststaffs"
+   "subcategory": "Froststaffs",
+   "fameToMax": 101729060
   },
   {
    "id": 110,
    "name": "Frost Staff",
    "category": "Combat",
-   "subcategory": "Froststaffs"
+   "subcategory": "Froststaffs",
+   "fameToMax": 101729060
   },
   {
    "id": 111,
    "name": "Glacial Staff",
    "category": "Combat",
-   "subcategory": "Froststaffs"
+   "subcategory": "Froststaffs",
+   "fameToMax": 101729060
   },
   {
    "id": 112,
    "name": "Great Frost Staff",
    "category": "Combat",
-   "subcategory": "Froststaffs"
+   "subcategory": "Froststaffs",
+   "fameToMax": 101729060
   },
   {
    "id": 113,
    "name": "Icicle Staff",
    "category": "Combat",
-   "subcategory": "Froststaffs"
+   "subcategory": "Froststaffs",
+   "fameToMax": 101729060
   },
   {
    "id": 114,
    "name": "Hoarfrost Staff",
    "category": "Combat",
-   "subcategory": "Froststaffs"
+   "subcategory": "Froststaffs",
+   "fameToMax": 101729060
   },
   {
    "id": 115,
    "name": "Permafrost Prism",
    "category": "Combat",
-   "subcategory": "Froststaffs"
+   "subcategory": "Froststaffs",
+   "fameToMax": 101729060
   },
   {
    "id": 116,
    "name": "Hammer",
    "category": "Combat",
-   "subcategory": "Hammers"
+   "subcategory": "Hammers",
+   "fameToMax": 14743573
   },
   {
    "id": 117,
    "name": "Hand of Justice",
    "category": "Combat",
-   "subcategory": "Hammers"
+   "subcategory": "Hammers",
+   "fameToMax": 101729060
   },
   {
    "id": 118,
    "name": "Truebolt Hammer",
    "category": "Combat",
-   "subcategory": "Hammers"
+   "subcategory": "Hammers",
+   "fameToMax": 101729060
   },
   {
    "id": 119,
    "name": "Great Hammer",
    "category": "Combat",
-   "subcategory": "Hammers"
+   "subcategory": "Hammers",
+   "fameToMax": 101729060
   },
   {
    "id": 120,
    "name": "Hammer",
    "category": "Combat",
-   "subcategory": "Hammers"
+   "subcategory": "Hammers",
+   "fameToMax": 101729060
   },
   {
    "id": 121,
    "name": "Forge Hammers",
    "category": "Combat",
-   "subcategory": "Hammers"
+   "subcategory": "Hammers",
+   "fameToMax": 101729060
   },
   {
    "id": 122,
    "name": "Grovekeeper",
    "category": "Combat",
-   "subcategory": "Hammers"
+   "subcategory": "Hammers",
+   "fameToMax": 101729060
   },
   {
    "id": 123,
    "name": "Polehammer",
    "category": "Combat",
-   "subcategory": "Hammers"
+   "subcategory": "Hammers",
+   "fameToMax": 101729060
   },
   {
    "id": 124,
    "name": "Tombhammer",
    "category": "Combat",
-   "subcategory": "Hammers"
+   "subcategory": "Hammers",
+   "fameToMax": 101729060
   },
   {
    "id": 125,
    "name": "Holy Staff",
    "category": "Combat",
-   "subcategory": "Holystaffs"
+   "subcategory": "Holystaffs",
+   "fameToMax": 14743573
   },
   {
    "id": 126,
    "name": "Hallowfall",
    "category": "Combat",
-   "subcategory": "Holystaffs"
+   "subcategory": "Holystaffs",
+   "fameToMax": 101729060
   },
   {
    "id": 127,
    "name": "Exalted Staff",
    "category": "Combat",
-   "subcategory": "Holystaffs"
+   "subcategory": "Holystaffs",
+   "fameToMax": 101729060
   },
   {
    "id": 128,
    "name": "Divine Staff",
    "category": "Combat",
-   "subcategory": "Holystaffs"
+   "subcategory": "Holystaffs",
+   "fameToMax": 101729060
   },
   {
    "id": 129,
    "name": "Great Holy Staff",
    "category": "Combat",
-   "subcategory": "Holystaffs"
+   "subcategory": "Holystaffs",
+   "fameToMax": 101729060
   },
   {
    "id": 130,
    "name": "Fallen Staff",
    "category": "Combat",
-   "subcategory": "Holystaffs"
+   "subcategory": "Holystaffs",
+   "fameToMax": 101729060
   },
   {
    "id": 131,
    "name": "Holy Staff",
    "category": "Combat",
-   "subcategory": "Holystaffs"
+   "subcategory": "Holystaffs",
+   "fameToMax": 101729060
   },
   {
    "id": 132,
    "name": "Lifetouch Staff",
    "category": "Combat",
-   "subcategory": "Holystaffs"
+   "subcategory": "Holystaffs",
+   "fameToMax": 101729060
   },
   {
    "id": 133,
    "name": "Redemption Staff",
    "category": "Combat",
-   "subcategory": "Holystaffs"
+   "subcategory": "Holystaffs",
+   "fameToMax": 101729060
   },
   {
    "id": 134,
-   "name": "Combat Hunter",
+   "name": "Hunter",
    "category": "Combat",
    "subcategory": "Hunter"
   },
@@ -815,55 +942,64 @@
    "id": 135,
    "name": "Brawler Gloves",
    "category": "Combat",
-   "subcategory": "Knuckles"
+   "subcategory": "Knuckles",
+   "fameToMax": 14743573
   },
   {
    "id": 136,
    "name": "Fists of Avalon",
    "category": "Combat",
-   "subcategory": "Knuckles"
+   "subcategory": "Knuckles",
+   "fameToMax": 101729060
   },
   {
    "id": 137,
    "name": "Forcepulse Bracers",
    "category": "Combat",
-   "subcategory": "Knuckles"
+   "subcategory": "Knuckles",
+   "fameToMax": 101729060
   },
   {
    "id": 138,
    "name": "Hellfire Hands",
    "category": "Combat",
-   "subcategory": "Knuckles"
+   "subcategory": "Knuckles",
+   "fameToMax": 101729060
   },
   {
    "id": 139,
    "name": "Ursine Maulers",
    "category": "Combat",
-   "subcategory": "Knuckles"
+   "subcategory": "Knuckles",
+   "fameToMax": 101729060
   },
   {
    "id": 140,
    "name": "Ravenstrike Cestus",
    "category": "Combat",
-   "subcategory": "Knuckles"
+   "subcategory": "Knuckles",
+   "fameToMax": 101729060
   },
   {
    "id": 141,
    "name": "Brawler Gloves",
    "category": "Combat",
-   "subcategory": "Knuckles"
+   "subcategory": "Knuckles",
+   "fameToMax": 101729060
   },
   {
    "id": 142,
    "name": "Battle Bracers",
    "category": "Combat",
-   "subcategory": "Knuckles"
+   "subcategory": "Knuckles",
+   "fameToMax": 101729060
   },
   {
    "id": 143,
    "name": "Spiked Gauntlets",
    "category": "Combat",
-   "subcategory": "Knuckles"
+   "subcategory": "Knuckles",
+   "fameToMax": 101729060
   },
   {
    "id": 144,
@@ -875,235 +1011,274 @@
    "id": 145,
    "name": "Mercenary Jacket",
    "category": "Combat",
-   "subcategory": "Leather"
+   "subcategory": "Leather",
+   "fameToMax": 14743573
   },
   {
    "id": 146,
    "name": "Jacket of Tenacity",
    "category": "Combat",
-   "subcategory": "Leather"
+   "subcategory": "Leather",
+   "fameToMax": 101729060
   },
   {
    "id": 147,
    "name": "Mistwalker Jacket",
    "category": "Combat",
-   "subcategory": "Leather"
+   "subcategory": "Leather",
+   "fameToMax": 101729060
   },
   {
    "id": 148,
    "name": "Hellion Jacket",
    "category": "Combat",
-   "subcategory": "Leather"
+   "subcategory": "Leather",
+   "fameToMax": 101729060
   },
   {
    "id": 149,
    "name": "Stalker Jacket",
    "category": "Combat",
-   "subcategory": "Leather"
+   "subcategory": "Leather",
+   "fameToMax": 101729060
   },
   {
    "id": 150,
    "name": "Royal Jacket",
    "category": "Combat",
-   "subcategory": "Leather"
+   "subcategory": "Leather",
+   "fameToMax": 101729060
   },
   {
    "id": 151,
    "name": "Mercenary Jacket",
    "category": "Combat",
-   "subcategory": "Leather"
+   "subcategory": "Leather",
+   "fameToMax": 101729060
   },
   {
    "id": 152,
    "name": "Hunter Jacket",
    "category": "Combat",
-   "subcategory": "Leather"
+   "subcategory": "Leather",
+   "fameToMax": 101729060
   },
   {
    "id": 153,
    "name": "Assassin Jacket",
    "category": "Combat",
-   "subcategory": "Leather"
+   "subcategory": "Leather",
+   "fameToMax": 101729060
   },
   {
    "id": 154,
    "name": "Specter Jacket",
    "category": "Combat",
-   "subcategory": "Leather"
+   "subcategory": "Leather",
+   "fameToMax": 101729060
   },
   {
    "id": 155,
    "name": "Mercenary Hood",
    "category": "Combat",
-   "subcategory": "Leather"
+   "subcategory": "Leather",
+   "fameToMax": 14743573
   },
   {
    "id": 156,
    "name": "Hood of Tenacity",
    "category": "Combat",
-   "subcategory": "Leather"
+   "subcategory": "Leather",
+   "fameToMax": 101729060
   },
   {
    "id": 157,
    "name": "Mistwalker Hood",
    "category": "Combat",
-   "subcategory": "Leather"
+   "subcategory": "Leather",
+   "fameToMax": 101729060
   },
   {
    "id": 158,
    "name": "Hellion Hood",
    "category": "Combat",
-   "subcategory": "Leather"
+   "subcategory": "Leather",
+   "fameToMax": 101729060
   },
   {
    "id": 159,
    "name": "Stalker Hood",
    "category": "Combat",
-   "subcategory": "Leather"
+   "subcategory": "Leather",
+   "fameToMax": 101729060
   },
   {
    "id": 160,
    "name": "Royal Hood",
    "category": "Combat",
-   "subcategory": "Leather"
+   "subcategory": "Leather",
+   "fameToMax": 101729060
   },
   {
    "id": 161,
    "name": "Mercenary Hood",
    "category": "Combat",
-   "subcategory": "Leather"
+   "subcategory": "Leather",
+   "fameToMax": 101729060
   },
   {
    "id": 162,
    "name": "Hunter Hood",
    "category": "Combat",
-   "subcategory": "Leather"
+   "subcategory": "Leather",
+   "fameToMax": 101729060
   },
   {
    "id": 163,
    "name": "Assassin Hood",
    "category": "Combat",
-   "subcategory": "Leather"
+   "subcategory": "Leather",
+   "fameToMax": 101729060
   },
   {
    "id": 164,
    "name": "Specter Hood",
    "category": "Combat",
-   "subcategory": "Leather"
+   "subcategory": "Leather",
+   "fameToMax": 101729060
   },
   {
    "id": 165,
    "name": "Mercenary Shoes",
    "category": "Combat",
-   "subcategory": "Leather"
+   "subcategory": "Leather",
+   "fameToMax": 14743573
   },
   {
    "id": 166,
    "name": "Shoes of Tenacity",
    "category": "Combat",
-   "subcategory": "Leather"
+   "subcategory": "Leather",
+   "fameToMax": 101729060
   },
   {
    "id": 167,
    "name": "Mistwalker Shoes",
    "category": "Combat",
-   "subcategory": "Leather"
+   "subcategory": "Leather",
+   "fameToMax": 101729060
   },
   {
    "id": 168,
    "name": "Hellion Shoes",
    "category": "Combat",
-   "subcategory": "Leather"
+   "subcategory": "Leather",
+   "fameToMax": 101729060
   },
   {
    "id": 169,
    "name": "Stalker Shoes",
    "category": "Combat",
-   "subcategory": "Leather"
+   "subcategory": "Leather",
+   "fameToMax": 101729060
   },
   {
    "id": 170,
    "name": "Royal Shoes",
    "category": "Combat",
-   "subcategory": "Leather"
+   "subcategory": "Leather",
+   "fameToMax": 101729060
   },
   {
    "id": 171,
    "name": "Mercenary Shoes",
    "category": "Combat",
-   "subcategory": "Leather"
+   "subcategory": "Leather",
+   "fameToMax": 101729060
   },
   {
    "id": 172,
    "name": "Hunter Shoes",
    "category": "Combat",
-   "subcategory": "Leather"
+   "subcategory": "Leather",
+   "fameToMax": 101729060
   },
   {
    "id": 173,
    "name": "Assassin Shoes",
    "category": "Combat",
-   "subcategory": "Leather"
+   "subcategory": "Leather",
+   "fameToMax": 101729060
   },
   {
    "id": 174,
    "name": "Specter Shoes",
    "category": "Combat",
-   "subcategory": "Leather"
+   "subcategory": "Leather",
+   "fameToMax": 101729060
   },
   {
    "id": 175,
    "name": "Mace",
    "category": "Combat",
-   "subcategory": "Maces"
+   "subcategory": "Maces",
+   "fameToMax": 14743573
   },
   {
    "id": 176,
    "name": "Oathkeepers",
    "category": "Combat",
-   "subcategory": "Maces"
+   "subcategory": "Maces",
+   "fameToMax": 101729060
   },
   {
    "id": 177,
    "name": "Dreadstorm Monarch",
    "category": "Combat",
-   "subcategory": "Maces"
+   "subcategory": "Maces",
+   "fameToMax": 101729060
   },
   {
    "id": 178,
    "name": "Morning Star",
    "category": "Combat",
-   "subcategory": "Maces"
+   "subcategory": "Maces",
+   "fameToMax": 101729060
   },
   {
    "id": 179,
    "name": "Heavy Mace",
    "category": "Combat",
-   "subcategory": "Maces"
+   "subcategory": "Maces",
+   "fameToMax": 101729060
   },
   {
    "id": 180,
    "name": "Incubus Mace",
    "category": "Combat",
-   "subcategory": "Maces"
+   "subcategory": "Maces",
+   "fameToMax": 101729060
   },
   {
    "id": 181,
    "name": "Bedrock Mace",
    "category": "Combat",
-   "subcategory": "Maces"
+   "subcategory": "Maces",
+   "fameToMax": 101729060
   },
   {
    "id": 182,
    "name": "Mace",
    "category": "Combat",
-   "subcategory": "Maces"
+   "subcategory": "Maces",
+   "fameToMax": 101729060
   },
   {
    "id": 183,
    "name": "Camlann Mace",
    "category": "Combat",
-   "subcategory": "Maces"
+   "subcategory": "Maces",
+   "fameToMax": 101729060
   },
   {
    "id": 184,
@@ -1115,55 +1290,64 @@
    "id": 185,
    "name": "Nature Staff",
    "category": "Combat",
-   "subcategory": "Naturestaffs"
+   "subcategory": "Naturestaffs",
+   "fameToMax": 14743573
   },
   {
    "id": 186,
    "name": "Ironroot Staff",
    "category": "Combat",
-   "subcategory": "Naturestaffs"
+   "subcategory": "Naturestaffs",
+   "fameToMax": 101729060
   },
   {
    "id": 187,
    "name": "Forgebark Staff",
    "category": "Combat",
-   "subcategory": "Naturestaffs"
+   "subcategory": "Naturestaffs",
+   "fameToMax": 101729060
   },
   {
    "id": 188,
    "name": "Great Nature Staff",
    "category": "Combat",
-   "subcategory": "Naturestaffs"
+   "subcategory": "Naturestaffs",
+   "fameToMax": 101729060
   },
   {
    "id": 189,
    "name": "Blight Staff",
    "category": "Combat",
-   "subcategory": "Naturestaffs"
+   "subcategory": "Naturestaffs",
+   "fameToMax": 101729060
   },
   {
    "id": 190,
    "name": "Druidic Staff",
    "category": "Combat",
-   "subcategory": "Naturestaffs"
+   "subcategory": "Naturestaffs",
+   "fameToMax": 101729060
   },
   {
    "id": 191,
    "name": "Rampant Staff",
    "category": "Combat",
-   "subcategory": "Naturestaffs"
+   "subcategory": "Naturestaffs",
+   "fameToMax": 101729060
   },
   {
    "id": 192,
    "name": "Nature Staff",
    "category": "Combat",
-   "subcategory": "Naturestaffs"
+   "subcategory": "Naturestaffs",
+   "fameToMax": 101729060
   },
   {
    "id": 193,
    "name": "Wild Staff",
    "category": "Combat",
-   "subcategory": "Naturestaffs"
+   "subcategory": "Naturestaffs",
+   "fameToMax": 101729060
   },
   {
    "id": 194,
@@ -1175,485 +1359,565 @@
    "id": 195,
    "name": "Soldier Armor",
    "category": "Combat",
-   "subcategory": "Plate"
+   "subcategory": "Plate",
+   "fameToMax": 14743573
   },
   {
    "id": 196,
    "name": "Armor of Valor",
    "category": "Combat",
-   "subcategory": "Plate"
+   "subcategory": "Plate",
+   "fameToMax": 101729060
   },
   {
    "id": 197,
    "name": "Duskweaver Armor",
    "category": "Combat",
-   "subcategory": "Plate"
+   "subcategory": "Plate",
+   "fameToMax": 101729060
   },
   {
    "id": 198,
    "name": "Demon Armor",
    "category": "Combat",
-   "subcategory": "Plate"
+   "subcategory": "Plate",
+   "fameToMax": 101729060
   },
   {
    "id": 199,
    "name": "Judicator Armor",
    "category": "Combat",
-   "subcategory": "Plate"
+   "subcategory": "Plate",
+   "fameToMax": 101729060
   },
   {
    "id": 200,
    "name": "Royal Armor",
    "category": "Combat",
-   "subcategory": "Plate"
+   "subcategory": "Plate",
+   "fameToMax": 101729060
   },
   {
    "id": 201,
    "name": "Soldier Armor",
    "category": "Combat",
-   "subcategory": "Plate"
+   "subcategory": "Plate",
+   "fameToMax": 101729060
   },
   {
    "id": 202,
    "name": "Knight Armor",
    "category": "Combat",
-   "subcategory": "Plate"
+   "subcategory": "Plate",
+   "fameToMax": 101729060
   },
   {
    "id": 203,
    "name": "Guardian Armor",
    "category": "Combat",
-   "subcategory": "Plate"
+   "subcategory": "Plate",
+   "fameToMax": 101729060
   },
   {
    "id": 204,
    "name": "Graveguard Armor",
    "category": "Combat",
-   "subcategory": "Plate"
+   "subcategory": "Plate",
+   "fameToMax": 101729060
   },
   {
    "id": 205,
    "name": "Soldier Helmet",
    "category": "Combat",
-   "subcategory": "Plate"
+   "subcategory": "Plate",
+   "fameToMax": 14743573
   },
   {
    "id": 206,
    "name": "Helmet of Valor",
    "category": "Combat",
-   "subcategory": "Plate"
+   "subcategory": "Plate",
+   "fameToMax": 101729060
   },
   {
    "id": 207,
    "name": "Duskweaver Helmet",
    "category": "Combat",
-   "subcategory": "Plate"
+   "subcategory": "Plate",
+   "fameToMax": 101729060
   },
   {
    "id": 208,
    "name": "Demon Helmet",
    "category": "Combat",
-   "subcategory": "Plate"
+   "subcategory": "Plate",
+   "fameToMax": 101729060
   },
   {
    "id": 209,
    "name": "Judicator Helmet",
    "category": "Combat",
-   "subcategory": "Plate"
+   "subcategory": "Plate",
+   "fameToMax": 101729060
   },
   {
    "id": 210,
    "name": "Royal Helmet",
    "category": "Combat",
-   "subcategory": "Plate"
+   "subcategory": "Plate",
+   "fameToMax": 101729060
   },
   {
    "id": 211,
    "name": "Soldier Helmet",
    "category": "Combat",
-   "subcategory": "Plate"
+   "subcategory": "Plate",
+   "fameToMax": 101729060
   },
   {
    "id": 212,
    "name": "Knight Helmet",
    "category": "Combat",
-   "subcategory": "Plate"
+   "subcategory": "Plate",
+   "fameToMax": 101729060
   },
   {
    "id": 213,
    "name": "Guardian Helmet",
    "category": "Combat",
-   "subcategory": "Plate"
+   "subcategory": "Plate",
+   "fameToMax": 101729060
   },
   {
    "id": 214,
    "name": "Graveguard Helmet",
    "category": "Combat",
-   "subcategory": "Plate"
+   "subcategory": "Plate",
+   "fameToMax": 101729060
   },
   {
    "id": 215,
    "name": "Soldier Boots",
    "category": "Combat",
-   "subcategory": "Plate"
+   "subcategory": "Plate",
+   "fameToMax": 14743573
   },
   {
    "id": 216,
    "name": "Boots of Valor",
    "category": "Combat",
-   "subcategory": "Plate"
+   "subcategory": "Plate",
+   "fameToMax": 101729060
   },
   {
    "id": 217,
    "name": "Duskweaver Boots",
    "category": "Combat",
-   "subcategory": "Plate"
+   "subcategory": "Plate",
+   "fameToMax": 101729060
   },
   {
    "id": 218,
    "name": "Demon Boots",
    "category": "Combat",
-   "subcategory": "Plate"
+   "subcategory": "Plate",
+   "fameToMax": 101729060
   },
   {
    "id": 219,
    "name": "Judicator Boots",
    "category": "Combat",
-   "subcategory": "Plate"
+   "subcategory": "Plate",
+   "fameToMax": 101729060
   },
   {
    "id": 220,
    "name": "Royal Boots",
    "category": "Combat",
-   "subcategory": "Plate"
+   "subcategory": "Plate",
+   "fameToMax": 101729060
   },
   {
    "id": 221,
    "name": "Soldier Boots",
    "category": "Combat",
-   "subcategory": "Plate"
+   "subcategory": "Plate",
+   "fameToMax": 101729060
   },
   {
    "id": 222,
    "name": "Knight Boots",
    "category": "Combat",
-   "subcategory": "Plate"
+   "subcategory": "Plate",
+   "fameToMax": 101729060
   },
   {
    "id": 223,
    "name": "Guardian Boots",
    "category": "Combat",
-   "subcategory": "Plate"
+   "subcategory": "Plate",
+   "fameToMax": 101729060
   },
   {
    "id": 224,
    "name": "Graveguard Boots",
    "category": "Combat",
-   "subcategory": "Plate"
+   "subcategory": "Plate",
+   "fameToMax": 101729060
   },
   {
    "id": 225,
    "name": "Quarterstaff",
    "category": "Combat",
-   "subcategory": "Quarterstaffs"
+   "subcategory": "Quarterstaffs",
+   "fameToMax": 14743573
   },
   {
    "id": 226,
    "name": "Grailseeker",
    "category": "Combat",
-   "subcategory": "Quarterstaffs"
+   "subcategory": "Quarterstaffs",
+   "fameToMax": 101729060
   },
   {
    "id": 227,
    "name": "Phantom Twinblade",
    "category": "Combat",
-   "subcategory": "Quarterstaffs"
+   "subcategory": "Quarterstaffs",
+   "fameToMax": 101729060
   },
   {
    "id": 228,
    "name": "Double Bladed Staff",
    "category": "Combat",
-   "subcategory": "Quarterstaffs"
+   "subcategory": "Quarterstaffs",
+   "fameToMax": 101729060
   },
   {
    "id": 229,
    "name": "Soulscythe",
    "category": "Combat",
-   "subcategory": "Quarterstaffs"
+   "subcategory": "Quarterstaffs",
+   "fameToMax": 101729060
   },
   {
    "id": 230,
    "name": "Iron-clad Staff",
    "category": "Combat",
-   "subcategory": "Quarterstaffs"
+   "subcategory": "Quarterstaffs",
+   "fameToMax": 101729060
   },
   {
    "id": 231,
    "name": "Staff of Balance",
    "category": "Combat",
-   "subcategory": "Quarterstaffs"
+   "subcategory": "Quarterstaffs",
+   "fameToMax": 101729060
   },
   {
    "id": 232,
    "name": "Black Monk Staff",
    "category": "Combat",
-   "subcategory": "Quarterstaffs"
+   "subcategory": "Quarterstaffs",
+   "fameToMax": 101729060
   },
   {
    "id": 233,
    "name": "Quarterstaff",
    "category": "Combat",
-   "subcategory": "Quarterstaffs"
+   "subcategory": "Quarterstaffs",
+   "fameToMax": 101729060
   },
   {
    "id": 234,
    "name": "Prowling Staff",
    "category": "Combat",
-   "subcategory": "Shapeshifter"
+   "subcategory": "Shapeshifter",
+   "fameToMax": 14743573
   },
   {
    "id": 235,
    "name": "Lightcaller",
    "category": "Combat",
-   "subcategory": "Shapeshifter"
+   "subcategory": "Shapeshifter",
+   "fameToMax": 101729060
   },
   {
    "id": 236,
    "name": "Stillgaze Staff",
    "category": "Combat",
-   "subcategory": "Shapeshifter"
+   "subcategory": "Shapeshifter",
+   "fameToMax": 101729060
   },
   {
    "id": 237,
    "name": "Hellspawn Staff",
    "category": "Combat",
-   "subcategory": "Shapeshifter"
+   "subcategory": "Shapeshifter",
+   "fameToMax": 101729060
   },
   {
    "id": 238,
    "name": "Earthrune Staff",
    "category": "Combat",
-   "subcategory": "Shapeshifter"
+   "subcategory": "Shapeshifter",
+   "fameToMax": 101729060
   },
   {
    "id": 239,
    "name": "Bloodmoon Staff",
    "category": "Combat",
-   "subcategory": "Shapeshifter"
+   "subcategory": "Shapeshifter",
+   "fameToMax": 101729060
   },
   {
    "id": 240,
    "name": "Prowling Staff",
    "category": "Combat",
-   "subcategory": "Shapeshifter"
+   "subcategory": "Shapeshifter",
+   "fameToMax": 101729060
   },
   {
    "id": 241,
    "name": "Rootbound Staff",
    "category": "Combat",
-   "subcategory": "Shapeshifter"
+   "subcategory": "Shapeshifter",
+   "fameToMax": 101729060
   },
   {
    "id": 242,
    "name": "Primal Staff",
    "category": "Combat",
-   "subcategory": "Shapeshifter"
+   "subcategory": "Shapeshifter",
+   "fameToMax": 101729060
   },
   {
    "id": 243,
    "name": "Shield",
    "category": "Combat",
-   "subcategory": "Shields"
+   "subcategory": "Shields",
+   "fameToMax": 14743573
   },
   {
    "id": 244,
    "name": "Astral Aegis",
    "category": "Combat",
-   "subcategory": "Shields"
+   "subcategory": "Shields",
+   "fameToMax": 101729060
   },
   {
    "id": 245,
    "name": "Unbreakable Ward",
    "category": "Combat",
-   "subcategory": "Shields"
+   "subcategory": "Shields",
+   "fameToMax": 101729060
   },
   {
    "id": 246,
    "name": "Caitiff Shield",
    "category": "Combat",
-   "subcategory": "Shields"
+   "subcategory": "Shields",
+   "fameToMax": 101729060
   },
   {
    "id": 247,
    "name": "Facebreaker",
    "category": "Combat",
-   "subcategory": "Shields"
+   "subcategory": "Shields",
+   "fameToMax": 101729060
   },
   {
    "id": 248,
    "name": "Shield",
    "category": "Combat",
-   "subcategory": "Shields"
+   "subcategory": "Shields",
+   "fameToMax": 101729060
   },
   {
    "id": 249,
    "name": "Sarcophagus",
    "category": "Combat",
-   "subcategory": "Shields"
+   "subcategory": "Shields",
+   "fameToMax": 101729060
   },
   {
    "id": 250,
    "name": "Spear",
    "category": "Combat",
-   "subcategory": "Spears"
+   "subcategory": "Spears",
+   "fameToMax": 14743573
   },
   {
    "id": 251,
    "name": "Daybreaker",
    "category": "Combat",
-   "subcategory": "Spears"
+   "subcategory": "Spears",
+   "fameToMax": 101729060
   },
   {
    "id": 252,
    "name": "Rift Glaive",
    "category": "Combat",
-   "subcategory": "Spears"
+   "subcategory": "Spears",
+   "fameToMax": 101729060
   },
   {
    "id": 253,
    "name": "Glaive",
    "category": "Combat",
-   "subcategory": "Spears"
+   "subcategory": "Spears",
+   "fameToMax": 101729060
   },
   {
    "id": 254,
    "name": "Pike",
    "category": "Combat",
-   "subcategory": "Spears"
+   "subcategory": "Spears",
+   "fameToMax": 101729060
   },
   {
    "id": 255,
    "name": "Spirithunter",
    "category": "Combat",
-   "subcategory": "Spears"
+   "subcategory": "Spears",
+   "fameToMax": 101729060
   },
   {
    "id": 256,
    "name": "Heron Spear",
    "category": "Combat",
-   "subcategory": "Spears"
+   "subcategory": "Spears",
+   "fameToMax": 101729060
   },
   {
    "id": 257,
    "name": "Spear",
    "category": "Combat",
-   "subcategory": "Spears"
+   "subcategory": "Spears",
+   "fameToMax": 101729060
   },
   {
    "id": 258,
    "name": "Trinity Spear",
    "category": "Combat",
-   "subcategory": "Spears"
+   "subcategory": "Spears",
+   "fameToMax": 101729060
   },
   {
    "id": 259,
    "name": "Broadsword",
    "category": "Combat",
-   "subcategory": "Swords"
+   "subcategory": "Swords",
+   "fameToMax": 14743573
   },
   {
    "id": 260,
    "name": "Kingmaker",
    "category": "Combat",
-   "subcategory": "Swords"
+   "subcategory": "Swords",
+   "fameToMax": 101729060
   },
   {
    "id": 261,
    "name": "Claymore",
    "category": "Combat",
-   "subcategory": "Swords"
+   "subcategory": "Swords",
+   "fameToMax": 101729060
   },
   {
    "id": 262,
    "name": "Infinity Blade",
    "category": "Combat",
-   "subcategory": "Swords"
+   "subcategory": "Swords",
+   "fameToMax": 101729060
   },
   {
    "id": 263,
    "name": "Dual Swords",
    "category": "Combat",
-   "subcategory": "Swords"
+   "subcategory": "Swords",
+   "fameToMax": 101729060
   },
   {
    "id": 264,
    "name": "Carving Sword",
    "category": "Combat",
-   "subcategory": "Swords"
+   "subcategory": "Swords",
+   "fameToMax": 101729060
   },
   {
    "id": 265,
    "name": "Clarent Blade",
    "category": "Combat",
-   "subcategory": "Swords"
+   "subcategory": "Swords",
+   "fameToMax": 101729060
   },
   {
    "id": 266,
    "name": "Broadsword",
    "category": "Combat",
-   "subcategory": "Swords"
+   "subcategory": "Swords",
+   "fameToMax": 101729060
   },
   {
    "id": 267,
    "name": "Galatine Pair",
    "category": "Combat",
-   "subcategory": "Swords"
+   "subcategory": "Swords",
+   "fameToMax": 101729060
   },
   {
    "id": 268,
    "name": "Torch",
    "category": "Combat",
-   "subcategory": "Torches"
+   "subcategory": "Torches",
+   "fameToMax": 14743573
   },
   {
    "id": 269,
    "name": "Sacred Scepter",
    "category": "Combat",
-   "subcategory": "Torches"
+   "subcategory": "Torches",
+   "fameToMax": 101729060
   },
   {
    "id": 270,
    "name": "Blueflame Torch",
    "category": "Combat",
-   "subcategory": "Torches"
+   "subcategory": "Torches",
+   "fameToMax": 101729060
   },
   {
    "id": 271,
    "name": "Leering Cane",
    "category": "Combat",
-   "subcategory": "Torches"
+   "subcategory": "Torches",
+   "fameToMax": 101729060
   },
   {
    "id": 272,
    "name": "Mistcaller",
    "category": "Combat",
-   "subcategory": "Torches"
+   "subcategory": "Torches",
+   "fameToMax": 101729060
   },
   {
    "id": 273,
    "name": "Torch",
    "category": "Combat",
-   "subcategory": "Torches"
+   "subcategory": "Torches",
+   "fameToMax": 101729060
   },
   {
    "id": 274,
    "name": "Cryptcandle",
    "category": "Combat",
-   "subcategory": "Torches"
+   "subcategory": "Torches",
+   "fameToMax": 101729060
   },
   {
    "id": 275,
-   "name": "Combat Trainee",
+   "name": "Trainee",
    "category": "Combat",
    "subcategory": "Trainee"
   },
@@ -1665,2457 +1929,2851 @@
   },
   {
    "id": 277,
-   "name": "Arcane Staff",
+   "name": "Arcanestaffs",
    "category": "Crafting",
-   "subcategory": "Arcanestaffs"
+   "subcategory": "Arcanestaffs",
+   "fameToMax": 12879472
   },
   {
    "id": 278,
-   "name": "Arcane Staff",
+   "name": "Arcanestaffs Arcane",
    "category": "Crafting",
-   "subcategory": "Arcanestaffs"
+   "subcategory": "Arcanestaffs",
+   "fameToMax": 25758944
   },
   {
    "id": 279,
-   "name": "Evensong",
+   "name": "Arcanestaffs Avalon",
    "category": "Crafting",
-   "subcategory": "Arcanestaffs"
+   "subcategory": "Arcanestaffs",
+   "fameToMax": 25758944
   },
   {
    "id": 280,
-   "name": "Astral Staff",
+   "name": "Arcanestaffs Crystal",
    "category": "Crafting",
-   "subcategory": "Arcanestaffs"
+   "subcategory": "Arcanestaffs",
+   "fameToMax": 25758944
   },
   {
    "id": 281,
-   "name": "Enigmatic Staff",
+   "name": "Arcanestaffs Enigmatic",
    "category": "Crafting",
-   "subcategory": "Arcanestaffs"
+   "subcategory": "Arcanestaffs",
+   "fameToMax": 25758944
   },
   {
    "id": 282,
-   "name": "Great Arcane Staff",
+   "name": "Arcanestaffs Great",
    "category": "Crafting",
-   "subcategory": "Arcanestaffs"
+   "subcategory": "Arcanestaffs",
+   "fameToMax": 25758944
   },
   {
    "id": 283,
-   "name": "Occult Staff",
+   "name": "Arcanestaffs Hell",
    "category": "Crafting",
-   "subcategory": "Arcanestaffs"
+   "subcategory": "Arcanestaffs",
+   "fameToMax": 25758944
   },
   {
    "id": 284,
-   "name": "Malevolent Locus",
+   "name": "Arcanestaffs Morgana",
    "category": "Crafting",
-   "subcategory": "Arcanestaffs"
+   "subcategory": "Arcanestaffs",
+   "fameToMax": 25758944
   },
   {
    "id": 285,
-   "name": "Witchwork Staff",
+   "name": "Arcanestaffs Undead",
    "category": "Crafting",
-   "subcategory": "Arcanestaffs"
+   "subcategory": "Arcanestaffs",
+   "fameToMax": 25758944
   },
   {
    "id": 286,
-   "name": "Battleaxe",
+   "name": "Axes",
    "category": "Crafting",
-   "subcategory": "Axes"
+   "subcategory": "Axes",
+   "fameToMax": 12879472
   },
   {
    "id": 287,
-   "name": "Realmbreaker",
+   "name": "Axes Avalon",
    "category": "Crafting",
-   "subcategory": "Axes"
+   "subcategory": "Axes",
+   "fameToMax": 25758944
   },
   {
    "id": 288,
-   "name": "Battleaxe",
+   "name": "Axes Axe",
    "category": "Crafting",
-   "subcategory": "Axes"
+   "subcategory": "Axes",
+   "fameToMax": 25758944
   },
   {
    "id": 289,
-   "name": "Crystal Reaper",
+   "name": "Axes Crystal",
    "category": "Crafting",
-   "subcategory": "Axes"
+   "subcategory": "Axes",
+   "fameToMax": 25758944
   },
   {
    "id": 290,
-   "name": "The Hand of Khor",
+   "name": "Axes Great",
    "category": "Crafting",
-   "subcategory": "Axes"
+   "subcategory": "Axes",
+   "fameToMax": 25758944
   },
   {
    "id": 291,
-   "name": "Halberd",
+   "name": "Axes Halberd",
    "category": "Crafting",
-   "subcategory": "Axes"
+   "subcategory": "Axes",
+   "fameToMax": 25758944
   },
   {
    "id": 292,
-   "name": "Infernal Scythe",
+   "name": "Axes Hell",
    "category": "Crafting",
-   "subcategory": "Axes"
+   "subcategory": "Axes",
+   "fameToMax": 25758944
   },
   {
    "id": 293,
-   "name": "Bear Paws",
+   "name": "Axes Keeper",
    "category": "Crafting",
-   "subcategory": "Axes"
+   "subcategory": "Axes",
+   "fameToMax": 25758944
   },
   {
    "id": 294,
-   "name": "Carrioncaller",
+   "name": "Axes Morgana",
    "category": "Crafting",
-   "subcategory": "Axes"
+   "subcategory": "Axes",
+   "fameToMax": 25758944
   },
   {
    "id": 295,
    "name": "Bag",
    "category": "Crafting",
-   "subcategory": "Bag"
+   "subcategory": "Bag",
+   "fameToMax": 6439736
   },
   {
    "id": 296,
-   "name": "Bag",
+   "name": "Bag Bag",
    "category": "Crafting",
-   "subcategory": "Bag"
+   "subcategory": "Bag",
+   "fameToMax": 19319208
   },
   {
    "id": 297,
-   "name": "Satchel of Insight",
+   "name": "Bag Insight",
    "category": "Crafting",
-   "subcategory": "Bag"
+   "subcategory": "Bag",
+   "fameToMax": 19319208
   },
   {
    "id": 298,
-   "name": "Diary",
+   "name": "Books",
    "category": "Crafting",
-   "subcategory": "Books"
+   "subcategory": "Books",
+   "fameToMax": 3219868
   },
   {
    "id": 299,
-   "name": "Celestial Censer",
+   "name": "Books Avalon",
    "category": "Crafting",
-   "subcategory": "Books"
+   "subcategory": "Books",
+   "fameToMax": 6439736
   },
   {
    "id": 300,
-   "name": "Diary",
+   "name": "Books Book",
    "category": "Crafting",
-   "subcategory": "Books"
+   "subcategory": "Books",
+   "fameToMax": 6439736
   },
   {
    "id": 301,
-   "name": "Timelocked Grimoire",
+   "name": "Books Crystal",
    "category": "Crafting",
-   "subcategory": "Books"
+   "subcategory": "Books",
+   "fameToMax": 6439736
   },
   {
    "id": 302,
-   "name": "Muisak",
+   "name": "Books Hell",
    "category": "Crafting",
-   "subcategory": "Books"
+   "subcategory": "Books",
+   "fameToMax": 6439736
   },
   {
    "id": 303,
-   "name": "Taproot",
+   "name": "Books Keeper",
    "category": "Crafting",
-   "subcategory": "Books"
+   "subcategory": "Books",
+   "fameToMax": 6439736
   },
   {
    "id": 304,
-   "name": "Eye of Secrets",
+   "name": "Books Morgana",
    "category": "Crafting",
-   "subcategory": "Books"
+   "subcategory": "Books",
+   "fameToMax": 6439736
   },
   {
    "id": 305,
-   "name": "Bow",
+   "name": "Bows",
    "category": "Crafting",
-   "subcategory": "Bows"
+   "subcategory": "Bows",
+   "fameToMax": 12879472
   },
   {
    "id": 306,
-   "name": "Mistpiercer",
+   "name": "Bows Avalon",
    "category": "Crafting",
-   "subcategory": "Bows"
+   "subcategory": "Bows",
+   "fameToMax": 25758944
   },
   {
    "id": 307,
-   "name": "Bow",
+   "name": "Bows Bow",
    "category": "Crafting",
-   "subcategory": "Bows"
+   "subcategory": "Bows",
+   "fameToMax": 25758944
   },
   {
    "id": 308,
-   "name": "Skystrider Bow",
+   "name": "Bows Crystal",
    "category": "Crafting",
-   "subcategory": "Bows"
+   "subcategory": "Bows",
+   "fameToMax": 25758944
   },
   {
    "id": 309,
-   "name": "Wailing Bow",
+   "name": "Bows Hell",
    "category": "Crafting",
-   "subcategory": "Bows"
+   "subcategory": "Bows",
+   "fameToMax": 25758944
   },
   {
    "id": 310,
-   "name": "Bow of Badon",
+   "name": "Bows Keeper",
    "category": "Crafting",
-   "subcategory": "Bows"
+   "subcategory": "Bows",
+   "fameToMax": 25758944
   },
   {
    "id": 311,
-   "name": "Longbow",
+   "name": "Bows Long",
    "category": "Crafting",
-   "subcategory": "Bows"
+   "subcategory": "Bows",
+   "fameToMax": 25758944
   },
   {
    "id": 312,
-   "name": "Whispering Bow",
+   "name": "Bows Undead",
    "category": "Crafting",
-   "subcategory": "Bows"
+   "subcategory": "Bows",
+   "fameToMax": 25758944
   },
   {
    "id": 313,
-   "name": "Warbow",
+   "name": "Bows War",
    "category": "Crafting",
-   "subcategory": "Bows"
+   "subcategory": "Bows",
+   "fameToMax": 25758944
   },
   {
    "id": 314,
    "name": "Cape",
    "category": "Crafting",
-   "subcategory": "Cape"
+   "subcategory": "Cape",
+   "fameToMax": 3219868
   },
   {
    "id": 315,
-   "name": "Cape",
+   "name": "Cape Cape",
    "category": "Crafting",
-   "subcategory": "Cape"
+   "subcategory": "Cape",
+   "fameToMax": 19319208
   },
   {
    "id": 316,
-   "name": "Scholar Robe",
+   "name": "Cloth Armors",
    "category": "Crafting",
-   "subcategory": "Cloth"
+   "subcategory": "Cloth",
+   "fameToMax": 6439736
   },
   {
    "id": 317,
-   "name": "Robe of Purity",
+   "name": "Cloth Armors Avalon",
    "category": "Crafting",
-   "subcategory": "Cloth"
+   "subcategory": "Cloth",
+   "fameToMax": 12879472
   },
   {
    "id": 318,
-   "name": "Feyscale Robe",
+   "name": "Cloth Armors Fey",
    "category": "Crafting",
-   "subcategory": "Cloth"
+   "subcategory": "Cloth",
+   "fameToMax": 12879472
   },
   {
    "id": 319,
-   "name": "Fiend Robe",
+   "name": "Cloth Armors Hell",
    "category": "Crafting",
-   "subcategory": "Cloth"
+   "subcategory": "Cloth",
+   "fameToMax": 12879472
   },
   {
    "id": 320,
-   "name": "Druid Robe",
+   "name": "Cloth Armors Keeper",
    "category": "Crafting",
-   "subcategory": "Cloth"
+   "subcategory": "Cloth",
+   "fameToMax": 12879472
   },
   {
    "id": 321,
-   "name": "Cultist Robe",
+   "name": "Cloth Armors Morgana",
    "category": "Crafting",
-   "subcategory": "Cloth"
+   "subcategory": "Cloth",
+   "fameToMax": 12879472
   },
   {
    "id": 322,
-   "name": "Scholar Robe",
+   "name": "Cloth Armors Set1",
    "category": "Crafting",
-   "subcategory": "Cloth"
+   "subcategory": "Cloth",
+   "fameToMax": 12879472
   },
   {
    "id": 323,
-   "name": "Cleric Robe",
+   "name": "Cloth Armors Set2",
    "category": "Crafting",
-   "subcategory": "Cloth"
+   "subcategory": "Cloth",
+   "fameToMax": 12879472
   },
   {
    "id": 324,
-   "name": "Mage Robe",
+   "name": "Cloth Armors Set3",
    "category": "Crafting",
-   "subcategory": "Cloth"
+   "subcategory": "Cloth",
+   "fameToMax": 12879472
   },
   {
    "id": 325,
-   "name": "Scholar Cowl",
+   "name": "Cloth Heads",
    "category": "Crafting",
-   "subcategory": "Cloth"
+   "subcategory": "Cloth",
+   "fameToMax": 3219868
   },
   {
    "id": 326,
-   "name": "Cowl of Purity",
+   "name": "Cloth Heads Avalon",
    "category": "Crafting",
-   "subcategory": "Cloth"
+   "subcategory": "Cloth",
+   "fameToMax": 6439736
   },
   {
    "id": 327,
-   "name": "Feyscale Hat",
+   "name": "Cloth Heads Fey",
    "category": "Crafting",
-   "subcategory": "Cloth"
+   "subcategory": "Cloth",
+   "fameToMax": 6439736
   },
   {
    "id": 328,
-   "name": "Fiend Cowl",
+   "name": "Cloth Heads Hell",
    "category": "Crafting",
-   "subcategory": "Cloth"
+   "subcategory": "Cloth",
+   "fameToMax": 6439736
   },
   {
    "id": 329,
-   "name": "Druid Cowl",
+   "name": "Cloth Heads Keeper",
    "category": "Crafting",
-   "subcategory": "Cloth"
+   "subcategory": "Cloth",
+   "fameToMax": 6439736
   },
   {
    "id": 330,
-   "name": "Cultist Cowl",
+   "name": "Cloth Heads Morgana",
    "category": "Crafting",
-   "subcategory": "Cloth"
+   "subcategory": "Cloth",
+   "fameToMax": 6439736
   },
   {
    "id": 331,
-   "name": "Scholar Cowl",
+   "name": "Cloth Heads Set1",
    "category": "Crafting",
-   "subcategory": "Cloth"
+   "subcategory": "Cloth",
+   "fameToMax": 6439736
   },
   {
    "id": 332,
-   "name": "Cleric Cowl",
+   "name": "Cloth Heads Set2",
    "category": "Crafting",
-   "subcategory": "Cloth"
+   "subcategory": "Cloth",
+   "fameToMax": 6439736
   },
   {
    "id": 333,
-   "name": "Mage Cowl",
+   "name": "Cloth Heads Set3",
    "category": "Crafting",
-   "subcategory": "Cloth"
+   "subcategory": "Cloth",
+   "fameToMax": 6439736
   },
   {
    "id": 334,
-   "name": "Scholar Sandals",
+   "name": "Cloth Shoes",
    "category": "Crafting",
-   "subcategory": "Cloth"
+   "subcategory": "Cloth",
+   "fameToMax": 3219868
   },
   {
    "id": 335,
-   "name": "Sandals of Purity",
+   "name": "Cloth Shoes Avalon",
    "category": "Crafting",
-   "subcategory": "Cloth"
+   "subcategory": "Cloth",
+   "fameToMax": 6439736
   },
   {
    "id": 336,
-   "name": "Feyscale Sandals",
+   "name": "Cloth Shoes Fey",
    "category": "Crafting",
-   "subcategory": "Cloth"
+   "subcategory": "Cloth",
+   "fameToMax": 6439736
   },
   {
    "id": 337,
-   "name": "Fiend Sandals",
+   "name": "Cloth Shoes Hell",
    "category": "Crafting",
-   "subcategory": "Cloth"
+   "subcategory": "Cloth",
+   "fameToMax": 6439736
   },
   {
    "id": 338,
-   "name": "Druid Sandals",
+   "name": "Cloth Shoes Keeper",
    "category": "Crafting",
-   "subcategory": "Cloth"
+   "subcategory": "Cloth",
+   "fameToMax": 6439736
   },
   {
    "id": 339,
-   "name": "Cultist Sandals",
+   "name": "Cloth Shoes Morgana",
    "category": "Crafting",
-   "subcategory": "Cloth"
+   "subcategory": "Cloth",
+   "fameToMax": 6439736
   },
   {
    "id": 340,
-   "name": "Scholar Sandals",
+   "name": "Cloth Shoes Set1",
    "category": "Crafting",
-   "subcategory": "Cloth"
+   "subcategory": "Cloth",
+   "fameToMax": 6439736
   },
   {
    "id": 341,
-   "name": "Cleric Sandals",
+   "name": "Cloth Shoes Set2",
    "category": "Crafting",
-   "subcategory": "Cloth"
+   "subcategory": "Cloth",
+   "fameToMax": 6439736
   },
   {
    "id": 342,
-   "name": "Mage Sandals",
+   "name": "Cloth Shoes Set3",
    "category": "Crafting",
-   "subcategory": "Cloth"
+   "subcategory": "Cloth",
+   "fameToMax": 6439736
   },
   {
    "id": 343,
-   "name": "Crossbow",
+   "name": "Crossbows",
    "category": "Crafting",
-   "subcategory": "Crossbows"
+   "subcategory": "Crossbows",
+   "fameToMax": 12879472
   },
   {
    "id": 344,
-   "name": "Energy Shaper",
+   "name": "Crossbows Avalon",
    "category": "Crafting",
-   "subcategory": "Crossbows"
+   "subcategory": "Crossbows",
+   "fameToMax": 25758944
   },
   {
    "id": 345,
-   "name": "Crossbow",
+   "name": "Crossbows Crossbow",
    "category": "Crafting",
-   "subcategory": "Crossbows"
+   "subcategory": "Crossbows",
+   "fameToMax": 25758944
   },
   {
    "id": 346,
-   "name": "Arclight Blasters",
+   "name": "Crossbows Crystal",
    "category": "Crafting",
-   "subcategory": "Crossbows"
+   "subcategory": "Crossbows",
+   "fameToMax": 25758944
   },
   {
    "id": 347,
-   "name": "Boltcasters",
+   "name": "Crossbows Hell",
    "category": "Crafting",
-   "subcategory": "Crossbows"
+   "subcategory": "Crossbows",
+   "fameToMax": 25758944
   },
   {
    "id": 348,
-   "name": "Heavy Crossbow",
+   "name": "Crossbows Large",
    "category": "Crafting",
-   "subcategory": "Crossbows"
+   "subcategory": "Crossbows",
+   "fameToMax": 25758944
   },
   {
    "id": 349,
-   "name": "Siegebow",
+   "name": "Crossbows Morgana",
    "category": "Crafting",
-   "subcategory": "Crossbows"
+   "subcategory": "Crossbows",
+   "fameToMax": 25758944
   },
   {
    "id": 350,
-   "name": "Light Crossbow",
+   "name": "Crossbows Onehand",
    "category": "Crafting",
-   "subcategory": "Crossbows"
+   "subcategory": "Crossbows",
+   "fameToMax": 25758944
   },
   {
    "id": 351,
-   "name": "Weeping Repeater",
+   "name": "Crossbows Undead",
    "category": "Crafting",
-   "subcategory": "Crossbows"
+   "subcategory": "Crossbows",
+   "fameToMax": 25758944
   },
   {
    "id": 352,
-   "name": "Cursed Staff",
+   "name": "Cursedstaffs",
    "category": "Crafting",
-   "subcategory": "Cursedstaffs"
+   "subcategory": "Cursedstaffs",
+   "fameToMax": 12879472
   },
   {
    "id": 353,
-   "name": "Shadowcaller",
+   "name": "Cursedstaffs Avalon",
    "category": "Crafting",
-   "subcategory": "Cursedstaffs"
+   "subcategory": "Cursedstaffs",
+   "fameToMax": 25758944
   },
   {
    "id": 354,
-   "name": "Rotcaller Staff",
+   "name": "Cursedstaffs Crystal",
    "category": "Crafting",
-   "subcategory": "Cursedstaffs"
+   "subcategory": "Cursedstaffs",
+   "fameToMax": 25758944
   },
   {
    "id": 355,
-   "name": "Cursed Staff",
+   "name": "Cursedstaffs Cursed",
    "category": "Crafting",
-   "subcategory": "Cursedstaffs"
+   "subcategory": "Cursedstaffs",
+   "fameToMax": 25758944
   },
   {
    "id": 356,
-   "name": "Demonic Staff",
+   "name": "Cursedstaffs Demonic",
    "category": "Crafting",
-   "subcategory": "Cursedstaffs"
+   "subcategory": "Cursedstaffs",
+   "fameToMax": 25758944
   },
   {
    "id": 357,
-   "name": "Great Cursed Staff",
+   "name": "Cursedstaffs Great",
    "category": "Crafting",
-   "subcategory": "Cursedstaffs"
+   "subcategory": "Cursedstaffs",
+   "fameToMax": 25758944
   },
   {
    "id": 358,
-   "name": "Cursed Skull",
+   "name": "Cursedstaffs Hell",
    "category": "Crafting",
-   "subcategory": "Cursedstaffs"
+   "subcategory": "Cursedstaffs",
+   "fameToMax": 25758944
   },
   {
    "id": 359,
-   "name": "Damnation Staff",
+   "name": "Cursedstaffs Morgana",
    "category": "Crafting",
-   "subcategory": "Cursedstaffs"
+   "subcategory": "Cursedstaffs",
+   "fameToMax": 25758944
   },
   {
    "id": 360,
-   "name": "Lifecurse Staff",
+   "name": "Cursedstaffs Undead",
    "category": "Crafting",
-   "subcategory": "Cursedstaffs"
+   "subcategory": "Cursedstaffs",
+   "fameToMax": 25758944
   },
   {
    "id": 361,
-   "name": "Dagger",
+   "name": "Daggers",
    "category": "Crafting",
-   "subcategory": "Daggers"
+   "subcategory": "Daggers",
+   "fameToMax": 12879472
   },
   {
    "id": 362,
-   "name": "Bridled Fury",
+   "name": "Daggers Avalon",
    "category": "Crafting",
-   "subcategory": "Daggers"
+   "subcategory": "Daggers",
+   "fameToMax": 25758944
   },
   {
    "id": 363,
-   "name": "Claws",
+   "name": "Daggers Claws",
    "category": "Crafting",
-   "subcategory": "Daggers"
+   "subcategory": "Daggers",
+   "fameToMax": 25758944
   },
   {
    "id": 364,
-   "name": "Twin Slayers",
+   "name": "Daggers Crystal",
    "category": "Crafting",
-   "subcategory": "Daggers"
+   "subcategory": "Daggers",
+   "fameToMax": 25758944
   },
   {
    "id": 365,
-   "name": "Dagger",
+   "name": "Daggers Dagger",
    "category": "Crafting",
-   "subcategory": "Daggers"
+   "subcategory": "Daggers",
+   "fameToMax": 25758944
   },
   {
    "id": 366,
-   "name": "Demonfang",
+   "name": "Daggers Hell",
    "category": "Crafting",
-   "subcategory": "Daggers"
+   "subcategory": "Daggers",
+   "fameToMax": 25758944
   },
   {
    "id": 367,
-   "name": "Bloodletter",
+   "name": "Daggers Morgana",
    "category": "Crafting",
-   "subcategory": "Daggers"
+   "subcategory": "Daggers",
+   "fameToMax": 25758944
   },
   {
    "id": 368,
-   "name": "Dagger Pair",
+   "name": "Daggers Pair",
    "category": "Crafting",
-   "subcategory": "Daggers"
+   "subcategory": "Daggers",
+   "fameToMax": 25758944
   },
   {
    "id": 369,
-   "name": "Deathgivers",
+   "name": "Daggers Undead",
    "category": "Crafting",
-   "subcategory": "Daggers"
+   "subcategory": "Daggers",
+   "fameToMax": 25758944
   },
   {
    "id": 370,
-   "name": "Fire Staff",
+   "name": "Firestaffs",
    "category": "Crafting",
-   "subcategory": "Firestaffs"
+   "subcategory": "Firestaffs",
+   "fameToMax": 12879472
   },
   {
    "id": 371,
-   "name": "Dawnsong",
+   "name": "Firestaffs Avalon",
    "category": "Crafting",
-   "subcategory": "Firestaffs"
+   "subcategory": "Firestaffs",
+   "fameToMax": 25758944
   },
   {
    "id": 372,
-   "name": "Flamewalker Staff",
+   "name": "Firestaffs Crystal",
    "category": "Crafting",
-   "subcategory": "Firestaffs"
+   "subcategory": "Firestaffs",
+   "fameToMax": 25758944
   },
   {
    "id": 373,
-   "name": "Fire Staff",
+   "name": "Firestaffs Fire",
    "category": "Crafting",
-   "subcategory": "Firestaffs"
+   "subcategory": "Firestaffs",
+   "fameToMax": 25758944
   },
   {
    "id": 374,
-   "name": "Wrath",
+   "name": "Firestaffs Great",
    "category": "Crafting",
-   "subcategory": "Firestaffs"
+   "subcategory": "Firestaffs",
+   "fameToMax": 25758944
   },
   {
    "id": 375,
-   "name": "Brimstone Staff",
+   "name": "Firestaffs Hell",
    "category": "Crafting",
-   "subcategory": "Firestaffs"
+   "subcategory": "Firestaffs",
+   "fameToMax": 25758944
   },
   {
    "id": 376,
-   "name": "Infernal Staff",
+   "name": "Firestaffs Inferno",
    "category": "Crafting",
-   "subcategory": "Firestaffs"
+   "subcategory": "Firestaffs",
+   "fameToMax": 25758944
   },
   {
    "id": 377,
-   "name": "Wildfire Staff",
+   "name": "Firestaffs Keeper",
    "category": "Crafting",
-   "subcategory": "Firestaffs"
+   "subcategory": "Firestaffs",
+   "fameToMax": 25758944
   },
   {
    "id": 378,
-   "name": "Blazing Staff",
+   "name": "Firestaffs Morgana",
    "category": "Crafting",
-   "subcategory": "Firestaffs"
+   "subcategory": "Firestaffs",
+   "fameToMax": 25758944
   },
   {
    "id": 379,
-   "name": "Frost Staff",
+   "name": "Froststaffs",
    "category": "Crafting",
-   "subcategory": "Froststaffs"
+   "subcategory": "Froststaffs",
+   "fameToMax": 12879472
   },
   {
    "id": 380,
-   "name": "Chillhowl",
+   "name": "Froststaffs Avalon",
    "category": "Crafting",
-   "subcategory": "Froststaffs"
+   "subcategory": "Froststaffs",
+   "fameToMax": 25758944
   },
   {
    "id": 381,
-   "name": "Arctic Staff",
+   "name": "Froststaffs Crystal",
    "category": "Crafting",
-   "subcategory": "Froststaffs"
+   "subcategory": "Froststaffs",
+   "fameToMax": 25758944
   },
   {
    "id": 382,
-   "name": "Frost Staff",
+   "name": "Froststaffs Frost",
    "category": "Crafting",
-   "subcategory": "Froststaffs"
+   "subcategory": "Froststaffs",
+   "fameToMax": 25758944
   },
   {
    "id": 383,
-   "name": "Glacial Staff",
+   "name": "Froststaffs Glacial",
    "category": "Crafting",
-   "subcategory": "Froststaffs"
+   "subcategory": "Froststaffs",
+   "fameToMax": 25758944
   },
   {
    "id": 384,
-   "name": "Great Frost Staff",
+   "name": "Froststaffs Great",
    "category": "Crafting",
-   "subcategory": "Froststaffs"
+   "subcategory": "Froststaffs",
+   "fameToMax": 25758944
   },
   {
    "id": 385,
-   "name": "Icicle Staff",
+   "name": "Froststaffs Hell",
    "category": "Crafting",
-   "subcategory": "Froststaffs"
+   "subcategory": "Froststaffs",
+   "fameToMax": 25758944
   },
   {
    "id": 386,
-   "name": "Hoarfrost Staff",
+   "name": "Froststaffs Keeper",
    "category": "Crafting",
-   "subcategory": "Froststaffs"
+   "subcategory": "Froststaffs",
+   "fameToMax": 25758944
   },
   {
    "id": 387,
-   "name": "Permafrost Prism",
+   "name": "Froststaffs Undead",
    "category": "Crafting",
-   "subcategory": "Froststaffs"
+   "subcategory": "Froststaffs",
+   "fameToMax": 25758944
   },
   {
    "id": 388,
-   "name": "Hammer",
+   "name": "Hammers",
    "category": "Crafting",
-   "subcategory": "Hammers"
+   "subcategory": "Hammers",
+   "fameToMax": 12879472
   },
   {
    "id": 389,
-   "name": "Hand of Justice",
+   "name": "Hammers Avalon",
    "category": "Crafting",
-   "subcategory": "Hammers"
+   "subcategory": "Hammers",
+   "fameToMax": 25758944
   },
   {
    "id": 390,
-   "name": "Truebolt Hammer",
+   "name": "Hammers Crystal",
    "category": "Crafting",
-   "subcategory": "Hammers"
+   "subcategory": "Hammers",
+   "fameToMax": 25758944
   },
   {
    "id": 391,
-   "name": "Great Hammer",
+   "name": "Hammers Great",
    "category": "Crafting",
-   "subcategory": "Hammers"
+   "subcategory": "Hammers",
+   "fameToMax": 25758944
   },
   {
    "id": 392,
-   "name": "Hammer",
+   "name": "Hammers Hammer",
    "category": "Crafting",
-   "subcategory": "Hammers"
+   "subcategory": "Hammers",
+   "fameToMax": 25758944
   },
   {
    "id": 393,
-   "name": "Forge Hammers",
+   "name": "Hammers Hell",
    "category": "Crafting",
-   "subcategory": "Hammers"
+   "subcategory": "Hammers",
+   "fameToMax": 25758944
   },
   {
    "id": 394,
-   "name": "Grovekeeper",
+   "name": "Hammers Keeper",
    "category": "Crafting",
-   "subcategory": "Hammers"
+   "subcategory": "Hammers",
+   "fameToMax": 25758944
   },
   {
    "id": 395,
-   "name": "Polehammer",
+   "name": "Hammers Pole",
    "category": "Crafting",
-   "subcategory": "Hammers"
+   "subcategory": "Hammers",
+   "fameToMax": 25758944
   },
   {
    "id": 396,
-   "name": "Tombhammer",
+   "name": "Hammers Undead",
    "category": "Crafting",
-   "subcategory": "Hammers"
+   "subcategory": "Hammers",
+   "fameToMax": 25758944
   },
   {
    "id": 397,
-   "name": "Holy Staff",
+   "name": "Holystaffs",
    "category": "Crafting",
-   "subcategory": "Holystaffs"
+   "subcategory": "Holystaffs",
+   "fameToMax": 12879472
   },
   {
    "id": 398,
-   "name": "Hallowfall",
+   "name": "Holystaffs Avalon",
    "category": "Crafting",
-   "subcategory": "Holystaffs"
+   "subcategory": "Holystaffs",
+   "fameToMax": 25758944
   },
   {
    "id": 399,
-   "name": "Exalted Staff",
+   "name": "Holystaffs Crystal",
    "category": "Crafting",
-   "subcategory": "Holystaffs"
+   "subcategory": "Holystaffs",
+   "fameToMax": 25758944
   },
   {
    "id": 400,
-   "name": "Divine Staff",
+   "name": "Holystaffs Divine",
    "category": "Crafting",
-   "subcategory": "Holystaffs"
+   "subcategory": "Holystaffs",
+   "fameToMax": 25758944
   },
   {
    "id": 401,
-   "name": "Great Holy Staff",
+   "name": "Holystaffs Great",
    "category": "Crafting",
-   "subcategory": "Holystaffs"
+   "subcategory": "Holystaffs",
+   "fameToMax": 25758944
   },
   {
    "id": 402,
-   "name": "Fallen Staff",
+   "name": "Holystaffs Hell",
    "category": "Crafting",
-   "subcategory": "Holystaffs"
+   "subcategory": "Holystaffs",
+   "fameToMax": 25758944
   },
   {
    "id": 403,
-   "name": "Holy Staff",
+   "name": "Holystaffs Holy",
    "category": "Crafting",
-   "subcategory": "Holystaffs"
+   "subcategory": "Holystaffs",
+   "fameToMax": 25758944
   },
   {
    "id": 404,
-   "name": "Lifetouch Staff",
+   "name": "Holystaffs Morgana",
    "category": "Crafting",
-   "subcategory": "Holystaffs"
+   "subcategory": "Holystaffs",
+   "fameToMax": 25758944
   },
   {
    "id": 405,
-   "name": "Redemption Staff",
+   "name": "Holystaffs Undead",
    "category": "Crafting",
-   "subcategory": "Holystaffs"
+   "subcategory": "Holystaffs",
+   "fameToMax": 25758944
   },
   {
    "id": 406,
-   "name": "Craft Hunter",
+   "name": "Hunter",
    "category": "Crafting",
    "subcategory": "Hunter"
   },
   {
    "id": 407,
-   "name": "Brawler Gloves",
+   "name": "Knuckles",
    "category": "Crafting",
-   "subcategory": "Knuckles"
+   "subcategory": "Knuckles",
+   "fameToMax": 12879472
   },
   {
    "id": 408,
-   "name": "Fists of Avalon",
+   "name": "Knuckles Avalon",
    "category": "Crafting",
-   "subcategory": "Knuckles"
+   "subcategory": "Knuckles",
+   "fameToMax": 25758944
   },
   {
    "id": 409,
-   "name": "Forcepulse Bracers",
+   "name": "Knuckles Crystal",
    "category": "Crafting",
-   "subcategory": "Knuckles"
+   "subcategory": "Knuckles",
+   "fameToMax": 25758944
   },
   {
    "id": 410,
-   "name": "Hellfire Hands",
+   "name": "Knuckles Hell",
    "category": "Crafting",
-   "subcategory": "Knuckles"
+   "subcategory": "Knuckles",
+   "fameToMax": 25758944
   },
   {
    "id": 411,
-   "name": "Ursine Maulers",
+   "name": "Knuckles Keeper",
    "category": "Crafting",
-   "subcategory": "Knuckles"
+   "subcategory": "Knuckles",
+   "fameToMax": 25758944
   },
   {
    "id": 412,
-   "name": "Ravenstrike Cestus",
+   "name": "Knuckles Morgana",
    "category": "Crafting",
-   "subcategory": "Knuckles"
+   "subcategory": "Knuckles",
+   "fameToMax": 25758944
   },
   {
    "id": 413,
-   "name": "Brawler Gloves",
+   "name": "Knuckles Set1",
    "category": "Crafting",
-   "subcategory": "Knuckles"
+   "subcategory": "Knuckles",
+   "fameToMax": 25758944
   },
   {
    "id": 414,
-   "name": "Battle Bracers",
+   "name": "Knuckles Set2",
    "category": "Crafting",
-   "subcategory": "Knuckles"
+   "subcategory": "Knuckles",
+   "fameToMax": 25758944
   },
   {
    "id": 415,
-   "name": "Spiked Gauntlets",
+   "name": "Knuckles Set3",
    "category": "Crafting",
-   "subcategory": "Knuckles"
+   "subcategory": "Knuckles",
+   "fameToMax": 25758944
   },
   {
    "id": 416,
-   "name": "Mercenary Jacket",
+   "name": "Leather Armors",
    "category": "Crafting",
-   "subcategory": "Leather"
+   "subcategory": "Leather",
+   "fameToMax": 6439736
   },
   {
    "id": 417,
-   "name": "Jacket of Tenacity",
+   "name": "Leather Armors Avalon",
    "category": "Crafting",
-   "subcategory": "Leather"
+   "subcategory": "Leather",
+   "fameToMax": 12879472
   },
   {
    "id": 418,
-   "name": "Mistwalker Jacket",
+   "name": "Leather Armors Fey",
    "category": "Crafting",
-   "subcategory": "Leather"
+   "subcategory": "Leather",
+   "fameToMax": 12879472
   },
   {
    "id": 419,
-   "name": "Hellion Jacket",
+   "name": "Leather Armors Hell",
    "category": "Crafting",
-   "subcategory": "Leather"
+   "subcategory": "Leather",
+   "fameToMax": 12879472
   },
   {
    "id": 420,
-   "name": "Stalker Jacket",
+   "name": "Leather Armors Morgana",
    "category": "Crafting",
-   "subcategory": "Leather"
+   "subcategory": "Leather",
+   "fameToMax": 12879472
   },
   {
    "id": 421,
-   "name": "Mercenary Jacket",
+   "name": "Leather Armors Set1",
    "category": "Crafting",
-   "subcategory": "Leather"
+   "subcategory": "Leather",
+   "fameToMax": 12879472
   },
   {
    "id": 422,
-   "name": "Hunter Jacket",
+   "name": "Leather Armors Set2",
    "category": "Crafting",
-   "subcategory": "Leather"
+   "subcategory": "Leather",
+   "fameToMax": 12879472
   },
   {
    "id": 423,
-   "name": "Assassin Jacket",
+   "name": "Leather Armors Set3",
    "category": "Crafting",
-   "subcategory": "Leather"
+   "subcategory": "Leather",
+   "fameToMax": 12879472
   },
   {
    "id": 424,
-   "name": "Specter Jacket",
+   "name": "Leather Armors Undead",
    "category": "Crafting",
-   "subcategory": "Leather"
+   "subcategory": "Leather",
+   "fameToMax": 12879472
   },
   {
    "id": 425,
-   "name": "Mercenary Hood",
+   "name": "Leather Heads",
    "category": "Crafting",
-   "subcategory": "Leather"
+   "subcategory": "Leather",
+   "fameToMax": 3219868
   },
   {
    "id": 426,
-   "name": "Hood of Tenacity",
+   "name": "Leather Heads Avalon",
    "category": "Crafting",
-   "subcategory": "Leather"
+   "subcategory": "Leather",
+   "fameToMax": 6439736
   },
   {
    "id": 427,
-   "name": "Mistwalker Hood",
+   "name": "Leather Heads Fey",
    "category": "Crafting",
-   "subcategory": "Leather"
+   "subcategory": "Leather",
+   "fameToMax": 6439736
   },
   {
    "id": 428,
-   "name": "Hellion Hood",
+   "name": "Leather Heads Hell",
    "category": "Crafting",
-   "subcategory": "Leather"
+   "subcategory": "Leather",
+   "fameToMax": 6439736
   },
   {
    "id": 429,
-   "name": "Stalker Hood",
+   "name": "Leather Heads Morgana",
    "category": "Crafting",
-   "subcategory": "Leather"
+   "subcategory": "Leather",
+   "fameToMax": 6439736
   },
   {
    "id": 430,
-   "name": "Mercenary Hood",
+   "name": "Leather Heads Set1",
    "category": "Crafting",
-   "subcategory": "Leather"
+   "subcategory": "Leather",
+   "fameToMax": 6439736
   },
   {
    "id": 431,
-   "name": "Hunter Hood",
+   "name": "Leather Heads Set2",
    "category": "Crafting",
-   "subcategory": "Leather"
+   "subcategory": "Leather",
+   "fameToMax": 6439736
   },
   {
    "id": 432,
-   "name": "Assassin Hood",
+   "name": "Leather Heads Set3",
    "category": "Crafting",
-   "subcategory": "Leather"
+   "subcategory": "Leather",
+   "fameToMax": 6439736
   },
   {
    "id": 433,
-   "name": "Specter Hood",
+   "name": "Leather Heads Undead",
    "category": "Crafting",
-   "subcategory": "Leather"
+   "subcategory": "Leather",
+   "fameToMax": 6439736
   },
   {
    "id": 434,
-   "name": "Mercenary Shoes",
+   "name": "Leather Shoes",
    "category": "Crafting",
-   "subcategory": "Leather"
+   "subcategory": "Leather",
+   "fameToMax": 3219868
   },
   {
    "id": 435,
-   "name": "Shoes of Tenacity",
+   "name": "Leather Shoes Avalon",
    "category": "Crafting",
-   "subcategory": "Leather"
+   "subcategory": "Leather",
+   "fameToMax": 6439736
   },
   {
    "id": 436,
-   "name": "Mistwalker Shoes",
+   "name": "Leather Shoes Fey",
    "category": "Crafting",
-   "subcategory": "Leather"
+   "subcategory": "Leather",
+   "fameToMax": 6439736
   },
   {
    "id": 437,
-   "name": "Hellion Shoes",
+   "name": "Leather Shoes Hell",
    "category": "Crafting",
-   "subcategory": "Leather"
+   "subcategory": "Leather",
+   "fameToMax": 6439736
   },
   {
    "id": 438,
-   "name": "Stalker Shoes",
+   "name": "Leather Shoes Morgana",
    "category": "Crafting",
-   "subcategory": "Leather"
+   "subcategory": "Leather",
+   "fameToMax": 6439736
   },
   {
    "id": 439,
-   "name": "Mercenary Shoes",
+   "name": "Leather Shoes Set1",
    "category": "Crafting",
-   "subcategory": "Leather"
+   "subcategory": "Leather",
+   "fameToMax": 6439736
   },
   {
    "id": 440,
-   "name": "Hunter Shoes",
+   "name": "Leather Shoes Set2",
    "category": "Crafting",
-   "subcategory": "Leather"
+   "subcategory": "Leather",
+   "fameToMax": 6439736
   },
   {
    "id": 441,
-   "name": "Assassin Shoes",
+   "name": "Leather Shoes Set3",
    "category": "Crafting",
-   "subcategory": "Leather"
+   "subcategory": "Leather",
+   "fameToMax": 6439736
   },
   {
    "id": 442,
-   "name": "Specter Shoes",
+   "name": "Leather Shoes Undead",
    "category": "Crafting",
-   "subcategory": "Leather"
+   "subcategory": "Leather",
+   "fameToMax": 6439736
   },
   {
    "id": 443,
-   "name": "Mace",
+   "name": "Maces",
    "category": "Crafting",
-   "subcategory": "Maces"
+   "subcategory": "Maces",
+   "fameToMax": 12879472
   },
   {
    "id": 444,
-   "name": "Oathkeepers",
+   "name": "Maces Avalon",
    "category": "Crafting",
-   "subcategory": "Maces"
+   "subcategory": "Maces",
+   "fameToMax": 25758944
   },
   {
    "id": 445,
-   "name": "Dreadstorm Monarch",
+   "name": "Maces Crystal",
    "category": "Crafting",
-   "subcategory": "Maces"
+   "subcategory": "Maces",
+   "fameToMax": 25758944
   },
   {
    "id": 446,
-   "name": "Morning Star",
+   "name": "Maces Flail",
    "category": "Crafting",
-   "subcategory": "Maces"
+   "subcategory": "Maces",
+   "fameToMax": 25758944
   },
   {
    "id": 447,
-   "name": "Heavy Mace",
+   "name": "Maces Heavy",
    "category": "Crafting",
-   "subcategory": "Maces"
+   "subcategory": "Maces",
+   "fameToMax": 25758944
   },
   {
    "id": 448,
-   "name": "Incubus Mace",
+   "name": "Maces Hell",
    "category": "Crafting",
-   "subcategory": "Maces"
+   "subcategory": "Maces",
+   "fameToMax": 25758944
   },
   {
    "id": 449,
-   "name": "Bedrock Mace",
+   "name": "Maces Keeper",
    "category": "Crafting",
-   "subcategory": "Maces"
+   "subcategory": "Maces",
+   "fameToMax": 25758944
   },
   {
    "id": 450,
-   "name": "Mace",
+   "name": "Maces Mace",
    "category": "Crafting",
-   "subcategory": "Maces"
+   "subcategory": "Maces",
+   "fameToMax": 25758944
   },
   {
    "id": 451,
-   "name": "Camlann Mace",
+   "name": "Maces Morgana",
    "category": "Crafting",
-   "subcategory": "Maces"
+   "subcategory": "Maces",
+   "fameToMax": 25758944
   },
   {
    "id": 452,
-   "name": "Craft Mage",
+   "name": "Mage",
    "category": "Crafting",
    "subcategory": "Mage"
   },
   {
    "id": 453,
-   "name": "Nature Staff",
+   "name": "Naturestaffs",
    "category": "Crafting",
-   "subcategory": "Naturestaffs"
+   "subcategory": "Naturestaffs",
+   "fameToMax": 12879472
   },
   {
    "id": 454,
-   "name": "Ironroot Staff",
+   "name": "Naturestaffs Avalon",
    "category": "Crafting",
-   "subcategory": "Naturestaffs"
+   "subcategory": "Naturestaffs",
+   "fameToMax": 25758944
   },
   {
    "id": 455,
-   "name": "Forgebark Staff",
+   "name": "Naturestaffs Crystal",
    "category": "Crafting",
-   "subcategory": "Naturestaffs"
+   "subcategory": "Naturestaffs",
+   "fameToMax": 25758944
   },
   {
    "id": 456,
-   "name": "Great Nature Staff",
+   "name": "Naturestaffs Great",
    "category": "Crafting",
-   "subcategory": "Naturestaffs"
+   "subcategory": "Naturestaffs",
+   "fameToMax": 25758944
   },
   {
    "id": 457,
-   "name": "Blight Staff",
+   "name": "Naturestaffs Hell",
    "category": "Crafting",
-   "subcategory": "Naturestaffs"
+   "subcategory": "Naturestaffs",
+   "fameToMax": 25758944
   },
   {
    "id": 458,
-   "name": "Druidic Staff",
+   "name": "Naturestaffs Keeper",
    "category": "Crafting",
-   "subcategory": "Naturestaffs"
+   "subcategory": "Naturestaffs",
+   "fameToMax": 25758944
   },
   {
    "id": 459,
-   "name": "Rampant Staff",
+   "name": "Naturestaffs Keeper2",
    "category": "Crafting",
-   "subcategory": "Naturestaffs"
+   "subcategory": "Naturestaffs",
+   "fameToMax": 25758944
   },
   {
    "id": 460,
-   "name": "Nature Staff",
+   "name": "Naturestaffs Nature",
    "category": "Crafting",
-   "subcategory": "Naturestaffs"
+   "subcategory": "Naturestaffs",
+   "fameToMax": 25758944
   },
   {
    "id": 461,
-   "name": "Wild Staff",
+   "name": "Naturestaffs Wild",
    "category": "Crafting",
-   "subcategory": "Naturestaffs"
+   "subcategory": "Naturestaffs",
+   "fameToMax": 25758944
   },
   {
    "id": 462,
-   "name": "Soldier Armor",
+   "name": "Plate Armors",
    "category": "Crafting",
-   "subcategory": "Plate"
+   "subcategory": "Plate",
+   "fameToMax": 6439736
   },
   {
    "id": 463,
-   "name": "Armor of Valor",
+   "name": "Plate Armors Avalon",
    "category": "Crafting",
-   "subcategory": "Plate"
+   "subcategory": "Plate",
+   "fameToMax": 12879472
   },
   {
    "id": 464,
-   "name": "Duskweaver Armor",
+   "name": "Plate Armors Fey",
    "category": "Crafting",
-   "subcategory": "Plate"
+   "subcategory": "Plate",
+   "fameToMax": 12879472
   },
   {
    "id": 465,
-   "name": "Demon Armor",
+   "name": "Plate Armors Hell",
    "category": "Crafting",
-   "subcategory": "Plate"
+   "subcategory": "Plate",
+   "fameToMax": 12879472
   },
   {
    "id": 466,
-   "name": "Judicator Armor",
+   "name": "Plate Armors Keeper",
    "category": "Crafting",
-   "subcategory": "Plate"
+   "subcategory": "Plate",
+   "fameToMax": 12879472
   },
   {
    "id": 467,
-   "name": "Soldier Armor",
+   "name": "Plate Armors Set1",
    "category": "Crafting",
-   "subcategory": "Plate"
+   "subcategory": "Plate",
+   "fameToMax": 12879472
   },
   {
    "id": 468,
-   "name": "Knight Armor",
+   "name": "Plate Armors Set2",
    "category": "Crafting",
-   "subcategory": "Plate"
+   "subcategory": "Plate",
+   "fameToMax": 12879472
   },
   {
    "id": 469,
-   "name": "Guardian Armor",
+   "name": "Plate Armors Set3",
    "category": "Crafting",
-   "subcategory": "Plate"
+   "subcategory": "Plate",
+   "fameToMax": 12879472
   },
   {
    "id": 470,
-   "name": "Graveguard Armor",
+   "name": "Plate Armors Undead",
    "category": "Crafting",
-   "subcategory": "Plate"
+   "subcategory": "Plate",
+   "fameToMax": 12879472
   },
   {
    "id": 471,
-   "name": "Soldier Helmet",
+   "name": "Plate Heads",
    "category": "Crafting",
-   "subcategory": "Plate"
+   "subcategory": "Plate",
+   "fameToMax": 3219868
   },
   {
    "id": 472,
-   "name": "Helmet of Valor",
+   "name": "Plate Heads Avalon",
    "category": "Crafting",
-   "subcategory": "Plate"
+   "subcategory": "Plate",
+   "fameToMax": 6439736
   },
   {
    "id": 473,
-   "name": "Duskweaver Helmet",
+   "name": "Plate Heads Fey",
    "category": "Crafting",
-   "subcategory": "Plate"
+   "subcategory": "Plate",
+   "fameToMax": 6439736
   },
   {
    "id": 474,
-   "name": "Demon Helmet",
+   "name": "Plate Heads Hell",
    "category": "Crafting",
-   "subcategory": "Plate"
+   "subcategory": "Plate",
+   "fameToMax": 6439736
   },
   {
    "id": 475,
-   "name": "Judicator Helmet",
+   "name": "Plate Heads Keeper",
    "category": "Crafting",
-   "subcategory": "Plate"
+   "subcategory": "Plate",
+   "fameToMax": 6439736
   },
   {
    "id": 476,
-   "name": "Soldier Helmet",
+   "name": "Plate Heads Set1",
    "category": "Crafting",
-   "subcategory": "Plate"
+   "subcategory": "Plate",
+   "fameToMax": 6439736
   },
   {
    "id": 477,
-   "name": "Knight Helmet",
+   "name": "Plate Heads Set2",
    "category": "Crafting",
-   "subcategory": "Plate"
+   "subcategory": "Plate",
+   "fameToMax": 6439736
   },
   {
    "id": 478,
-   "name": "Guardian Helmet",
+   "name": "Plate Heads Set3",
    "category": "Crafting",
-   "subcategory": "Plate"
+   "subcategory": "Plate",
+   "fameToMax": 6439736
   },
   {
    "id": 479,
-   "name": "Graveguard Helmet",
+   "name": "Plate Heads Undead",
    "category": "Crafting",
-   "subcategory": "Plate"
+   "subcategory": "Plate",
+   "fameToMax": 6439736
   },
   {
    "id": 480,
-   "name": "Soldier Boots",
+   "name": "Plate Shoes",
    "category": "Crafting",
-   "subcategory": "Plate"
+   "subcategory": "Plate",
+   "fameToMax": 3219868
   },
   {
    "id": 481,
-   "name": "Boots of Valor",
+   "name": "Plate Shoes Avalon",
    "category": "Crafting",
-   "subcategory": "Plate"
+   "subcategory": "Plate",
+   "fameToMax": 6439736
   },
   {
    "id": 482,
-   "name": "Duskweaver Boots",
+   "name": "Plate Shoes Fey",
    "category": "Crafting",
-   "subcategory": "Plate"
+   "subcategory": "Plate",
+   "fameToMax": 6439736
   },
   {
    "id": 483,
-   "name": "Demon Boots",
+   "name": "Plate Shoes Hell",
    "category": "Crafting",
-   "subcategory": "Plate"
+   "subcategory": "Plate",
+   "fameToMax": 6439736
   },
   {
    "id": 484,
-   "name": "Judicator Boots",
+   "name": "Plate Shoes Keeper",
    "category": "Crafting",
-   "subcategory": "Plate"
+   "subcategory": "Plate",
+   "fameToMax": 6439736
   },
   {
    "id": 485,
-   "name": "Soldier Boots",
+   "name": "Plate Shoes Set1",
    "category": "Crafting",
-   "subcategory": "Plate"
+   "subcategory": "Plate",
+   "fameToMax": 6439736
   },
   {
    "id": 486,
-   "name": "Knight Boots",
+   "name": "Plate Shoes Set2",
    "category": "Crafting",
-   "subcategory": "Plate"
+   "subcategory": "Plate",
+   "fameToMax": 6439736
   },
   {
    "id": 487,
-   "name": "Guardian Boots",
+   "name": "Plate Shoes Set3",
    "category": "Crafting",
-   "subcategory": "Plate"
+   "subcategory": "Plate",
+   "fameToMax": 6439736
   },
   {
    "id": 488,
-   "name": "Graveguard Boots",
+   "name": "Plate Shoes Undead",
    "category": "Crafting",
-   "subcategory": "Plate"
+   "subcategory": "Plate",
+   "fameToMax": 6439736
   },
   {
    "id": 489,
-   "name": "Quarterstaff",
+   "name": "Quarterstaffs",
    "category": "Crafting",
-   "subcategory": "Quarterstaffs"
+   "subcategory": "Quarterstaffs",
+   "fameToMax": 12879472
   },
   {
    "id": 490,
-   "name": "Grailseeker",
+   "name": "Quarterstaffs Avalon",
    "category": "Crafting",
-   "subcategory": "Quarterstaffs"
+   "subcategory": "Quarterstaffs",
+   "fameToMax": 25758944
   },
   {
    "id": 491,
-   "name": "Phantom Twinblade",
+   "name": "Quarterstaffs Crystal",
    "category": "Crafting",
-   "subcategory": "Quarterstaffs"
+   "subcategory": "Quarterstaffs",
+   "fameToMax": 25758944
   },
   {
    "id": 492,
-   "name": "Double Bladed Staff",
+   "name": "Quarterstaffs Doublebladed",
    "category": "Crafting",
-   "subcategory": "Quarterstaffs"
+   "subcategory": "Quarterstaffs",
+   "fameToMax": 25758944
   },
   {
    "id": 493,
-   "name": "Soulscythe",
+   "name": "Quarterstaffs Hell",
    "category": "Crafting",
-   "subcategory": "Quarterstaffs"
+   "subcategory": "Quarterstaffs",
+   "fameToMax": 25758944
   },
   {
    "id": 494,
-   "name": "Iron-clad Staff",
+   "name": "Quarterstaffs Ironclad",
    "category": "Crafting",
-   "subcategory": "Quarterstaffs"
+   "subcategory": "Quarterstaffs",
+   "fameToMax": 25758944
   },
   {
    "id": 495,
-   "name": "Staff of Balance",
+   "name": "Quarterstaffs Keeper",
    "category": "Crafting",
-   "subcategory": "Quarterstaffs"
+   "subcategory": "Quarterstaffs",
+   "fameToMax": 25758944
   },
   {
    "id": 496,
-   "name": "Black Monk Staff",
+   "name": "Quarterstaffs Morgana",
    "category": "Crafting",
-   "subcategory": "Quarterstaffs"
+   "subcategory": "Quarterstaffs",
+   "fameToMax": 25758944
   },
   {
    "id": 497,
-   "name": "Quarterstaff",
+   "name": "Quarterstaffs Quarterstaff",
    "category": "Crafting",
-   "subcategory": "Quarterstaffs"
+   "subcategory": "Quarterstaffs",
+   "fameToMax": 25758944
   },
   {
    "id": 498,
-   "name": "Craft Refine",
+   "name": "Refine",
    "category": "Crafting",
    "subcategory": "Refine"
   },
   {
    "id": 499,
-   "name": "Baroque Cloth",
+   "name": "Refine Fiber T4",
    "category": "Crafting",
-   "subcategory": "Refine"
+   "subcategory": "Refine",
+   "fameToMax": 2900810
   },
   {
    "id": 500,
-   "name": "Baroque Cloth",
+   "name": "Refine Fiber T5",
    "category": "Crafting",
-   "subcategory": "Refine"
+   "subcategory": "Refine",
+   "fameToMax": 3976767
   },
   {
    "id": 501,
-   "name": "Baroque Cloth",
+   "name": "Refine Fiber T6",
    "category": "Crafting",
-   "subcategory": "Refine"
+   "subcategory": "Refine",
+   "fameToMax": 7328579
   },
   {
    "id": 502,
-   "name": "Baroque Cloth",
+   "name": "Refine Fiber T7",
    "category": "Crafting",
-   "subcategory": "Refine"
+   "subcategory": "Refine",
+   "fameToMax": 19980828
   },
   {
    "id": 503,
-   "name": "Baroque Cloth",
+   "name": "Refine Fiber T8",
    "category": "Crafting",
-   "subcategory": "Refine"
+   "subcategory": "Refine",
+   "fameToMax": 21915828
   },
   {
    "id": 504,
-   "name": "Fortified Leather",
+   "name": "Refine Hide T4",
    "category": "Crafting",
-   "subcategory": "Refine"
+   "subcategory": "Refine",
+   "fameToMax": 2900810
   },
   {
    "id": 505,
-   "name": "Fortified Leather",
+   "name": "Refine Hide T5",
    "category": "Crafting",
-   "subcategory": "Refine"
+   "subcategory": "Refine",
+   "fameToMax": 3976767
   },
   {
    "id": 506,
-   "name": "Fortified Leather",
+   "name": "Refine Hide T6",
    "category": "Crafting",
-   "subcategory": "Refine"
+   "subcategory": "Refine",
+   "fameToMax": 7328579
   },
   {
    "id": 507,
-   "name": "Fortified Leather",
+   "name": "Refine Hide T7",
    "category": "Crafting",
-   "subcategory": "Refine"
+   "subcategory": "Refine",
+   "fameToMax": 19980828
   },
   {
    "id": 508,
-   "name": "Fortified Leather",
+   "name": "Refine Hide T8",
    "category": "Crafting",
-   "subcategory": "Refine"
+   "subcategory": "Refine",
+   "fameToMax": 21915828
   },
   {
    "id": 509,
-   "name": "Adamantium Steel Bar",
+   "name": "Refine Ore T4",
    "category": "Crafting",
-   "subcategory": "Refine"
+   "subcategory": "Refine",
+   "fameToMax": 2900810
   },
   {
    "id": 510,
-   "name": "Adamantium Steel Bar",
+   "name": "Refine Ore T5",
    "category": "Crafting",
-   "subcategory": "Refine"
+   "subcategory": "Refine",
+   "fameToMax": 3976767
   },
   {
    "id": 511,
-   "name": "Adamantium Steel Bar",
+   "name": "Refine Ore T6",
    "category": "Crafting",
-   "subcategory": "Refine"
+   "subcategory": "Refine",
+   "fameToMax": 7328579
   },
   {
    "id": 512,
-   "name": "Adamantium Steel Bar",
+   "name": "Refine Ore T7",
    "category": "Crafting",
-   "subcategory": "Refine"
+   "subcategory": "Refine",
+   "fameToMax": 19980828
   },
   {
    "id": 513,
-   "name": "Adamantium Steel Bar",
+   "name": "Refine Ore T8",
    "category": "Crafting",
-   "subcategory": "Refine"
+   "subcategory": "Refine",
+   "fameToMax": 21915828
   },
   {
    "id": 514,
-   "name": "Marble Block",
+   "name": "Refine Rock T4",
    "category": "Crafting",
-   "subcategory": "Refine"
+   "subcategory": "Refine",
+   "fameToMax": 2900810
   },
   {
    "id": 515,
-   "name": "Marble Block",
+   "name": "Refine Rock T5",
    "category": "Crafting",
-   "subcategory": "Refine"
+   "subcategory": "Refine",
+   "fameToMax": 3976767
   },
   {
    "id": 516,
-   "name": "Marble Block",
+   "name": "Refine Rock T6",
    "category": "Crafting",
-   "subcategory": "Refine"
+   "subcategory": "Refine",
+   "fameToMax": 7328579
   },
   {
    "id": 517,
-   "name": "Marble Block",
+   "name": "Refine Rock T7",
    "category": "Crafting",
-   "subcategory": "Refine"
+   "subcategory": "Refine",
+   "fameToMax": 19980828
   },
   {
    "id": 518,
-   "name": "Marble Block",
+   "name": "Refine Rock T8",
    "category": "Crafting",
-   "subcategory": "Refine"
+   "subcategory": "Refine",
+   "fameToMax": 21915828
   },
   {
    "id": 519,
-   "name": "Whitewood Planks",
+   "name": "Refine Wood T4",
    "category": "Crafting",
-   "subcategory": "Refine"
+   "subcategory": "Refine",
+   "fameToMax": 2900810
   },
   {
    "id": 520,
-   "name": "Whitewood Planks",
+   "name": "Refine Wood T5",
    "category": "Crafting",
-   "subcategory": "Refine"
+   "subcategory": "Refine",
+   "fameToMax": 3976767
   },
   {
    "id": 521,
-   "name": "Whitewood Planks",
+   "name": "Refine Wood T6",
    "category": "Crafting",
-   "subcategory": "Refine"
+   "subcategory": "Refine",
+   "fameToMax": 7328579
   },
   {
    "id": 522,
-   "name": "Whitewood Planks",
+   "name": "Refine Wood T7",
    "category": "Crafting",
-   "subcategory": "Refine"
+   "subcategory": "Refine",
+   "fameToMax": 19980828
   },
   {
    "id": 523,
-   "name": "Whitewood Planks",
+   "name": "Refine Wood T8",
    "category": "Crafting",
-   "subcategory": "Refine"
+   "subcategory": "Refine",
+   "fameToMax": 21915828
   },
   {
    "id": 524,
-   "name": "Prowling Staff",
+   "name": "Shapeshifter",
    "category": "Crafting",
-   "subcategory": "Shapeshifter"
+   "subcategory": "Shapeshifter",
+   "fameToMax": 12879472
   },
   {
    "id": 525,
-   "name": "Lightcaller",
+   "name": "Shapeshifter Avalon",
    "category": "Crafting",
-   "subcategory": "Shapeshifter"
+   "subcategory": "Shapeshifter",
+   "fameToMax": 25758944
   },
   {
    "id": 526,
-   "name": "Stillgaze Staff",
+   "name": "Shapeshifter Crystal",
    "category": "Crafting",
-   "subcategory": "Shapeshifter"
+   "subcategory": "Shapeshifter",
+   "fameToMax": 25758944
   },
   {
    "id": 527,
-   "name": "Hellspawn Staff",
+   "name": "Shapeshifter Hell",
    "category": "Crafting",
-   "subcategory": "Shapeshifter"
+   "subcategory": "Shapeshifter",
+   "fameToMax": 25758944
   },
   {
    "id": 528,
-   "name": "Earthrune Staff",
+   "name": "Shapeshifter Keeper",
    "category": "Crafting",
-   "subcategory": "Shapeshifter"
+   "subcategory": "Shapeshifter",
+   "fameToMax": 25758944
   },
   {
    "id": 529,
-   "name": "Bloodmoon Staff",
+   "name": "Shapeshifter Morgana",
    "category": "Crafting",
-   "subcategory": "Shapeshifter"
+   "subcategory": "Shapeshifter",
+   "fameToMax": 25758944
   },
   {
    "id": 530,
-   "name": "Prowling Staff",
+   "name": "Shapeshifter Set1",
    "category": "Crafting",
-   "subcategory": "Shapeshifter"
+   "subcategory": "Shapeshifter",
+   "fameToMax": 25758944
   },
   {
    "id": 531,
-   "name": "Rootbound Staff",
+   "name": "Shapeshifter Set2",
    "category": "Crafting",
-   "subcategory": "Shapeshifter"
+   "subcategory": "Shapeshifter",
+   "fameToMax": 25758944
   },
   {
    "id": 532,
-   "name": "Primal Staff",
+   "name": "Shapeshifter Set3",
    "category": "Crafting",
-   "subcategory": "Shapeshifter"
+   "subcategory": "Shapeshifter",
+   "fameToMax": 25758944
   },
   {
    "id": 533,
-   "name": "Shield",
+   "name": "Shields",
    "category": "Crafting",
-   "subcategory": "Shields"
+   "subcategory": "Shields",
+   "fameToMax": 3219868
   },
   {
    "id": 534,
-   "name": "Astral Aegis",
+   "name": "Shields Avalon",
    "category": "Crafting",
-   "subcategory": "Shields"
+   "subcategory": "Shields",
+   "fameToMax": 6439736
   },
   {
    "id": 535,
-   "name": "Unbreakable Ward",
+   "name": "Shields Crystal",
    "category": "Crafting",
-   "subcategory": "Shields"
+   "subcategory": "Shields",
+   "fameToMax": 6439736
   },
   {
    "id": 536,
-   "name": "Caitiff Shield",
+   "name": "Shields Hell",
    "category": "Crafting",
-   "subcategory": "Shields"
+   "subcategory": "Shields",
+   "fameToMax": 6439736
   },
   {
    "id": 537,
-   "name": "Facebreaker",
+   "name": "Shields Morgana",
    "category": "Crafting",
-   "subcategory": "Shields"
+   "subcategory": "Shields",
+   "fameToMax": 6439736
   },
   {
    "id": 538,
-   "name": "Shield",
+   "name": "Shields Shield",
    "category": "Crafting",
-   "subcategory": "Shields"
+   "subcategory": "Shields",
+   "fameToMax": 6439736
   },
   {
    "id": 539,
-   "name": "Sarcophagus",
+   "name": "Shields Undead",
    "category": "Crafting",
-   "subcategory": "Shields"
+   "subcategory": "Shields",
+   "fameToMax": 6439736
   },
   {
    "id": 540,
-   "name": "Spear",
+   "name": "Spears",
    "category": "Crafting",
-   "subcategory": "Spears"
+   "subcategory": "Spears",
+   "fameToMax": 12879472
   },
   {
    "id": 541,
-   "name": "Daybreaker",
+   "name": "Spears Avalon",
    "category": "Crafting",
-   "subcategory": "Spears"
+   "subcategory": "Spears",
+   "fameToMax": 25758944
   },
   {
    "id": 542,
-   "name": "Rift Glaive",
+   "name": "Spears Crystal",
    "category": "Crafting",
-   "subcategory": "Spears"
+   "subcategory": "Spears",
+   "fameToMax": 25758944
   },
   {
    "id": 543,
-   "name": "Glaive",
+   "name": "Spears Glaive",
    "category": "Crafting",
-   "subcategory": "Spears"
+   "subcategory": "Spears",
+   "fameToMax": 25758944
   },
   {
    "id": 544,
-   "name": "Pike",
+   "name": "Spears Great",
    "category": "Crafting",
-   "subcategory": "Spears"
+   "subcategory": "Spears",
+   "fameToMax": 25758944
   },
   {
    "id": 545,
-   "name": "Spirithunter",
+   "name": "Spears Hell",
    "category": "Crafting",
-   "subcategory": "Spears"
+   "subcategory": "Spears",
+   "fameToMax": 25758944
   },
   {
    "id": 546,
-   "name": "Heron Spear",
+   "name": "Spears Keeper",
    "category": "Crafting",
-   "subcategory": "Spears"
+   "subcategory": "Spears",
+   "fameToMax": 25758944
   },
   {
    "id": 547,
-   "name": "Spear",
+   "name": "Spears Spear",
    "category": "Crafting",
-   "subcategory": "Spears"
+   "subcategory": "Spears",
+   "fameToMax": 25758944
   },
   {
    "id": 548,
-   "name": "Trinity Spear",
+   "name": "Spears Undead",
    "category": "Crafting",
-   "subcategory": "Spears"
+   "subcategory": "Spears",
+   "fameToMax": 25758944
   },
   {
    "id": 549,
-   "name": "Broadsword",
+   "name": "Swords",
    "category": "Crafting",
-   "subcategory": "Swords"
+   "subcategory": "Swords",
+   "fameToMax": 12879472
   },
   {
    "id": 550,
-   "name": "Kingmaker",
+   "name": "Swords Avalon",
    "category": "Crafting",
-   "subcategory": "Swords"
+   "subcategory": "Swords",
+   "fameToMax": 25758944
   },
   {
    "id": 551,
-   "name": "Claymore",
+   "name": "Swords Claymore",
    "category": "Crafting",
-   "subcategory": "Swords"
+   "subcategory": "Swords",
+   "fameToMax": 25758944
   },
   {
    "id": 552,
-   "name": "Infinity Blade",
+   "name": "Swords Crystal",
    "category": "Crafting",
-   "subcategory": "Swords"
+   "subcategory": "Swords",
+   "fameToMax": 25758944
   },
   {
    "id": 553,
-   "name": "Dual Swords",
+   "name": "Swords Dual",
    "category": "Crafting",
-   "subcategory": "Swords"
+   "subcategory": "Swords",
+   "fameToMax": 25758944
   },
   {
    "id": 554,
-   "name": "Carving Sword",
+   "name": "Swords Hell",
    "category": "Crafting",
-   "subcategory": "Swords"
+   "subcategory": "Swords",
+   "fameToMax": 25758944
   },
   {
    "id": 555,
-   "name": "Clarent Blade",
+   "name": "Swords Morgana",
    "category": "Crafting",
-   "subcategory": "Swords"
+   "subcategory": "Swords",
+   "fameToMax": 25758944
   },
   {
    "id": 556,
-   "name": "Broadsword",
+   "name": "Swords Sword",
    "category": "Crafting",
-   "subcategory": "Swords"
+   "subcategory": "Swords",
+   "fameToMax": 25758944
   },
   {
    "id": 557,
-   "name": "Galatine Pair",
+   "name": "Swords Undead",
    "category": "Crafting",
-   "subcategory": "Swords"
+   "subcategory": "Swords",
+   "fameToMax": 25758944
   },
   {
    "id": 558,
-   "name": "Craft Tool",
+   "name": "Tool",
    "category": "Crafting",
    "subcategory": "Tool"
   },
   {
    "id": 559,
-   "name": "Axe",
+   "name": "Tool Axe",
    "category": "Crafting",
-   "subcategory": "Tool"
+   "subcategory": "Tool",
+   "fameToMax": 6439736
   },
   {
    "id": 560,
-   "name": "Lumberjack Garb",
+   "name": "Tool Axe Armor",
    "category": "Crafting",
-   "subcategory": "Tool"
+   "subcategory": "Tool",
+   "fameToMax": 12879472
   },
   {
    "id": 561,
-   "name": "Lumberjack Cap",
+   "name": "Tool Axe Head",
    "category": "Crafting",
-   "subcategory": "Tool"
+   "subcategory": "Tool",
+   "fameToMax": 6439736
   },
   {
    "id": 562,
-   "name": "Lumberjack Workboots",
+   "name": "Tool Axe Shoes",
    "category": "Crafting",
-   "subcategory": "Tool"
+   "subcategory": "Tool",
+   "fameToMax": 6439736
   },
   {
    "id": 563,
-   "name": "Fishing Rod",
+   "name": "Tool Fishingrod",
    "category": "Crafting",
-   "subcategory": "Tool"
+   "subcategory": "Tool",
+   "fameToMax": 6439736
   },
   {
    "id": 564,
-   "name": "Fisherman Garb",
+   "name": "Tool Fishingrod Armor",
    "category": "Crafting",
-   "subcategory": "Tool"
+   "subcategory": "Tool",
+   "fameToMax": 12879472
   },
   {
    "id": 565,
-   "name": "Fisherman Cap",
+   "name": "Tool Fishingrod Head",
    "category": "Crafting",
-   "subcategory": "Tool"
+   "subcategory": "Tool",
+   "fameToMax": 6439736
   },
   {
    "id": 566,
-   "name": "Fisherman Workboots",
+   "name": "Tool Fishingrod Shoes",
    "category": "Crafting",
-   "subcategory": "Tool"
+   "subcategory": "Tool",
+   "fameToMax": 6439736
   },
   {
    "id": 567,
-   "name": "Stone Hammer",
+   "name": "Tool Hammer",
    "category": "Crafting",
-   "subcategory": "Tool"
+   "subcategory": "Tool",
+   "fameToMax": 6439736
   },
   {
    "id": 568,
-   "name": "Quarrier Garb",
+   "name": "Tool Hammer Armor",
    "category": "Crafting",
-   "subcategory": "Tool"
+   "subcategory": "Tool",
+   "fameToMax": 12879472
   },
   {
    "id": 569,
-   "name": "Quarrier Cap",
+   "name": "Tool Hammer Head",
    "category": "Crafting",
-   "subcategory": "Tool"
+   "subcategory": "Tool",
+   "fameToMax": 6439736
   },
   {
    "id": 570,
-   "name": "Quarrier Workboots",
+   "name": "Tool Hammer Shoes",
    "category": "Crafting",
-   "subcategory": "Tool"
+   "subcategory": "Tool",
+   "fameToMax": 6439736
   },
   {
    "id": 571,
-   "name": "Skinning Knife",
+   "name": "Tool Knife",
    "category": "Crafting",
-   "subcategory": "Tool"
+   "subcategory": "Tool",
+   "fameToMax": 6439736
   },
   {
    "id": 572,
-   "name": "Skinner Garb",
+   "name": "Tool Knife Armor",
    "category": "Crafting",
-   "subcategory": "Tool"
+   "subcategory": "Tool",
+   "fameToMax": 12879472
   },
   {
    "id": 573,
-   "name": "Skinner Cap",
+   "name": "Tool Knife Head",
    "category": "Crafting",
-   "subcategory": "Tool"
+   "subcategory": "Tool",
+   "fameToMax": 6439736
   },
   {
    "id": 574,
-   "name": "Skinner Workboots",
+   "name": "Tool Knife Shoes",
    "category": "Crafting",
-   "subcategory": "Tool"
+   "subcategory": "Tool",
+   "fameToMax": 6439736
   },
   {
    "id": 575,
-   "name": "Pickaxe",
+   "name": "Tool Pick",
    "category": "Crafting",
-   "subcategory": "Tool"
+   "subcategory": "Tool",
+   "fameToMax": 6439736
   },
   {
    "id": 576,
-   "name": "Miner Garb",
+   "name": "Tool Pick Armor",
    "category": "Crafting",
-   "subcategory": "Tool"
+   "subcategory": "Tool",
+   "fameToMax": 12879472
   },
   {
    "id": 577,
-   "name": "Miner Cap",
+   "name": "Tool Pick Head",
    "category": "Crafting",
-   "subcategory": "Tool"
+   "subcategory": "Tool",
+   "fameToMax": 6439736
   },
   {
    "id": 578,
-   "name": "Miner Workboots",
+   "name": "Tool Pick Shoes",
    "category": "Crafting",
-   "subcategory": "Tool"
+   "subcategory": "Tool",
+   "fameToMax": 6439736
   },
   {
    "id": 579,
-   "name": "Sickle",
+   "name": "Tool Sickle",
    "category": "Crafting",
-   "subcategory": "Tool"
+   "subcategory": "Tool",
+   "fameToMax": 6439736
   },
   {
    "id": 580,
-   "name": "Harvester Garb",
+   "name": "Tool Sickle Armor",
    "category": "Crafting",
-   "subcategory": "Tool"
+   "subcategory": "Tool",
+   "fameToMax": 12879472
   },
   {
    "id": 581,
-   "name": "Harvester Cap",
+   "name": "Tool Sickle Head",
    "category": "Crafting",
-   "subcategory": "Tool"
+   "subcategory": "Tool",
+   "fameToMax": 6439736
   },
   {
    "id": 582,
-   "name": "Harvester Workboots",
+   "name": "Tool Sickle Shoes",
    "category": "Crafting",
-   "subcategory": "Tool"
+   "subcategory": "Tool",
+   "fameToMax": 6439736
   },
   {
    "id": 583,
-   "name": "Siege Banner",
+   "name": "Tool Siegehammer",
    "category": "Crafting",
-   "subcategory": "Tool"
+   "subcategory": "Tool",
+   "fameToMax": 6439736
   },
   {
    "id": 584,
-   "name": "Siege Banner",
+   "name": "Tool Siegehammer Siegebanner",
    "category": "Crafting",
-   "subcategory": "Tool"
+   "subcategory": "Tool",
+   "fameToMax": 38638416
   },
   {
    "id": 585,
-   "name": "Siege Hammer",
+   "name": "Tool Siegehammer Siegehammer",
    "category": "Crafting",
-   "subcategory": "Tool"
+   "subcategory": "Tool",
+   "fameToMax": 38638416
   },
   {
    "id": 586,
-   "name": "Tracking Toolkit",
+   "name": "Tool Tracking",
    "category": "Crafting",
-   "subcategory": "Tool"
+   "subcategory": "Tool",
+   "fameToMax": 3219868
   },
   {
    "id": 587,
-   "name": "Tracking Toolkit",
+   "name": "Tool Tracking Tracking",
    "category": "Crafting",
-   "subcategory": "Tool"
+   "subcategory": "Tool",
+   "fameToMax": 19319208
   },
   {
    "id": 588,
-   "name": "Torch",
+   "name": "Torches",
    "category": "Crafting",
-   "subcategory": "Torches"
+   "subcategory": "Torches",
+   "fameToMax": 3219868
   },
   {
    "id": 589,
-   "name": "Sacred Scepter",
+   "name": "Torches Avalon",
    "category": "Crafting",
-   "subcategory": "Torches"
+   "subcategory": "Torches",
+   "fameToMax": 6439736
   },
   {
    "id": 590,
-   "name": "Blueflame Torch",
+   "name": "Torches Crystal",
    "category": "Crafting",
-   "subcategory": "Torches"
+   "subcategory": "Torches",
+   "fameToMax": 6439736
   },
   {
    "id": 591,
-   "name": "Leering Cane",
+   "name": "Torches Hell",
    "category": "Crafting",
-   "subcategory": "Torches"
+   "subcategory": "Torches",
+   "fameToMax": 6439736
   },
   {
    "id": 592,
-   "name": "Mistcaller",
+   "name": "Torches Keeper",
    "category": "Crafting",
-   "subcategory": "Torches"
+   "subcategory": "Torches",
+   "fameToMax": 6439736
   },
   {
    "id": 593,
-   "name": "Torch",
+   "name": "Torches Torch",
    "category": "Crafting",
-   "subcategory": "Torches"
+   "subcategory": "Torches",
+   "fameToMax": 6439736
   },
   {
    "id": 594,
-   "name": "Cryptcandle",
+   "name": "Torches Undead",
    "category": "Crafting",
-   "subcategory": "Torches"
+   "subcategory": "Torches",
+   "fameToMax": 6439736
   },
   {
    "id": 595,
-   "name": "Craft Trainee",
+   "name": "Trainee",
    "category": "Crafting",
    "subcategory": "Trainee"
   },
   {
    "id": 596,
-   "name": "Craft Warrior",
+   "name": "Warrior",
    "category": "Crafting",
    "subcategory": "Warrior"
   },
   {
    "id": 597,
-   "name": "Minor Healing Potion",
+   "name": "Alchemist",
    "category": "Farming",
-   "subcategory": "Alchemist"
+   "subcategory": "Alchemist",
+   "fameToMax": 458628
   },
   {
    "id": 598,
-   "name": "Major Acid Potion",
+   "name": "Alchemist Acid",
    "category": "Farming",
-   "subcategory": "Alchemist"
+   "subcategory": "Alchemist",
+   "fameToMax": 4035884
   },
   {
    "id": 599,
-   "name": "Pumpkin Moonshine",
+   "name": "Alchemist Alcohol",
    "category": "Farming",
-   "subcategory": "Alchemist"
+   "subcategory": "Alchemist",
+   "fameToMax": 4035884
   },
   {
    "id": 600,
-   "name": "Major Berserk Potion",
+   "name": "Alchemist Berserk",
    "category": "Farming",
-   "subcategory": "Alchemist"
+   "subcategory": "Alchemist",
+   "fameToMax": 4035884
   },
   {
    "id": 601,
-   "name": "Invisibility Potion",
+   "name": "Alchemist Cleanse",
    "category": "Farming",
-   "subcategory": "Alchemist"
+   "subcategory": "Alchemist",
+   "fameToMax": 4035884
   },
   {
    "id": 602,
-   "name": "Major Cleansing Potion",
+   "name": "Alchemist Cleanse2",
    "category": "Farming",
-   "subcategory": "Alchemist"
+   "subcategory": "Alchemist",
+   "fameToMax": 4035884
   },
   {
    "id": 603,
-   "name": "Minor Poison Potion",
+   "name": "Alchemist Cooldown",
    "category": "Farming",
-   "subcategory": "Alchemist"
+   "subcategory": "Alchemist",
+   "fameToMax": 4035884
   },
   {
    "id": 604,
-   "name": "Minor Energy Potion",
+   "name": "Alchemist Energy",
    "category": "Farming",
-   "subcategory": "Alchemist"
+   "subcategory": "Alchemist",
+   "fameToMax": 4035884
   },
   {
    "id": 605,
-   "name": "Major Gathering Potion",
+   "name": "Alchemist Gather",
    "category": "Farming",
-   "subcategory": "Alchemist"
+   "subcategory": "Alchemist",
+   "fameToMax": 4035884
   },
   {
    "id": 606,
-   "name": "Minor Healing Potion",
+   "name": "Alchemist Heal",
    "category": "Farming",
-   "subcategory": "Alchemist"
+   "subcategory": "Alchemist",
+   "fameToMax": 4035884
   },
   {
    "id": 607,
-   "name": "Major Hellfire Potion",
+   "name": "Alchemist Lava",
    "category": "Farming",
-   "subcategory": "Alchemist"
+   "subcategory": "Alchemist",
+   "fameToMax": 4035884
   },
   {
    "id": 608,
-   "name": "Major Calming Potion",
+   "name": "Alchemist Mobreset",
    "category": "Farming",
-   "subcategory": "Alchemist"
+   "subcategory": "Alchemist",
+   "fameToMax": 4035884
   },
   {
    "id": 609,
-   "name": "Minor Gigantify Potion",
+   "name": "Alchemist Revive",
    "category": "Farming",
-   "subcategory": "Alchemist"
+   "subcategory": "Alchemist",
+   "fameToMax": 4035884
   },
   {
    "id": 610,
-   "name": "Minor Sticky Potion",
+   "name": "Alchemist Slowfield",
    "category": "Farming",
-   "subcategory": "Alchemist"
+   "subcategory": "Alchemist",
+   "fameToMax": 4035884
   },
   {
    "id": 611,
-   "name": "Minor Resistance Potion",
+   "name": "Alchemist Stoneskin",
    "category": "Farming",
-   "subcategory": "Alchemist"
+   "subcategory": "Alchemist",
+   "fameToMax": 4035884
   },
   {
    "id": 612,
-   "name": "Major Tornado in a Bottle",
+   "name": "Alchemist Tornado",
    "category": "Farming",
-   "subcategory": "Alchemist"
+   "subcategory": "Alchemist",
+   "fameToMax": 4035884
   },
   {
    "id": 613,
-   "name": "Foal",
+   "name": "Animals",
    "category": "Farming",
-   "subcategory": "Animals"
+   "subcategory": "Animals",
+   "fameToMax": 229314
   },
   {
    "id": 614,
-   "name": "Baby Chickens",
+   "name": "Animals Chicken",
    "category": "Farming",
-   "subcategory": "Animals"
+   "subcategory": "Animals",
+   "fameToMax": 2017942
   },
   {
    "id": 615,
-   "name": "Calf",
+   "name": "Animals Cow",
    "category": "Farming",
-   "subcategory": "Animals"
+   "subcategory": "Animals",
+   "fameToMax": 2017942
   },
   {
    "id": 616,
-   "name": "Kid",
+   "name": "Animals Goat",
    "category": "Farming",
-   "subcategory": "Animals"
+   "subcategory": "Animals",
+   "fameToMax": 2017942
   },
   {
    "id": 617,
-   "name": "Gosling",
+   "name": "Animals Goose",
    "category": "Farming",
-   "subcategory": "Animals"
+   "subcategory": "Animals",
+   "fameToMax": 2017942
   },
   {
    "id": 618,
-   "name": "Foal",
+   "name": "Animals Horse",
    "category": "Farming",
-   "subcategory": "Animals"
+   "subcategory": "Animals",
+   "fameToMax": 2017942
   },
   {
    "id": 619,
-   "name": "Ox Calf",
+   "name": "Animals Ox",
    "category": "Farming",
-   "subcategory": "Animals"
+   "subcategory": "Animals",
+   "fameToMax": 2017942
   },
   {
    "id": 620,
-   "name": "Piglet",
+   "name": "Animals Pig",
    "category": "Farming",
-   "subcategory": "Animals"
+   "subcategory": "Animals",
+   "fameToMax": 2017942
   },
   {
    "id": 621,
-   "name": "Ghostwolf Pup",
+   "name": "Animals Rare",
    "category": "Farming",
-   "subcategory": "Animals"
+   "subcategory": "Animals",
+   "fameToMax": 2017942
   },
   {
    "id": 622,
-   "name": "Lamb",
+   "name": "Animals Sheep",
    "category": "Farming",
-   "subcategory": "Animals"
+   "subcategory": "Animals",
+   "fameToMax": 2017942
   },
   {
    "id": 623,
-   "name": "Carrot Soup",
+   "name": "Cook",
    "category": "Farming",
-   "subcategory": "Cook"
+   "subcategory": "Cook",
+   "fameToMax": 458628
   },
   {
    "id": 624,
-   "name": "Raw Beef",
+   "name": "Cook Meat",
    "category": "Farming",
-   "subcategory": "Cook"
+   "subcategory": "Cook",
+   "fameToMax": 4035884
   },
   {
    "id": 625,
-   "name": "Chicken Omelette",
+   "name": "Cook Omelette",
    "category": "Farming",
-   "subcategory": "Cook"
+   "subcategory": "Cook",
+   "fameToMax": 4035884
   },
   {
    "id": 626,
-   "name": "Chicken Pie",
+   "name": "Cook Pie",
    "category": "Farming",
-   "subcategory": "Cook"
+   "subcategory": "Cook",
+   "fameToMax": 4035884
   },
   {
    "id": 627,
-   "name": "Bread",
+   "name": "Cook Products",
    "category": "Farming",
-   "subcategory": "Cook"
+   "subcategory": "Cook",
+   "fameToMax": 4035884
   },
   {
    "id": 628,
-   "name": "Roast Pork",
+   "name": "Cook Roast",
    "category": "Farming",
-   "subcategory": "Cook"
+   "subcategory": "Cook",
+   "fameToMax": 4035884
   },
   {
    "id": 629,
-   "name": "Bean Salad",
+   "name": "Cook Salad",
    "category": "Farming",
-   "subcategory": "Cook"
+   "subcategory": "Cook",
+   "fameToMax": 4035884
   },
   {
    "id": 630,
-   "name": "Beef Sandwich",
+   "name": "Cook Sandwich",
    "category": "Farming",
-   "subcategory": "Cook"
+   "subcategory": "Cook",
+   "fameToMax": 4035884
   },
   {
    "id": 631,
-   "name": "Carrot Soup",
+   "name": "Cook Soup",
    "category": "Farming",
-   "subcategory": "Cook"
+   "subcategory": "Cook",
+   "fameToMax": 4035884
   },
   {
    "id": 632,
-   "name": "Beef Stew",
+   "name": "Cook Stew",
    "category": "Farming",
-   "subcategory": "Cook"
+   "subcategory": "Cook",
+   "fameToMax": 4035884
   },
   {
    "id": 633,
-   "name": "Healing Potion",
+   "name": "Crafter",
    "category": "Farming",
    "subcategory": "Crafter"
   },
   {
    "id": 634,
-   "name": "Carrots",
+   "name": "Crops",
    "category": "Farming",
-   "subcategory": "Crops"
+   "subcategory": "Crops",
+   "fameToMax": 229314
   },
   {
    "id": 635,
-   "name": "Beans",
+   "name": "Crops Bean",
    "category": "Farming",
-   "subcategory": "Crops"
+   "subcategory": "Crops",
+   "fameToMax": 2017942
   },
   {
    "id": 636,
-   "name": "Cabbage",
+   "name": "Crops Cabbage",
    "category": "Farming",
-   "subcategory": "Crops"
+   "subcategory": "Crops",
+   "fameToMax": 2017942
   },
   {
    "id": 637,
-   "name": "Carrots",
+   "name": "Crops Carrot",
    "category": "Farming",
-   "subcategory": "Crops"
+   "subcategory": "Crops",
+   "fameToMax": 2017942
   },
   {
    "id": 638,
-   "name": "Bundle of Corn",
+   "name": "Crops Corn",
    "category": "Farming",
-   "subcategory": "Crops"
+   "subcategory": "Crops",
+   "fameToMax": 2017942
   },
   {
    "id": 639,
-   "name": "Potatoes",
+   "name": "Crops Potato",
    "category": "Farming",
-   "subcategory": "Crops"
+   "subcategory": "Crops",
+   "fameToMax": 2017942
   },
   {
    "id": 640,
-   "name": "Pumpkin",
+   "name": "Crops Pumpkin",
    "category": "Farming",
-   "subcategory": "Crops"
+   "subcategory": "Crops",
+   "fameToMax": 2017942
   },
   {
    "id": 641,
-   "name": "Turnips",
+   "name": "Crops Turnip",
    "category": "Farming",
-   "subcategory": "Crops"
+   "subcategory": "Crops",
+   "fameToMax": 2017942
   },
   {
    "id": 642,
-   "name": "Sheaf of Wheat",
+   "name": "Crops Wheat",
    "category": "Farming",
-   "subcategory": "Crops"
+   "subcategory": "Crops",
+   "fameToMax": 2017942
   },
   {
    "id": 643,
-   "name": "Farm Farmer",
+   "name": "Farmer",
    "category": "Farming",
    "subcategory": "Farmer"
   },
   {
    "id": 644,
-   "name": "Arcane Agaric",
+   "name": "Herbs",
    "category": "Farming",
-   "subcategory": "Herbs"
+   "subcategory": "Herbs",
+   "fameToMax": 229314
   },
   {
    "id": 645,
-   "name": "Arcane Agaric",
+   "name": "Herbs Agaric",
    "category": "Farming",
-   "subcategory": "Herbs"
+   "subcategory": "Herbs",
+   "fameToMax": 2017942
   },
   {
    "id": 646,
-   "name": "Crenellated Burdock",
+   "name": "Herbs Burdock",
    "category": "Farming",
-   "subcategory": "Herbs"
+   "subcategory": "Herbs",
+   "fameToMax": 2017942
   },
   {
    "id": 647,
-   "name": "Brightleaf Comfrey",
+   "name": "Herbs Comfrey",
    "category": "Farming",
-   "subcategory": "Herbs"
+   "subcategory": "Herbs",
+   "fameToMax": 2017942
   },
   {
    "id": 648,
-   "name": "Elusive Foxglove",
+   "name": "Herbs Foxglove",
    "category": "Farming",
-   "subcategory": "Herbs"
+   "subcategory": "Herbs",
+   "fameToMax": 2017942
   },
   {
    "id": 649,
-   "name": "Firetouched Mullein",
+   "name": "Herbs Mullein",
    "category": "Farming",
-   "subcategory": "Herbs"
+   "subcategory": "Herbs",
+   "fameToMax": 2017942
   },
   {
    "id": 650,
-   "name": "Dragon Teasel",
+   "name": "Herbs Teasel",
    "category": "Farming",
-   "subcategory": "Herbs"
+   "subcategory": "Herbs",
+   "fameToMax": 2017942
   },
   {
    "id": 651,
-   "name": "Ghoul Yarrow",
+   "name": "Herbs Yarrow",
    "category": "Farming",
-   "subcategory": "Herbs"
+   "subcategory": "Herbs",
+   "fameToMax": 2017942
   },
   {
    "id": 652,
-   "name": "Farm Trainee",
+   "name": "Trainee",
    "category": "Farming",
    "subcategory": "Trainee"
   },
   {
    "id": 653,
-   "name": "Gather Fiber T3",
+   "name": "Fiber T3",
    "category": "Gathering",
    "subcategory": "Fiber"
   },
   {
    "id": 654,
-   "name": "Sickle",
+   "name": "Fiber T4",
    "category": "Gathering",
-   "subcategory": "Fiber"
+   "subcategory": "Fiber",
+   "fameToMax": 2927130
   },
   {
    "id": 655,
-   "name": "Sickle",
+   "name": "Fiber T5",
    "category": "Gathering",
-   "subcategory": "Fiber"
+   "subcategory": "Fiber",
+   "fameToMax": 4071787
   },
   {
    "id": 656,
-   "name": "Sickle",
+   "name": "Fiber T6",
    "category": "Gathering",
-   "subcategory": "Fiber"
+   "subcategory": "Fiber",
+   "fameToMax": 7631947
   },
   {
    "id": 657,
-   "name": "Sickle",
+   "name": "Fiber T7",
    "category": "Gathering",
-   "subcategory": "Fiber"
+   "subcategory": "Fiber",
+   "fameToMax": 20120846
   },
   {
    "id": 658,
-   "name": "Sickle",
+   "name": "Fiber T8",
    "category": "Gathering",
-   "subcategory": "Fiber"
+   "subcategory": "Fiber",
+   "fameToMax": 33732943
   },
   {
    "id": 659,
-   "name": "Fishing Rod",
+   "name": "Fish",
    "category": "Gathering",
-   "subcategory": "Fish"
+   "subcategory": "Fish",
+   "fameToMax": 4015146
   },
   {
    "id": 660,
-   "name": "Fishing Rod",
+   "name": "Fish Fish",
    "category": "Gathering",
-   "subcategory": "Fish"
+   "subcategory": "Fish",
+   "fameToMax": 8024452
   },
   {
    "id": 661,
-   "name": "Gather Hide T3",
+   "name": "Hide T3",
    "category": "Gathering",
    "subcategory": "Hide"
   },
   {
    "id": 662,
-   "name": "Skinning Knife",
+   "name": "Hide T4",
    "category": "Gathering",
-   "subcategory": "Hide"
+   "subcategory": "Hide",
+   "fameToMax": 2927130
   },
   {
    "id": 663,
-   "name": "Skinning Knife",
+   "name": "Hide T5",
    "category": "Gathering",
-   "subcategory": "Hide"
+   "subcategory": "Hide",
+   "fameToMax": 4071787
   },
   {
    "id": 664,
-   "name": "Skinning Knife",
+   "name": "Hide T6",
    "category": "Gathering",
-   "subcategory": "Hide"
+   "subcategory": "Hide",
+   "fameToMax": 7631947
   },
   {
    "id": 665,
-   "name": "Skinning Knife",
+   "name": "Hide T7",
    "category": "Gathering",
-   "subcategory": "Hide"
+   "subcategory": "Hide",
+   "fameToMax": 20120846
   },
   {
    "id": 666,
-   "name": "Skinning Knife",
+   "name": "Hide T8",
    "category": "Gathering",
-   "subcategory": "Hide"
+   "subcategory": "Hide",
+   "fameToMax": 33732943
   },
   {
    "id": 667,
-   "name": "Gather Ore T3",
+   "name": "Ore T3",
    "category": "Gathering",
    "subcategory": "Ore"
   },
   {
    "id": 668,
-   "name": "Pickaxe",
+   "name": "Ore T4",
    "category": "Gathering",
-   "subcategory": "Ore"
+   "subcategory": "Ore",
+   "fameToMax": 2927130
   },
   {
    "id": 669,
-   "name": "Pickaxe",
+   "name": "Ore T5",
    "category": "Gathering",
-   "subcategory": "Ore"
+   "subcategory": "Ore",
+   "fameToMax": 4071787
   },
   {
    "id": 670,
-   "name": "Pickaxe",
+   "name": "Ore T6",
    "category": "Gathering",
-   "subcategory": "Ore"
+   "subcategory": "Ore",
+   "fameToMax": 7631947
   },
   {
    "id": 671,
-   "name": "Pickaxe",
+   "name": "Ore T7",
    "category": "Gathering",
-   "subcategory": "Ore"
+   "subcategory": "Ore",
+   "fameToMax": 20120846
   },
   {
    "id": 672,
-   "name": "Pickaxe",
+   "name": "Ore T8",
    "category": "Gathering",
-   "subcategory": "Ore"
+   "subcategory": "Ore",
+   "fameToMax": 33732943
   },
   {
    "id": 673,
-   "name": "Gather Rock T3",
+   "name": "Rock T3",
    "category": "Gathering",
    "subcategory": "Rock"
   },
   {
    "id": 674,
-   "name": "Stone Hammer",
+   "name": "Rock T4",
    "category": "Gathering",
-   "subcategory": "Rock"
+   "subcategory": "Rock",
+   "fameToMax": 2927130
   },
   {
    "id": 675,
-   "name": "Stone Hammer",
+   "name": "Rock T5",
    "category": "Gathering",
-   "subcategory": "Rock"
+   "subcategory": "Rock",
+   "fameToMax": 4071787
   },
   {
    "id": 676,
-   "name": "Stone Hammer",
+   "name": "Rock T6",
    "category": "Gathering",
-   "subcategory": "Rock"
+   "subcategory": "Rock",
+   "fameToMax": 7631947
   },
   {
    "id": 677,
-   "name": "Stone Hammer",
+   "name": "Rock T7",
    "category": "Gathering",
-   "subcategory": "Rock"
+   "subcategory": "Rock",
+   "fameToMax": 20120846
   },
   {
    "id": 678,
-   "name": "Stone Hammer",
+   "name": "Rock T8",
    "category": "Gathering",
-   "subcategory": "Rock"
+   "subcategory": "Rock",
+   "fameToMax": 33732943
   },
   {
    "id": 679,
-   "name": "Gather Trainee",
+   "name": "Trainee",
    "category": "Gathering",
    "subcategory": "Trainee"
   },
   {
    "id": 680,
-   "name": "Gather Wood T3",
+   "name": "Wood T3",
    "category": "Gathering",
    "subcategory": "Wood"
   },
   {
    "id": 681,
-   "name": "Axe",
+   "name": "Wood T4",
    "category": "Gathering",
-   "subcategory": "Wood"
+   "subcategory": "Wood",
+   "fameToMax": 2927130
   },
   {
    "id": 682,
-   "name": "Axe",
+   "name": "Wood T5",
    "category": "Gathering",
-   "subcategory": "Wood"
+   "subcategory": "Wood",
+   "fameToMax": 4071787
   },
   {
    "id": 683,
-   "name": "Axe",
+   "name": "Wood T6",
    "category": "Gathering",
-   "subcategory": "Wood"
+   "subcategory": "Wood",
+   "fameToMax": 7631947
   },
   {
    "id": 684,
-   "name": "Axe",
+   "name": "Wood T7",
    "category": "Gathering",
-   "subcategory": "Wood"
+   "subcategory": "Wood",
+   "fameToMax": 20120846
   },
   {
    "id": 685,
-   "name": "Axe",
+   "name": "Wood T8",
    "category": "Gathering",
-   "subcategory": "Wood"
+   "subcategory": "Wood",
+   "fameToMax": 33732943
   },
   {
    "id": 686,
@@ -4124,63 +4782,72 @@
   },
   {
    "id": 687,
-   "name": "Excellent Spirit Paws",
+   "name": "Direbear",
    "category": "Tracking",
-   "subcategory": "Direbear"
+   "subcategory": "Direbear",
+   "fameToMax": 2557648
   },
   {
    "id": 688,
-   "name": "Excellent Dawnfeather",
+   "name": "Eagle",
    "category": "Tracking",
-   "subcategory": "Eagle"
+   "subcategory": "Eagle",
+   "fameToMax": 2557648
   },
   {
    "id": 689,
-   "name": "Excellent Runestone Tooth",
+   "name": "Elemental Rock",
    "category": "Tracking",
-   "subcategory": "Elemental"
+   "subcategory": "Elemental",
+   "fameToMax": 2557648
   },
   {
    "id": 690,
-   "name": "Excellent Sylvian Root",
+   "name": "Ent",
    "category": "Tracking",
-   "subcategory": "Ent"
+   "subcategory": "Ent",
+   "fameToMax": 2557648
   },
   {
    "id": 691,
-   "name": "Bag of Silver",
+   "name": "Faction Mob",
    "category": "Tracking",
-   "subcategory": "Faction"
+   "subcategory": "Faction",
+   "fameToMax": 2557648
   },
   {
    "id": 692,
-   "name": "Rare Animal Remains",
+   "name": "General",
    "category": "Tracking",
-   "subcategory": "General"
+   "subcategory": "General",
+   "fameToMax": 2557648
   },
   {
    "id": 693,
-   "name": "Horn",
+   "name": "Imp",
    "category": "Tracking",
-   "subcategory": "Imp"
+   "subcategory": "Imp",
+   "fameToMax": 2557648
   },
   {
    "id": 694,
-   "name": "Fine Shadow Claws",
+   "name": "Panther",
    "category": "Tracking",
-   "subcategory": "Panther"
+   "subcategory": "Panther",
+   "fameToMax": 2557648
   },
   {
    "id": 695,
-   "name": "Tracking Trainee",
+   "name": "Trainee",
    "category": "Tracking",
    "subcategory": "Trainee"
   },
   {
    "id": 696,
-   "name": "Excellent Werewolf Fangs",
+   "name": "Werewolf",
    "category": "Tracking",
-   "subcategory": "Werewolf"
+   "subcategory": "Werewolf",
+   "fameToMax": 2557648
   }
  ]
 }

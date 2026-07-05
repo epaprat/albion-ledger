@@ -31,6 +31,7 @@
     { "kind": "response", "code": 518, "category": "bank_tab_content" },
     { "kind": "event", "code": 154, "category": "spec_snapshot" },
     { "kind": "event", "code": 153, "category": "spec_delta" },
-    { "kind": "event", "code": 152, "category": "spec_done" }
+    { "kind": "event", "code": 152, "category": "spec_done" },
+    { "kind": "event", "code": 151, "category": "spec_full" }
   ]
 }

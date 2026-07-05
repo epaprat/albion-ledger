@@ -70,6 +70,7 @@ type MasteryLevel struct {
 	Category    string  `json:"category"`    // top breakdown, e.g. "Combat" (011)
 	Subcategory string  `json:"subcategory"` // mid breakdown, e.g. "Axes" (011)
 	Touched     bool    `json:"touched"`     // false = catalog node with no progress yet (011)
+	FameToMax   int64   `json:"fameToMax"`   // total fame to level 100; 0 = unknown (011)
 }
 
 // SpecNodeCatalog is one node's static identity from the name catalog (011).
@@ -78,6 +79,7 @@ type SpecNodeCatalog struct {
 	Name        string
 	Category    string
 	Subcategory string
+	FameToMax   int64 // total fame from 0 to level 100 (011); 0 = unknown
 }
 
 // CharacterSpec is the player's Destiny Board (specialization) state.

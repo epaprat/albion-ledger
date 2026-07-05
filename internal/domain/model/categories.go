@@ -48,6 +48,10 @@ const (
 	CatSpecSnapshot Category = "spec_snapshot"
 	CatSpecDelta    Category = "spec_delta"
 	CatSpecDone     Category = "spec_done"
+	// CatSpecFull = E:151 FullAchievementInfo (the FINISHED/maxed node list, login
+	// burst). Layout not yet pinned — the handler logs its shape under -debugflow so
+	// the next live capture reveals it, then marks those nodes maxed (011 follow-up).
+	CatSpecFull Category = "spec_full"
 )
 
 // AllCategories is the full ordered set of target categories (13). The coverage

@@ -21,6 +21,7 @@ import (
 	"encoding/xml"
 	"fmt"
 	"os"
+	"strconv"
 	"strings"
 )
 
@@ -29,6 +30,7 @@ type node struct {
 	Name        string `json:"name"`
 	Category    string `json:"category,omitempty"`    // top breakdown (Combat, Gathering…)
 	Subcategory string `json:"subcategory,omitempty"` // mid breakdown (Axes, Fiber…)
+	FameToMax   int64  `json:"fameToMax,omitempty"`   // total fame from 0 to level 100 (011)
 }
 
 func humanize(s string) string {
@@ -43,6 +45,16 @@ func humanize(s string) string {
 }
 
 // categoryDisplay maps the raw category code to the in-game top-breakdown name.
+// humanizeAfterFirst humanizes an id after dropping its first (category) token:
+// GATHER_FIBER_T5 → "Fiber T5", CRAFT_ARCANESTAFFS_ARCANE → "Arcanestaffs Arcane".
+func humanizeAfterFirst(id string) string {
+	parts := strings.SplitN(id, "_", 2)
+	if len(parts) < 2 {
+		return humanize(id)
+	}
+	return humanize(parts[1])
+}
+
 func categoryDisplay(cat string) string {
 	switch cat {
 	case "fighting":
@@ -107,6 +119,54 @@ func loadItemNames(args []string) map[string]string {
 	return m
 }
 
+// loadTemplateFame sums the per-level Fame column of every <template>'s <baselevels>
+// block → total fame from 0 to level 100 (multiplied by the node's famemultiplier at
+// use). The Fame column is the FIRST in the ";"-separated structure (011).
+func loadTemplateFame(raw []byte) map[string]int64 {
+	dec := xml.NewDecoder(strings.NewReader(string(raw)))
+	out := map[string]int64{}
+	var curTemplate string
+	for {
+		tok, err := dec.Token()
+		if err != nil {
+			break
+		}
+		switch t := tok.(type) {
+		case xml.StartElement:
+			if t.Name.Local == "template" {
+				for _, a := range t.Attr {
+					if a.Name.Local == "name" {
+						curTemplate = a.Value
+					}
+				}
+			}
+		case xml.CharData:
+			if curTemplate == "" {
+				continue
+			}
+			var sum int64
+			for _, line := range strings.Split(string(t), "\n") {
+				line = strings.TrimSpace(line)
+				if line == "" {
+					continue
+				}
+				fields := strings.Split(line, ";")
+				if n, err := strconv.ParseInt(strings.TrimSpace(fields[0]), 10, 64); err == nil {
+					sum += n
+				}
+			}
+			if sum > 0 {
+				out[curTemplate] = sum
+			}
+		case xml.EndElement:
+			if t.Name.Local == "template" {
+				curTemplate = ""
+			}
+		}
+	}
+	return out
+}
+
 func main() {
 	if len(os.Args) < 2 {
 		fmt.Fprintln(os.Stderr, "usage: gen-spec-nodes <achievements.xml>")
@@ -123,7 +183,7 @@ func main() {
 	// which the wire-index alignment assumption depends on.
 	dec := xml.NewDecoder(strings.NewReader(string(raw)))
 	var version string
-	var defs []struct{ id, category, item string }
+	var defs []struct{ id, category, item, tmpl string; fameMult float64 }
 	depthUnderParent := 0
 	for {
 		tok, err := dec.Token()
@@ -150,7 +210,8 @@ func main() {
 			if depthUnderParent > 0 {
 				continue // a reference, not a definition
 			}
-			var id, cat, item string
+			var id, cat, item, tmpl string
+			fameMult := 1.0
 			for _, a := range se.Attr {
 				switch a.Name.Local {
 				case "id":
@@ -159,10 +220,16 @@ func main() {
 					cat = a.Value
 				case "itemforsprite":
 					item = a.Value
+				case "usetemplate":
+					tmpl = a.Value
+				case "famemultiplier":
+					if v, err := strconv.ParseFloat(a.Value, 64); err == nil {
+						fameMult = v
+					}
 				}
 			}
 			if id != "" {
-				defs = append(defs, struct{ id, category, item string }{id, cat, item})
+				defs = append(defs, struct{ id, category, item, tmpl string; fameMult float64 }{id, cat, item, tmpl, fameMult})
 			}
 		}
 	}
@@ -174,19 +241,29 @@ func main() {
 			"id = DOCUMENT-ORDER index (0-based) over <achievement>+<templateachievement> defs — the wire "+
 			"E:154 alignment assumption, live-verified per 011 quickstart. Regenerate: scripts/gen-spec-nodes.", version),
 	}
+	tmplFame := loadTemplateFame(raw)
 	itemNames := loadItemNames(os.Args)
 	for i, d := range defs {
-		name := humanize(d.id)
-		if d.item != "" {
+		// Combat weapons/armor: itemforsprite IS the node's item ("Scholar Robe",
+		// "Arcane Staff"). Gathering/crafting/farming point itemforsprite at the TOOL
+		// (a sickle for every fiber tier), so there the id — minus its redundant
+		// category prefix — is the readable, tier-distinct name ("Fiber T5").
+		name := humanizeAfterFirst(d.id)
+		if d.category == "fighting" && d.item != "" {
 			if n, ok := itemNames[d.item]; ok {
-				name = n // real in-game item name (e.g. "Scholar Robe")
+				name = n
 			}
+		}
+		var fameToMax int64
+		if total, ok := tmplFame[d.tmpl]; ok {
+			fameToMax = int64(float64(total) * d.fameMult)
 		}
 		out.Nodes = append(out.Nodes, node{
 			ID:          i,
 			Name:        name,
 			Category:    categoryDisplay(d.category),
 			Subcategory: subcategoryOf(d.id),
+			FameToMax:   fameToMax,
 		})
 	}
 	enc := json.NewEncoder(os.Stdout)
