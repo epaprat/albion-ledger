@@ -25,8 +25,8 @@ const ready = ref(false)
 const specOpen = ref({})              // "Category" | "Category/Sub" → collapsed?
 const toggleSpec = (key) => { specOpen.value = { ...specOpen.value, [key]: !specOpen.value[key] } }
 const specCollapsed = (key) => !!specOpen.value[key]
-const pctToMax = (fame, needed) => needed > 0 ? Math.min(100, Math.round((fame / needed) * 100)) : 0
-const remainToMax = (fame, needed) => Math.max(0, (needed || 0) - (fame || 0))
+const pctMaxed = (g) => g.nodes > 0 ? Math.round((g.levelsum / (g.nodes * 100)) * 100) : 0
+const levelsToGo = (g) => (g.nodes * 100) - g.levelsum
 
 // Group the flat node list into category → subcategory → rows, each with a rollup
 // (node count, summed fame, top level). Filter matches node/sub/category names.
@@ -43,14 +43,15 @@ const specTree = computed(() => {
   for (const m of rows) {
     const cat = m.category || 'Other'
     const sub = m.subcategory || '—'
-    if (!cats.has(cat)) cats.set(cat, { name: cat, nodes: 0, touched: 0, fame: 0, needed: 0, maxLevel: 0, subs: new Map() })
+    if (!cats.has(cat)) cats.set(cat, { name: cat, nodes: 0, touched: 0, fame: 0, levelsum: 0, maxed: 0, subs: new Map() })
     const c = cats.get(cat)
-    if (!c.subs.has(sub)) c.subs.set(sub, { name: sub, nodes: 0, touched: 0, fame: 0, needed: 0, maxLevel: 0, rows: [] })
+    if (!c.subs.has(sub)) c.subs.set(sub, { name: sub, nodes: 0, touched: 0, fame: 0, levelsum: 0, maxed: 0, rows: [] })
     const sc = c.subs.get(sub)
-    const need = m.fameToMax || 0
-    sc.rows.push(m); sc.nodes++; sc.fame += m.fame || 0; sc.needed += need; sc.maxLevel = Math.max(sc.maxLevel, m.level || 0)
-    c.nodes++; c.fame += m.fame || 0; c.needed += need; c.maxLevel = Math.max(c.maxLevel, m.level || 0)
+    const lvl = m.level || 0
+    sc.rows.push(m); sc.nodes++; sc.fame += m.fame || 0; sc.levelsum += lvl
+    c.nodes++; c.fame += m.fame || 0; c.levelsum += lvl
     if (m.touched) { sc.touched++; c.touched++ }
+    if (lvl >= 100) { sc.maxed++; c.maxed++ }
   }
   const catList = [...cats.values()].sort((a, b) => b.fame - a.fame)
   for (const c of catList) {
@@ -213,14 +214,14 @@ onMounted(async () => {
               <button class="spec-head cat" @click="toggleSpec(c.name)" :aria-expanded="!specCollapsed(c.name)">
                 <span class="chev" :class="{ open: !specCollapsed(c.name) }">▸</span>
                 <span class="spec-name">{{ c.name }}</span>
-                <span class="muted">· {{ c.touched }}/{{ c.nodes }} started · {{ pctToMax(c.fame, c.needed) }}% maxed · {{ compact(remainToMax(c.fame, c.needed)) }} to go</span>
+                <span class="muted">· {{ pctMaxed(c) }}% maxed · {{ c.maxed }}/{{ c.nodes }} at 100 · {{ fmt(levelsToGo(c)) }} lvls to go</span>
               </button>
               <div v-show="!specCollapsed(c.name)" class="spec-subs">
                 <div v-for="sc in c.subList" :key="sc.name" class="spec-sub">
                   <button class="spec-head sub" @click="toggleSpec(c.name + '/' + sc.name)" :aria-expanded="!specCollapsed(c.name + '/' + sc.name)">
                     <span class="chev" :class="{ open: !specCollapsed(c.name + '/' + sc.name) }">▸</span>
                     <span class="spec-name">{{ sc.name }}</span>
-                    <span class="muted">· {{ sc.touched }}/{{ sc.nodes }} · {{ pctToMax(sc.fame, sc.needed) }}% maxed · {{ compact(remainToMax(sc.fame, sc.needed)) }} to go</span>
+                    <span class="muted">· {{ pctMaxed(sc) }}% maxed · {{ sc.maxed }}/{{ sc.nodes }} at 100 · {{ fmt(levelsToGo(sc)) }} lvls to go</span>
                   </button>
                   <table v-show="!specCollapsed(c.name + '/' + sc.name)">
                     <caption class="sr-only">{{ c.name }} — {{ sc.name }}</caption>
@@ -235,7 +236,7 @@ onMounted(async () => {
                           </span>
                         </td>
                         <td class="num">{{ m.fame ? compact(m.fame) : '—' }}</td>
-                        <td class="num" :title="m.fameToMax ? pctToMax(m.fame, m.fameToMax) + '% maxed' : ''">{{ m.fameToMax ? (m.level >= 100 ? '✓' : compact(remainToMax(m.fame, m.fameToMax))) : '—' }}</td>
+                        <td class="num">{{ m.level >= 100 ? '✓' : (100 - (m.level || 0)) + ' lvl' }}</td>
                       </tr>
                     </tbody>
                   </table>
