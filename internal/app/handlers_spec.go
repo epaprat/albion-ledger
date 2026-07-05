@@ -76,6 +76,7 @@ func handleSpecSnapshot(p *Pipeline, _ probe.Kind, _ int, params map[byte]interf
 	} else {
 		p.board.MergeAll(nodes)
 	}
+	p.specSnapshotSeen = true
 	p.emitSpec()
 	if p.debug {
 		p2, _ := p.board.Totals()
@@ -137,8 +138,11 @@ func (p *Pipeline) emitSpec() {
 		inCatalog[c.ID] = true
 		if n, inProg := prog[c.ID]; inProg {
 			add(c.ID, c.Name, c.Category, c.Subcategory, n, n.Level > 0 || n.Fame > 0, c.FameToMax)
-		} else if p.specUnlocked[c.ID] {
-			// Unlocked but not in-progress → maxed (level 100). E:155 carries no fame.
+		} else if p.specUnlocked[c.ID] && p.specSnapshotSeen {
+			// Unlocked but not in the CURRENT in-progress snapshot → maxed. The
+			// snapshot is REQUIRED: the unlocked set alone (e.g. the persisted seed
+			// at startup, before any zone join) contains in-progress nodes too, and
+			// classifying against an empty board marked EVERYTHING level 100.
 			add(c.ID, c.Name, c.Category, c.Subcategory, specboard.Node{Level: 100, Progress: 1}, true, c.FameToMax)
 		} else {
 			add(c.ID, c.Name, c.Category, c.Subcategory, specboard.Node{}, false, c.FameToMax)
@@ -152,6 +156,7 @@ func (p *Pipeline) emitSpec() {
 	}
 	count, totalFame := p.board.Totals()
 	p.sink.SetSpec(model.CharacterSpec{
-		Masteries: masteries, NodeCount: count, TotalFame: totalFame, Complete: p.specUnlockedSeen,
+		Masteries: masteries, NodeCount: count, TotalFame: totalFame,
+		Complete: p.specUnlockedSeen && p.specSnapshotSeen,
 	})
 }

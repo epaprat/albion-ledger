@@ -128,6 +128,8 @@ type Pipeline struct {
 	specReplacePending bool
 	specUnlocked       map[int]bool // E:155 full unlocked set; ids not in board = maxed (011)
 	specUnlockedSeen   bool         // true once E:155 (or a persisted seed) is known — data is complete
+	specSnapshotSeen   bool         // true once an E:154 burst arrived — REQUIRED before maxed
+	//                                 classification (unlocked ∖ empty-board would mark ALL 100)
 }
 
 // New wires a Pipeline. locs may be nil (zones stay raw cluster ids).

@@ -169,3 +169,32 @@ func TestSpecUnlockedMarksMaxed(t *testing.T) {
 		}
 	}
 }
+
+// Startup seed order: the persisted unlocked set arrives BEFORE any E:154. Nothing
+// may be classified maxed until a snapshot separates in-progress from finished —
+// live regression: everything with fame showed level 100.
+func TestSeedBeforeSnapshotMarksNothingMaxed(t *testing.T) {
+	svc, p := newGlue(t)
+	p.SeedSpecUnlocked([]int{22, 999}) // full unlocked set: 22 in-progress, 999 maxed
+	for _, m := range specOf(svc).Masteries {
+		if m.Level == 100 {
+			t.Fatalf("maxed classification before any snapshot: %+v", m)
+		}
+	}
+	if specOf(svc).Complete {
+		t.Fatal("complete must require BOTH the unlocked set and a snapshot")
+	}
+	// Snapshot arrives: 22 in-progress at 30 → 999 (unlocked, absent) becomes maxed.
+	p.setSelfForTest(specSelf)
+	p.dispatch(probe.KindEvent, 154, snapshotParams(specSelf, []int16{22}, []byte{30}, nil, nil))
+	byIdx := map[int]model.MasteryLevel{}
+	for _, m := range specOf(svc).Masteries {
+		byIdx[m.Index] = m
+	}
+	if byIdx[22].Level != 30 || byIdx[999].Level != 100 {
+		t.Fatalf("post-snapshot classification wrong: 22=%+v 999=%+v", byIdx[22], byIdx[999])
+	}
+	if !specOf(svc).Complete {
+		t.Fatal("complete once both known")
+	}
+}
