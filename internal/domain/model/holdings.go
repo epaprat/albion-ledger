@@ -67,7 +67,8 @@ type MasteryLevel struct {
 	Level    int     `json:"level"`
 	Progress float64 `json:"progress"` // fraction to next level [0,1] (011)
 	Fame     int64   `json:"fame"`     // accumulated fame on this node (011)
-	Category string  `json:"category"` // node category, e.g. "fighting" (011)
+	Category    string  `json:"category"`    // top breakdown, e.g. "Combat" (011)
+	Subcategory string  `json:"subcategory"` // mid breakdown, e.g. "Axes" (011)
 }
 
 // CharacterSpec is the player's Destiny Board (specialization) state.

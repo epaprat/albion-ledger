@@ -21,10 +21,37 @@ const specFilter = ref('')
 const status = ref({ capturing: false, interface: '', encryptedRate: 0, driftAlert: '' })
 const ready = ref(false)
 
-const specRows = computed(() => {
+const specOpen = ref({})              // "Category" | "Category/Sub" → collapsed?
+const toggleSpec = (key) => { specOpen.value = { ...specOpen.value, [key]: !specOpen.value[key] } }
+const specCollapsed = (key) => !!specOpen.value[key]
+
+// Group the flat node list into category → subcategory → rows, each with a rollup
+// (node count, summed fame, top level). Filter matches node/sub/category names.
+const specTree = computed(() => {
   const q = specFilter.value.trim().toLowerCase()
-  const rows = spec.value.masteries || []
-  return q ? rows.filter(m => (m.name || '').toLowerCase().includes(q)) : rows
+  const rows = (spec.value.masteries || []).filter(m => {
+    if (!q) return true
+    return (m.name || '').toLowerCase().includes(q)
+      || (m.subcategory || '').toLowerCase().includes(q)
+      || (m.category || '').toLowerCase().includes(q)
+  })
+  const cats = new Map()
+  for (const m of rows) {
+    const cat = m.category || 'Other'
+    const sub = m.subcategory || '—'
+    if (!cats.has(cat)) cats.set(cat, { name: cat, nodes: 0, fame: 0, maxLevel: 0, subs: new Map() })
+    const c = cats.get(cat)
+    if (!c.subs.has(sub)) c.subs.set(sub, { name: sub, nodes: 0, fame: 0, maxLevel: 0, rows: [] })
+    const sc = c.subs.get(sub)
+    sc.rows.push(m); sc.nodes++; sc.fame += m.fame || 0; sc.maxLevel = Math.max(sc.maxLevel, m.level || 0)
+    c.nodes++; c.fame += m.fame || 0; c.maxLevel = Math.max(c.maxLevel, m.level || 0)
+  }
+  const catList = [...cats.values()].sort((a, b) => b.fame - a.fame)
+  for (const c of catList) {
+    c.subList = [...c.subs.values()].sort((a, b) => b.fame - a.fame)
+    for (const sc of c.subList) sc.rows.sort((a, b) => (b.level - a.level) || (b.fame - a.fame))
+  }
+  return catList
 })
 const marketRows = computed(() =>
   [...market.value.values()].sort((a, b) => (b.lastSeen || 0) - (a.lastSeen || 0))
@@ -172,22 +199,39 @@ onMounted(async () => {
               </label>
             </span>
           </div>
-          <table>
-            <caption class="sr-only">Destiny Board nodes by level</caption>
-            <thead><tr><th>Node</th><th class="num">Level</th><th>Progress</th><th class="num">Fame</th></tr></thead>
-            <tbody>
-              <tr v-for="m in specRows" :key="m.index">
-                <td>{{ m.name }}<span class="muted" v-if="m.category"> · {{ m.category }}</span></td>
-                <td class="num">{{ m.level }}</td>
-                <td>
-                  <span class="bar" :title="Math.round(m.progress * 100) + '%'">
-                    <span class="bar-fill" :style="{ width: Math.round(m.progress * 100) + '%' }"></span>
-                  </span>
-                </td>
-                <td class="num">{{ m.fame ? compact(m.fame) : '—' }}</td>
-              </tr>
-            </tbody>
-          </table>
+          <div class="spec-tree">
+            <div v-for="c in specTree" :key="c.name" class="spec-cat">
+              <button class="spec-head cat" @click="toggleSpec(c.name)" :aria-expanded="!specCollapsed(c.name)">
+                <span class="chev" :class="{ open: !specCollapsed(c.name) }">▸</span>
+                <span class="spec-name">{{ c.name }}</span>
+                <span class="muted">· {{ c.nodes }} · max {{ c.maxLevel }} · {{ compact(c.fame) }}</span>
+              </button>
+              <div v-show="!specCollapsed(c.name)" class="spec-subs">
+                <div v-for="sc in c.subList" :key="sc.name" class="spec-sub">
+                  <button class="spec-head sub" @click="toggleSpec(c.name + '/' + sc.name)" :aria-expanded="!specCollapsed(c.name + '/' + sc.name)">
+                    <span class="chev" :class="{ open: !specCollapsed(c.name + '/' + sc.name) }">▸</span>
+                    <span class="spec-name">{{ sc.name }}</span>
+                    <span class="muted">· {{ sc.nodes }} · max {{ sc.maxLevel }} · {{ compact(sc.fame) }}</span>
+                  </button>
+                  <table v-show="!specCollapsed(c.name + '/' + sc.name)">
+                    <caption class="sr-only">{{ c.name }} — {{ sc.name }}</caption>
+                    <tbody>
+                      <tr v-for="m in sc.rows" :key="m.index">
+                        <td>{{ m.name }}</td>
+                        <td class="num">{{ m.level }}</td>
+                        <td>
+                          <span class="bar" :title="Math.round(m.progress * 100) + '%'">
+                            <span class="bar-fill" :style="{ width: Math.round(m.progress * 100) + '%' }"></span>
+                          </span>
+                        </td>
+                        <td class="num">{{ m.fame ? compact(m.fame) : '—' }}</td>
+                      </tr>
+                    </tbody>
+                  </table>
+                </div>
+              </div>
+            </div>
+          </div>
         </template>
       </section>
     </main>
@@ -219,6 +263,16 @@ tbody tr:hover { background: var(--panel); }
 .badge.server_estimate { background: rgba(210,153,34,.18); color: var(--warn); }
 .badge.unknown { color: var(--muted); }
 .badge.stale { background: rgba(248,81,73,.18); color: var(--bad); margin-left: 8px; }
+.spec-tree { display: flex; flex-direction: column; gap: 2px; }
+.spec-head { display: flex; align-items: baseline; gap: 8px; width: 100%; text-align: left; background: none; border: none; color: var(--text); cursor: pointer; padding: 7px 10px; border-radius: 6px; font: inherit; }
+.spec-head:hover { background: var(--panel); }
+.spec-head.cat { font-weight: 600; font-size: 15px; }
+.spec-head.sub { font-size: 13px; padding-left: 26px; color: var(--text); }
+.spec-name { flex: 0 0 auto; }
+.chev { display: inline-block; transition: transform .12s; font-size: 11px; color: var(--muted); }
+.chev.open { transform: rotate(90deg); }
+.spec-subs { display: flex; flex-direction: column; gap: 1px; }
+.spec-sub table { margin-left: 40px; width: calc(100% - 40px); }
 .bar { display: inline-block; width: 120px; height: 8px; background: var(--border); border-radius: 4px; overflow: hidden; vertical-align: middle; }
 .bar-fill { display: block; height: 100%; background: var(--good); }
 </style>

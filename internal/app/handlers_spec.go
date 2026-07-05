@@ -92,13 +92,14 @@ func (p *Pipeline) emitSpec() {
 	rows := p.board.List()
 	masteries := make([]model.MasteryLevel, len(rows))
 	for i, n := range rows {
-		name, category, ok := p.specNames.Resolve(n.ID)
+		name, category, subcategory, ok := p.specNames.Resolve(n.ID)
 		if !ok {
 			name = "Node #" + strconv.Itoa(n.ID)
+			category = "Other"
 		}
 		masteries[i] = model.MasteryLevel{
 			Index: n.ID, Name: name, Level: n.Level,
-			Progress: n.Progress, Fame: n.Fame, Category: category,
+			Progress: n.Progress, Fame: n.Fame, Category: category, Subcategory: subcategory,
 		}
 	}
 	count, totalFame := p.board.Totals()

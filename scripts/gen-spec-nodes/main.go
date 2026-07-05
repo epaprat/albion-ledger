@@ -25,13 +25,14 @@ import (
 )
 
 type node struct {
-	ID       int    `json:"id"`
-	Name     string `json:"name"`
-	Category string `json:"category,omitempty"`
+	ID          int    `json:"id"`
+	Name        string `json:"name"`
+	Category    string `json:"category,omitempty"`    // top breakdown (Combat, Gathering…)
+	Subcategory string `json:"subcategory,omitempty"` // mid breakdown (Axes, Fiber…)
 }
 
-func humanize(id string) string {
-	words := strings.Split(strings.ToLower(id), "_")
+func humanize(s string) string {
+	words := strings.Split(strings.ToLower(s), "_")
 	for i, w := range words {
 		if w == "" {
 			continue
@@ -39,6 +40,37 @@ func humanize(id string) string {
 		words[i] = strings.ToUpper(w[:1]) + w[1:]
 	}
 	return strings.Join(words, " ")
+}
+
+// categoryDisplay maps the raw category code to the in-game top-breakdown name.
+func categoryDisplay(cat string) string {
+	switch cat {
+	case "fighting":
+		return "Combat"
+	case "gathering":
+		return "Gathering"
+	case "crafting":
+		return "Crafting"
+	case "farming":
+		return "Farming"
+	case "tracking":
+		return "Tracking"
+	case "main":
+		return "Adventurer"
+	default:
+		return humanize(cat)
+	}
+}
+
+// subcategoryOf derives the mid-breakdown from the id's second token (the weapon /
+// resource line): GATHER_FIBER_T3 → "Fiber", COMBAT_ARCANESTAFFS_ARCANE →
+// "Arcanestaffs", FARM_ALCHEMIST_ACID → "Alchemist". Single-token ids → "".
+func subcategoryOf(id string) string {
+	parts := strings.Split(id, "_")
+	if len(parts) < 2 {
+		return ""
+	}
+	return humanize(parts[1])
 }
 
 func main() {
@@ -107,7 +139,12 @@ func main() {
 			"E:154 alignment assumption, live-verified per 011 quickstart. Regenerate: scripts/gen-spec-nodes.", version),
 	}
 	for i, d := range defs {
-		out.Nodes = append(out.Nodes, node{ID: i, Name: humanize(d.id), Category: d.category})
+		out.Nodes = append(out.Nodes, node{
+			ID:          i,
+			Name:        humanize(d.id),
+			Category:    categoryDisplay(d.category),
+			Subcategory: subcategoryOf(d.id),
+		})
 	}
 	enc := json.NewEncoder(os.Stdout)
 	enc.SetIndent("", " ")

@@ -12,9 +12,10 @@ import (
 )
 
 type entry struct {
-	ID       int    `json:"id"`
-	Name     string `json:"name"`
-	Category string `json:"category"`
+	ID          int    `json:"id"`
+	Name        string `json:"name"`
+	Category    string `json:"category"`
+	Subcategory string `json:"subcategory"`
 }
 
 type fileFormat struct {
@@ -50,11 +51,11 @@ func parse(b []byte) (map[int]entry, error) {
 
 // Resolve returns the node's name + category; ok=false for an unknown id, which the
 // caller renders as an honest "Node #N" placeholder (spec rule 5).
-func (c *Catalog) Resolve(id int) (name, category string, ok bool) {
+func (c *Catalog) Resolve(id int) (name, category, subcategory string, ok bool) {
 	c.mu.RLock()
 	defer c.mu.RUnlock()
 	e, found := c.byID[id]
-	return e.Name, e.Category, found
+	return e.Name, e.Category, e.Subcategory, found
 }
 
 // Reload swaps in a new catalog file at runtime; a malformed file is rejected and

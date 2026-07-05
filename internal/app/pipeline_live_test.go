@@ -365,9 +365,9 @@ func TestMoveToHoldingsKnownButTrackerUnknownDst(t *testing.T) {
 // testSpecNames is a trivial resolver for the pipeline tests (011).
 type testSpecNames struct{}
 
-func (testSpecNames) Resolve(id int) (string, string, bool) {
+func (testSpecNames) Resolve(id int) (string, string, string, bool) {
 	if id == 22 {
-		return "Combat Axes", "fighting", true
+		return "Combat Axes", "Combat", "Axes", true
 	}
-	return "", "", false
+	return "", "", "", false
 }

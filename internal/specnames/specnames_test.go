@@ -13,10 +13,10 @@ func TestResolveBundled(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	if name, cat, ok := c.Resolve(22); !ok || name == "" || cat == "" {
+	if name, cat, _, ok := c.Resolve(22); !ok || name == "" || cat == "" {
 		t.Fatalf("bundled node 22 unresolved: %q/%q/%v", name, cat, ok)
 	}
-	if _, _, ok := c.Resolve(999999); ok {
+	if _, _, _, ok := c.Resolve(999999); ok {
 		t.Fatal("unknown id must be not-ok (renders Node #N)")
 	}
 }
@@ -32,7 +32,7 @@ func TestReloadRejectsMalformed(t *testing.T) {
 	if err := c.Reload(bad); err == nil {
 		t.Fatal("malformed reload must error")
 	}
-	if name, _, ok := c.Resolve(1); !ok || name != "Alpha" {
+	if name, _, _, ok := c.Resolve(1); !ok || name != "Alpha" {
 		t.Fatal("previous catalog must survive a bad reload")
 	}
 	good := filepath.Join(dir, "good.json")
@@ -40,10 +40,10 @@ func TestReloadRejectsMalformed(t *testing.T) {
 	if err := c.Reload(good); err != nil {
 		t.Fatal(err)
 	}
-	if _, _, ok := c.Resolve(1); ok {
+	if _, _, _, ok := c.Resolve(1); ok {
 		t.Fatal("reload must REPLACE")
 	}
-	if name, _, ok := c.Resolve(2); !ok || name != "Beta" {
+	if name, _, _, ok := c.Resolve(2); !ok || name != "Beta" {
 		t.Fatal("reload must load the new file")
 	}
 }
