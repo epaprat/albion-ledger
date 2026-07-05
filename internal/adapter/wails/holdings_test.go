@@ -1,11 +1,13 @@
 package wailsadapter
 
 import (
+	"context"
 	"testing"
 
 	"github.com/epaprat/albion-ledger/internal/catalog"
 	"github.com/epaprat/albion-ledger/internal/domain/model"
 	"github.com/epaprat/albion-ledger/internal/holdings"
+	"github.com/epaprat/albion-ledger/internal/port"
 	"github.com/epaprat/albion-ledger/internal/valuation"
 )
 
@@ -93,5 +95,47 @@ func TestEquipmentAndSpec(t *testing.T) {
 	s.SetSpec([]int{8, 0, 86})
 	if sp := s.Spec(); len(sp.Masteries) != 3 || sp.Masteries[2].Level != 86 {
 		t.Fatalf("spec = %+v", sp)
+	}
+}
+
+// 010: the external (AODP) layer prices held-but-unvalued items, only queries the
+// missing ones, and every in-game source outranks it.
+type fakeFetcher struct {
+	prices []port.ExternalPrice
+	asked  []string
+}
+
+func (f *fakeFetcher) Fetch(_ context.Context, names []string) ([]port.ExternalPrice, error) {
+	f.asked = names
+	return f.prices, nil
+}
+
+func TestExternalPricesFillGapsButYieldToInGame(t *testing.T) {
+	s, _, book := newHoldSvc(t)
+	s.IngestVaultSummaryTab("vault:X:Tab", "X", "Tab", []holdings.ItemRef{{Index: 920, Count: 2, Quality: 1}})
+
+	f := &fakeFetcher{prices: []port.ExternalPrice{{UniqueName: "T7_WOOD", Quality: 1, Silver: 55}}}
+	if n := s.RefreshExternalPrices(context.Background(), f); n != 1 {
+		t.Fatalf("fetched = %d, want 1", n)
+	}
+	if len(f.asked) != 1 || f.asked[0] != "T7_WOOD" {
+		t.Fatalf("must query exactly the missing name, got %v", f.asked)
+	}
+	rows := s.ListHoldings()
+	if len(rows) != 1 || rows[0].Valuation.Amount != 55 || rows[0].Valuation.Source != model.SourceExternal {
+		t.Fatalf("external price must fill the gap: %+v", rows[0].Valuation)
+	}
+
+	// In-game EMV arrives → outranks the external base layer.
+	book.SetEMV(920, 1, 70, 900)
+	rows = s.ListHoldings()
+	if rows[0].Valuation.Amount != 70 || rows[0].Valuation.Source != model.SourceServerEstimate {
+		t.Fatalf("in-game EMV must override external: %+v", rows[0].Valuation)
+	}
+
+	// Nothing missing anymore → no query at all.
+	f.asked = nil
+	if n := s.RefreshExternalPrices(context.Background(), f); n != 0 || f.asked != nil {
+		t.Fatalf("no-missing must skip the fetch: n=%d asked=%v", n, f.asked)
 	}
 }

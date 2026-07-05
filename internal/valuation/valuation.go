@@ -22,14 +22,22 @@ type priced struct {
 // Book is the in-memory price source: latest live market price and EMV per
 // item+quality. Bounded by the number of distinct items seen.
 type Book struct {
-	mu   sync.RWMutex
-	live map[key]priced
-	emv  map[key]priced
+	mu       sync.RWMutex
+	live     map[key]priced
+	emv      map[key]priced
+	external map[key]priced // community feed (AODP) — base layer, in-game data wins
 }
 
 // NewBook creates an empty price book.
 func NewBook() *Book {
-	return &Book{live: map[key]priced{}, emv: map[key]priced{}}
+	return &Book{live: map[key]priced{}, emv: map[key]priced{}, external: map[key]priced{}}
+}
+
+// SetExternal records a community-feed price (AODP) for item+quality (010).
+func (b *Book) SetExternal(index, quality int, amount, asOf int64) {
+	b.mu.Lock()
+	b.external[key{index, quality}] = priced{amount, asOf}
+	b.mu.Unlock()
 }
 
 // SetMarket records a live market price for item+quality.
@@ -95,11 +103,16 @@ func (v *Valuer) Value(index, quality int, nowMS int64) model.Valuation {
 	emv, hasEMV := v.book.emv[k]
 	v.book.mu.RUnlock()
 
+	v.book.mu.RLock()
+	ext, hasExt := v.book.external[k]
+	v.book.mu.RUnlock()
 	switch {
 	case hasLive:
 		return v.mk(live.amount, model.SourceLiveMarket, live.asOf, nowMS)
 	case hasEMV:
 		return v.mk(emv.amount, model.SourceServerEstimate, emv.asOf, nowMS)
+	case hasExt:
+		return v.mk(ext.amount, model.SourceExternal, ext.asOf, nowMS)
 	}
 
 	// Quality-0 fallback (010): type-based summary rows (K bank overview) don't know
@@ -118,6 +131,11 @@ func (v *Valuer) Value(index, quality int, nowMS int64) model.Valuation {
 		for q := 1; q <= 5; q++ {
 			if e, ok := v.book.emv[key{index, q}]; ok {
 				return v.mk(e.amount, model.SourceServerEstimate, e.asOf, nowMS)
+			}
+		}
+		for q := 1; q <= 5; q++ {
+			if e, ok := v.book.external[key{index, q}]; ok {
+				return v.mk(e.amount, model.SourceExternal, e.asOf, nowMS)
 			}
 		}
 	}

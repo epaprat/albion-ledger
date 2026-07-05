@@ -6,6 +6,7 @@ package wailsadapter
 import (
 	"context"
 	"log"
+	"sort"
 	"strconv"
 	"sync"
 	"sync/atomic"
@@ -91,6 +92,40 @@ func (s *Service) IngestEMV(index, quality int, value, asOf int64) {
 	if len(revalued) > 0 {
 		s.emitFlow()
 	}
+}
+
+// RefreshExternalPrices fills valuation gaps from a community price feed (010):
+// only items currently HELD and still unvalued are queried — the base layer under
+// every in-game price source. Failures degrade silently (no network dependency).
+func (s *Service) RefreshExternalPrices(ctx context.Context, fetch port.PriceFetcher) int {
+	now := s.nowMS()
+	missing := map[string]bool{}
+	for _, r := range s.agg.List() {
+		if r.Valuation.Source == model.SourceUnknown && r.Item.UniqueName != "" {
+			missing[r.Item.UniqueName] = true
+		}
+	}
+	if len(missing) == 0 {
+		return 0
+	}
+	names := make([]string, 0, len(missing))
+	for n := range missing {
+		names = append(names, n)
+	}
+	sort.Strings(names) // deterministic batches
+	prices, err := fetch.Fetch(ctx, names)
+	if err != nil && len(prices) == 0 {
+		return 0
+	}
+	for _, p := range prices {
+		if idx, ok := s.cat.IndexOf(p.UniqueName); ok && p.Silver > 0 {
+			s.book.SetExternal(idx, p.Quality, p.Silver, now)
+		}
+	}
+	if len(prices) > 0 {
+		s.emitHoldings()
+	}
+	return len(prices)
 }
 
 // IngestMarketPrice records a market price identified by uniqueName (order feeds

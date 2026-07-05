@@ -19,6 +19,7 @@ import (
 	"github.com/wailsapp/wails/v2/pkg/runtime"
 
 	"github.com/epaprat/albion-ledger/data"
+	"github.com/epaprat/albion-ledger/internal/adapter/aodp"
 	"github.com/epaprat/albion-ledger/internal/adapter/capture"
 	"github.com/epaprat/albion-ledger/internal/adapter/store"
 	wailsadapter "github.com/epaprat/albion-ledger/internal/adapter/wails"
@@ -140,6 +141,25 @@ func main() {
 				svc.SetFlowReader(flowStore, sessionID) // zone analytics read side (006)
 			}
 			go runCapture(ctx, *iface, *replay, pipe, svc)
+			// Community price base layer (AODP, 010): fills valuation gaps for held
+			// items shortly after startup, then hourly. In-game observations always
+			// override; network failures degrade silently.
+			go func() {
+				client := aodp.New("")
+				t := time.NewTimer(20 * time.Second)
+				defer t.Stop()
+				for {
+					select {
+					case <-ctx.Done():
+						return
+					case <-t.C:
+						if n := svc.RefreshExternalPrices(ctx, client); n > 0 {
+							log.Printf("aodp: %d prices fetched", n)
+						}
+						t.Reset(time.Hour)
+					}
+				}
+			}()
 		},
 		OnShutdown: func(context.Context) {
 			if flowStore != nil {

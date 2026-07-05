@@ -28,7 +28,10 @@ type ValuationSource string
 const (
 	SourceLiveMarket     ValuationSource = "live_market"
 	SourceServerEstimate ValuationSource = "server_estimate" // EMV
-	SourceUnknown        ValuationSource = "unknown"
+	// SourceExternal is a community price feed (AODP) — the lowest-priority base
+	// layer; any in-game observation (live market, declared EMV) overrides it (010).
+	SourceExternal ValuationSource = "external"
+	SourceUnknown  ValuationSource = "unknown"
 )
 
 // DefaultStaleAfterMS is the freshness threshold (30 minutes) past which a value
