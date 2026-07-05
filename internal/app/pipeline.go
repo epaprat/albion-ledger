@@ -125,6 +125,7 @@ type Pipeline struct {
 	board              *specboard.Board
 	specNames          SpecResolver
 	specReplacePending bool
+	specUnlocked       map[int]bool // E:155 full unlocked set; ids not in board = maxed (011)
 }
 
 // New wires a Pipeline. locs may be nil (zones stay raw cluster ids).

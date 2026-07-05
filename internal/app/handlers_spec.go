@@ -19,35 +19,29 @@ func init() {
 	register(model.CatSpecSnapshot, handleSpecSnapshot)
 	register(model.CatSpecDelta, handleSpecDelta)
 	register(model.CatSpecDone, handleSpecDone)
-	register(model.CatSpecFull, handleSpecFull)
+	register(model.CatSpecUnlocked, handleSpecUnlocked)
 }
 
-// handleSpecFull — E:151 FullAchievementInfo (finished/maxed nodes, login burst).
-// Layout unconfirmed; log its shape under -debugflow to pin it. If it carries a plain
-// node-id array at k1, treat those as level-100 completions so maxed branches stop
-// showing as untouched (011 follow-up).
-func handleSpecFull(p *Pipeline, _ probe.Kind, _ int, params map[byte]interface{}) {
+// handleSpecUnlocked — E:155: the full unlocked-node list (in-progress ∪ maxed). Any
+// id here that is NOT in the current in-progress snapshot (E:154) is a maxed node
+// (level 100). The classification happens at emit time, so E:154/E:155 order in the
+// login burst doesn't matter — board membership always wins.
+func handleSpecUnlocked(p *Pipeline, _ probe.Kind, _ int, params map[byte]interface{}) {
 	if !p.specSelfMatches(params) {
 		return
 	}
-	ids := capture.SpecFinishedIDs(params)
-	if p.debug {
-		log.Printf("[spec] full (E:151) keys=%v finished=%d", specParamKeys(params), len(ids))
+	ids := capture.SpecUnlockedIDs(params)
+	if len(ids) == 0 {
+		return
 	}
+	p.specUnlocked = make(map[int]bool, len(ids))
 	for _, id := range ids {
-		p.board.Complete(id, 100)
+		p.specUnlocked[id] = true
 	}
-	if len(ids) > 0 {
-		p.emitSpec()
+	p.emitSpec()
+	if p.debug {
+		log.Printf("[spec] unlocked (E:155) n=%d", len(ids))
 	}
-}
-
-func specParamKeys(params map[byte]interface{}) []int {
-	ks := make([]int, 0, len(params))
-	for k := range params {
-		ks = append(ks, int(k))
-	}
-	return ks
 }
 
 // specSelfMatches gates all three messages on k0 == self (005 isSelfObj pattern).
@@ -136,7 +130,14 @@ func (p *Pipeline) emitSpec() {
 	}
 	for _, c := range catalog {
 		inCatalog[c.ID] = true
-		add(c.ID, c.Name, c.Category, c.Subcategory, prog[c.ID], prog[c.ID].Level > 0 || prog[c.ID].Fame > 0, c.FameToMax)
+		if n, inProg := prog[c.ID]; inProg {
+			add(c.ID, c.Name, c.Category, c.Subcategory, n, n.Level > 0 || n.Fame > 0, c.FameToMax)
+		} else if p.specUnlocked[c.ID] {
+			// Unlocked but not in-progress → maxed (level 100). E:155 carries no fame.
+			add(c.ID, c.Name, c.Category, c.Subcategory, specboard.Node{Level: 100, Progress: 1}, true, c.FameToMax)
+		} else {
+			add(c.ID, c.Name, c.Category, c.Subcategory, specboard.Node{}, false, c.FameToMax)
+		}
 	}
 	// A live node not in the catalog (unknown id) still shows, honestly labelled.
 	for id, n := range prog {

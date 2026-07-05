@@ -366,12 +366,18 @@ func TestMoveToHoldingsKnownButTrackerUnknownDst(t *testing.T) {
 type testSpecNames struct{}
 
 func (testSpecNames) Resolve(id int) (string, string, string, bool) {
-	if id == 22 {
+	switch id {
+	case 22:
 		return "Combat Axes", "Combat", "Axes", true
+	case 999:
+		return "Test Node", "Combat", "Test", true
 	}
 	return "", "", "", false
 }
 
 func (testSpecNames) All() []model.SpecNodeCatalog {
-	return []model.SpecNodeCatalog{{ID: 22, Name: "Combat Axes", Category: "Combat", Subcategory: "Axes", FameToMax: 1000}}
+	return []model.SpecNodeCatalog{
+		{ID: 22, Name: "Combat Axes", Category: "Combat", Subcategory: "Axes", FameToMax: 1000},
+		{ID: 999, Name: "Test Node", Category: "Combat", Subcategory: "Test", FameToMax: 1000},
+	}
 }

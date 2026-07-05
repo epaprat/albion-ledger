@@ -37,13 +37,13 @@ func TestSpecSnapshotFills(t *testing.T) {
 	svc, p := newGlue(t)
 	p.setSelfForTest(specSelf)
 	p.dispatch(probe.KindEvent, 154, snapshotParams(specSelf,
-		[]int16{22, 999}, []byte{22, 3}, []float32{0.5, 0.1}, []string{"[[100]]", "[[9]]"}))
+		[]int16{22, 888}, []byte{22, 3}, []float32{0.5, 0.1}, []string{"[[100]]", "[[9]]"}))
 
 	sp := specOf(svc)
 	if sp.NodeCount != 2 || sp.TotalFame != 109 {
 		t.Fatalf("totals wrong: %+v", sp)
 	}
-	// Node 22 resolves (testSpecNames), 999 falls back to "Node #999".
+	// Node 22 resolves (testSpecNames), 888 falls back to "Node #888".
 	byIdx := map[int]model.MasteryLevel{}
 	for _, m := range sp.Masteries {
 		byIdx[m.Index] = m
@@ -51,8 +51,8 @@ func TestSpecSnapshotFills(t *testing.T) {
 	if byIdx[22].Name != "Combat Axes" || byIdx[22].Level != 22 || math.Abs(byIdx[22].Progress-0.5) > 1e-6 {
 		t.Fatalf("node 22 wrong: %+v", byIdx[22])
 	}
-	if byIdx[999].Name != "Node #999" {
-		t.Fatalf("unknown id must fall back: %+v", byIdx[999])
+	if byIdx[888].Name != "Node #888" {
+		t.Fatalf("unknown id must fall back: %+v", byIdx[888])
 	}
 }
 
@@ -138,5 +138,34 @@ func TestSpecMultiPacketBurstMerges(t *testing.T) {
 	p.dispatch(probe.KindEvent, 154, snapshotParams(specSelf, []int16{9}, []byte{5}, nil, nil))
 	if n := specOf(svc).NodeCount; n != 1 {
 		t.Fatalf("new Join must replace, got %d", n)
+	}
+}
+
+// E:155 = full unlocked list (in-progress ∪ maxed). Ids unlocked but absent from
+// the in-progress snapshot are MAXED (level 100) — research-confirmed 2026-07-05.
+func TestSpecUnlockedMarksMaxed(t *testing.T) {
+	svc, p := newGlue(t)
+	p.setSelfForTest(specSelf)
+	// In-progress snapshot: node 22 at level 30.
+	p.dispatch(probe.KindEvent, 154, snapshotParams(specSelf, []int16{22}, []byte{30}, []float32{0.5}, nil))
+	// E:155 unlocked set includes 22 (in-progress) + 999 (maxed, not in snapshot).
+	p.dispatch(probe.KindEvent, 155, map[byte]interface{}{0: int32(specSelf), 1: []int16{22, 999}, 252: int16(155)})
+	byIdx := map[int]model.MasteryLevel{}
+	for _, m := range specOf(svc).Masteries {
+		byIdx[m.Index] = m
+	}
+	if byIdx[22].Level != 30 {
+		t.Fatalf("in-progress node must keep its level: %+v", byIdx[22])
+	}
+	if byIdx[999].Level != 100 || !byIdx[999].Touched {
+		t.Fatalf("unlocked-but-not-in-progress node must be maxed: %+v", byIdx[999])
+	}
+	// Order independence: a later E:154 that includes 999 with a real level wins.
+	p.specReplacePending = true
+	p.dispatch(probe.KindEvent, 154, snapshotParams(specSelf, []int16{999}, []byte{40}, nil, nil))
+	for _, m := range specOf(svc).Masteries {
+		if m.Index == 999 && m.Level != 40 {
+			t.Fatalf("in-progress must override maxed guess: %+v", m)
+		}
 	}
 }
