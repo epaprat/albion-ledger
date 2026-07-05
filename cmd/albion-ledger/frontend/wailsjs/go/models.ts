@@ -84,6 +84,7 @@ export namespace model {
 	    category: string;
 	    subcategory: string;
 	    touched: boolean;
+	    fameToMax: number;
 	
 	    static createFrom(source: any = {}) {
 	        return new MasteryLevel(source);
@@ -99,6 +100,7 @@ export namespace model {
 	        this.category = source["category"];
 	        this.subcategory = source["subcategory"];
 	        this.touched = source["touched"];
+	        this.fameToMax = source["fameToMax"];
 	    }
 	}
 	export class CharacterSpec {
