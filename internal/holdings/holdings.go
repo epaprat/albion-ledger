@@ -554,7 +554,11 @@ func (a *Aggregator) Summary(nowMS int64) model.HoldingsSummary {
 			VaultValue: a.cityVaultValue[cn], // 0 = not reported (010)
 		})
 	}
-	return model.HoldingsSummary{TotalValue: grand, UnvaluedCount: grandUnvalued, Cities: out}
+	var gameEst int64
+	for _, v := range a.cityVaultValue {
+		gameEst += v
+	}
+	return model.HoldingsSummary{TotalValue: grand, GameEstTotal: gameEst, UnvaluedCount: grandUnvalued, Cities: out}
 }
 
 // stateOf builds a SectionState from a last-seen ms (seen=false when not observed).

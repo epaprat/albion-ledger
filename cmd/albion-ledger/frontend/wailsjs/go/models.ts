@@ -375,6 +375,7 @@ export namespace model {
 	}
 	export class HoldingsSummary {
 	    totalValue: number;
+	    gameEstTotal: number;
 	    unvaluedCount: number;
 	    cities: CitySummary[];
 	
@@ -385,6 +386,7 @@ export namespace model {
 	    constructor(source: any = {}) {
 	        if ('string' === typeof source) source = JSON.parse(source);
 	        this.totalValue = source["totalValue"];
+	        this.gameEstTotal = source["gameEstTotal"];
 	        this.unvaluedCount = source["unvaluedCount"];
 	        this.cities = this.convertValues(source["cities"], CitySummary);
 	    }

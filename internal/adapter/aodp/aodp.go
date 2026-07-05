@@ -70,19 +70,32 @@ func (c *Client) Fetch(ctx context.Context, names []string) ([]port.ExternalPric
 		if err != nil {
 			return out, err
 		}
-		// Cheapest positive sell price per (name, quality) across cities.
-		best := map[string]port.ExternalPrice{}
+		// Average of the positive per-city minimum sell prices: a single city's
+		// rock-bottom listing under-values everything (live feedback: our totals sat
+		// far below the game's own estimate), and a lone outlier can't skew a mean
+		// of city minimums much.
+		type acc struct {
+			sum int64
+			n   int64
+			p   port.ExternalPrice
+		}
+		agg := map[string]*acc{}
 		for _, r := range rows {
 			if r.SellPriceMin <= 0 {
 				continue
 			}
 			k := fmt.Sprintf("%s|%d", r.ItemID, r.Quality)
-			if b, ok := best[k]; !ok || r.SellPriceMin < b.Silver {
-				best[k] = port.ExternalPrice{UniqueName: r.ItemID, Quality: r.Quality, Silver: r.SellPriceMin}
+			a := agg[k]
+			if a == nil {
+				a = &acc{p: port.ExternalPrice{UniqueName: r.ItemID, Quality: r.Quality}}
+				agg[k] = a
 			}
+			a.sum += r.SellPriceMin
+			a.n++
 		}
-		for _, p := range best {
-			out = append(out, p)
+		for _, a := range agg {
+			a.p.Silver = a.sum / a.n
+			out = append(out, a.p)
 		}
 	}
 	return out, nil

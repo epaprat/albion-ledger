@@ -55,6 +55,7 @@ type CitySummary struct {
 // HoldingsSummary is the rolled-up holdings state, nested city → tab.
 type HoldingsSummary struct {
 	TotalValue    int64         `json:"totalValue"`    // grand total of known values
+	GameEstTotal  int64         `json:"gameEstTotal"`  // Σ game-reported vault values (K overview, 010)
 	UnvaluedCount int           `json:"unvaluedCount"` // total held items with no known value
 	Cities        []CitySummary `json:"cities"`        // inventory first, then cities by last-seen desc
 }

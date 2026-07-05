@@ -64,6 +64,7 @@ const staleLabel = (st) => {
     <div class="total" role="status" aria-live="polite">
       <span>Holdings total</span>
       <strong>{{ compact(summary.totalValue) }}</strong>
+      <span class="muted" v-if="summary.gameEstTotal" :title="'Sum of the game-reported vault estimates (K overview)'">· in-game est {{ compact(summary.gameEstTotal) }}</span>
       <span class="muted" v-if="summary.unvaluedCount">· {{ summary.unvaluedCount }} unvalued</span>
       <span class="filters" v-if="cities.length">
         <label class="sr-pair">City
