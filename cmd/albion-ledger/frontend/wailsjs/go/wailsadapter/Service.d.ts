@@ -10,6 +10,8 @@ export function EmitFlowNow():Promise<void>;
 
 export function EnsureSelfContainer(arg1:string,arg2:string):Promise<void>;
 
+export function ExternalRefreshSignal():Promise<any>;
+
 export function FlowBreakdown(arg1:string):Promise<Array<model.FlowItemStatView>>;
 
 export function FlowSummary():Promise<model.SessionSummary>;

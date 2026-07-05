@@ -10,6 +10,10 @@ export function EnsureSelfContainer(arg1, arg2) {
   return window['go']['wailsadapter']['Service']['EnsureSelfContainer'](arg1, arg2);
 }
 
+export function ExternalRefreshSignal() {
+  return window['go']['wailsadapter']['Service']['ExternalRefreshSignal']();
+}
+
 export function FlowBreakdown(arg1) {
   return window['go']['wailsadapter']['Service']['FlowBreakdown'](arg1);
 }

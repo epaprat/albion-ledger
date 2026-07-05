@@ -94,6 +94,22 @@ func (s *Service) IngestEMV(index, quality int, value, asOf int64) {
 	}
 }
 
+// externalNudge signals that new potentially-unvalued rows arrived (K overview
+// content) so the external price loop should run soon instead of waiting out its
+// hourly timer (the startup-race left fresh vault rows unpriced for an hour —
+// live-seen 2026-07-05). Buffered(1): repeated nudges collapse.
+var externalNudge = make(chan struct{}, 1)
+
+// ExternalRefreshSignal exposes the nudge channel to the price loop.
+func (s *Service) ExternalRefreshSignal() <-chan struct{} { return externalNudge }
+
+func nudgeExternal() {
+	select {
+	case externalNudge <- struct{}{}:
+	default:
+	}
+}
+
 // RefreshExternalPrices fills valuation gaps from a community price feed (010):
 // only items currently HELD and still unvalued are queried — the base layer under
 // every in-game price source. Failures degrade silently (no network dependency).
@@ -242,6 +258,7 @@ func (s *Service) SetCurrentCity(city string) {
 func (s *Service) IngestVaultSummaryTab(tabGUID, city, tabName string, rows []holdings.ItemRef) {
 	s.agg.SetVaultSummaryTab(tabGUID, city, tabName, rows, s.nowMS())
 	s.emitHoldings()
+	nudgeExternal() // fresh summary rows may need the external base layer soon
 }
 
 // IngestCityVaultValues replaces the per-city vault totals from the K overview (010).

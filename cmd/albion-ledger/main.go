@@ -148,14 +148,27 @@ func main() {
 				client := aodp.New("")
 				t := time.NewTimer(20 * time.Second)
 				defer t.Stop()
+				refresh := func() {
+					if n := svc.RefreshExternalPrices(ctx, client); n > 0 {
+						log.Printf("aodp: %d prices fetched", n)
+					}
+				}
 				for {
 					select {
 					case <-ctx.Done():
 						return
 					case <-t.C:
-						if n := svc.RefreshExternalPrices(ctx, client); n > 0 {
-							log.Printf("aodp: %d prices fetched", n)
+						refresh()
+						t.Reset(time.Hour)
+					case <-svc.ExternalRefreshSignal():
+						// New vault rows just landed (K overview): give the burst a
+						// moment to finish, then fill the gaps — don't wait the hour.
+						select {
+						case <-ctx.Done():
+							return
+						case <-time.After(3 * time.Second):
 						}
+						refresh()
 						t.Reset(time.Hour)
 					}
 				}
