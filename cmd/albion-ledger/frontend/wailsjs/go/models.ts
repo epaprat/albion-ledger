@@ -82,6 +82,7 @@ export namespace model {
 	    progress: number;
 	    fame: number;
 	    category: string;
+	    subcategory: string;
 	
 	    static createFrom(source: any = {}) {
 	        return new MasteryLevel(source);
@@ -95,6 +96,7 @@ export namespace model {
 	        this.progress = source["progress"];
 	        this.fame = source["fame"];
 	        this.category = source["category"];
+	        this.subcategory = source["subcategory"];
 	    }
 	}
 	export class CharacterSpec {
