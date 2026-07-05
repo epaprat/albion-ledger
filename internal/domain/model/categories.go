@@ -33,6 +33,15 @@ const (
 	// coverage targets.
 	CatLootSource Category = "loot_source"
 	CatLootMove   Category = "loot_move"
+	// CatBankLocations/CatBankTabs/CatBankTabContent carry the K-key bank-overview
+	// chain (R:516 locations+total values, R:517 tab guids+real names, R:1/518 tab
+	// content summaries) — full bank sync without opening banks (feature 010). Not
+	// probe coverage targets. NOTE: the content response (raw op byte 1) carries NO
+	// key 253 — classification relies on the opByte fallback plus a strict shape
+	// guard in the extractor (Principle IV double-lock).
+	CatBankLocations  Category = "bank_locations"
+	CatBankTabs       Category = "bank_tabs"
+	CatBankTabContent Category = "bank_tab_content"
 )
 
 // AllCategories is the full ordered set of target categories (13). The coverage

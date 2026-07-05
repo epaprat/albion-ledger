@@ -13,6 +13,7 @@ import (
 	_ "modernc.org/sqlite"
 
 	"github.com/epaprat/albion-ledger/internal/domain/model"
+	"github.com/epaprat/albion-ledger/internal/valuation"
 	"github.com/epaprat/albion-ledger/internal/zonestats"
 )
 
@@ -52,6 +53,10 @@ CREATE TABLE IF NOT EXISTS flow_events (
   PRIMARY KEY (session_id, event_id)
 );
 CREATE INDEX IF NOT EXISTS idx_flow_session_ts ON flow_events(session_id, ts);
+CREATE TABLE IF NOT EXISTS emv_book (
+  item_index INTEGER, quality INTEGER, amount INTEGER, as_of INTEGER,
+  PRIMARY KEY (item_index, quality)
+);
 `
 
 // SQLite is a Store backed by a local SQLite database.
@@ -352,6 +357,53 @@ func (s *SQLite) LoadReconciliations(ctx context.Context, sessionID string) ([]m
 		}
 		n.SessionID, n.Category = sessionID, model.Category(cat)
 		out = append(out, n)
+	}
+	return out, rows.Err()
+}
+
+// SaveEMVBook upserts the whole server-estimate book in one transaction (010: the
+// book survives restarts so values learned from declarations keep pricing the K
+// bank-overview summary rows in later sessions). Newest as_of wins.
+func (s *SQLite) SaveEMVBook(ctx context.Context, entries []valuation.EMVEntry) error {
+	if len(entries) == 0 {
+		return nil
+	}
+	tx, err := s.db.BeginTx(ctx, nil)
+	if err != nil {
+		return err
+	}
+	defer tx.Rollback()
+	stmt, err := tx.PrepareContext(ctx, `INSERT INTO emv_book (item_index, quality, amount, as_of)
+		VALUES (?,?,?,?)
+		ON CONFLICT(item_index, quality) DO UPDATE SET
+		  amount=excluded.amount, as_of=excluded.as_of
+		WHERE excluded.as_of >= emv_book.as_of`)
+	if err != nil {
+		return err
+	}
+	defer stmt.Close()
+	for _, e := range entries {
+		if _, err := stmt.ExecContext(ctx, e.Index, e.Quality, e.Amount, e.AsOf); err != nil {
+			return err
+		}
+	}
+	return tx.Commit()
+}
+
+// LoadEMVBook reads all persisted server estimates.
+func (s *SQLite) LoadEMVBook(ctx context.Context) ([]valuation.EMVEntry, error) {
+	rows, err := s.db.QueryContext(ctx, `SELECT item_index, quality, amount, as_of FROM emv_book`)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	var out []valuation.EMVEntry
+	for rows.Next() {
+		var e valuation.EMVEntry
+		if err := rows.Scan(&e.Index, &e.Quality, &e.Amount, &e.AsOf); err != nil {
+			return nil, err
+		}
+		out = append(out, e)
 	}
 	return out, rows.Err()
 }

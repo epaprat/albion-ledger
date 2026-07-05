@@ -184,6 +184,7 @@ export namespace model {
 	    unvaluedCount: number;
 	    tabs: TabSummary[];
 	    state: SectionState;
+	    vaultValue: number;
 	
 	    static createFrom(source: any = {}) {
 	        return new CitySummary(source);
@@ -197,6 +198,7 @@ export namespace model {
 	        this.unvaluedCount = source["unvaluedCount"];
 	        this.tabs = this.convertValues(source["tabs"], TabSummary);
 	        this.state = this.convertValues(source["state"], SectionState);
+	        this.vaultValue = source["vaultValue"];
 	    }
 	
 		convertValues(a: any, classs: any, asMap: boolean = false): any {
@@ -373,6 +375,7 @@ export namespace model {
 	}
 	export class HoldingsSummary {
 	    totalValue: number;
+	    gameEstTotal: number;
 	    unvaluedCount: number;
 	    cities: CitySummary[];
 	
@@ -383,6 +386,7 @@ export namespace model {
 	    constructor(source: any = {}) {
 	        if ('string' === typeof source) source = JSON.parse(source);
 	        this.totalValue = source["totalValue"];
+	        this.gameEstTotal = source["gameEstTotal"];
 	        this.unvaluedCount = source["unvaluedCount"];
 	        this.cities = this.convertValues(source["cities"], CitySummary);
 	    }

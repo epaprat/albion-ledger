@@ -19,6 +19,7 @@ import (
 	"github.com/wailsapp/wails/v2/pkg/runtime"
 
 	"github.com/epaprat/albion-ledger/data"
+	"github.com/epaprat/albion-ledger/internal/adapter/aodp"
 	"github.com/epaprat/albion-ledger/internal/adapter/capture"
 	"github.com/epaprat/albion-ledger/internal/adapter/store"
 	wailsadapter "github.com/epaprat/albion-ledger/internal/adapter/wails"
@@ -62,6 +63,7 @@ func main() {
 	catalogPath := flag.String("catalog", "", "override item catalog file (data/items.json format)")
 	codesPath := flag.String("codes", "", "override code map file (data/codes.json format)")
 	debugFlowFlag := flag.Bool("debugflow", false, "log flow (silver/loot/gather/fame) attribution to stderr")
+	noExternal := flag.Bool("noexternal", false, "disable the community price feed (AODP) — no outbound HTTP")
 	flag.Parse()
 
 	cat, err := catalog.New(data.ItemsJSON)
@@ -124,6 +126,13 @@ func main() {
 			svc.EnsureSelfContainer(app.SelfBagGUID, "Bag")
 			svc.EnsureSelfContainer(app.SelfEquipGUID, "Equipped")
 			if flowStore != nil {
+				// Persisted EMV book (010): values learned in earlier sessions keep
+				// pricing K-overview summary rows now; the book flushes on shutdown.
+				if entries, err := flowStore.LoadEMVBook(ctx); err == nil {
+					book.RestoreEMV(entries)
+				} else {
+					log.Printf("store LoadEMVBook: %v", err)
+				}
 				if err := flowStore.StartSession(ctx, model.CaptureSession{
 					ID: sessionID, StartedAt: nowMS(), SourceKind: srcKind, Interface: *iface,
 				}); err != nil {
@@ -133,10 +142,55 @@ func main() {
 				svc.SetFlowReader(flowStore, sessionID) // zone analytics read side (006)
 			}
 			go runCapture(ctx, *iface, *replay, pipe, svc)
+			// Community price base layer (AODP, 010): fills valuation gaps for held
+			// items shortly after startup, then hourly. In-game observations always
+			// override; network failures degrade silently.
+			go func() {
+				if *noExternal {
+					return // explicit opt-out: zero outbound HTTP (Principle V transparency)
+				}
+				client := aodp.New("")
+				t := time.NewTimer(20 * time.Second)
+				defer t.Stop()
+				refresh := func() {
+					if n := svc.RefreshExternalPrices(ctx, client); n > 0 {
+						log.Printf("aodp: %d prices fetched", n)
+					}
+					// Periodic durability: a crash must not discard the session's learned
+					// prices — the upsert is idempotent and newest-wins (010 review).
+					if flowStore != nil {
+						if err := flowStore.SaveEMVBook(ctx, book.SnapshotEMV()); err != nil {
+							log.Printf("store SaveEMVBook (periodic): %v", err)
+						}
+					}
+				}
+				for {
+					select {
+					case <-ctx.Done():
+						return
+					case <-t.C:
+						refresh()
+						t.Reset(time.Hour)
+					case <-svc.ExternalRefreshSignal():
+						// New vault rows just landed (K overview): give the burst a
+						// moment to finish, then fill the gaps — don't wait the hour.
+						select {
+						case <-ctx.Done():
+							return
+						case <-time.After(3 * time.Second):
+						}
+						refresh()
+						t.Reset(time.Hour)
+					}
+				}
+			}()
 		},
 		OnShutdown: func(context.Context) {
 			if flowStore != nil {
 				svc.StopFlowPersistence() // drain the final batch before the DB closes
+				if err := flowStore.SaveEMVBook(context.Background(), book.SnapshotEMV()); err != nil {
+					log.Printf("store SaveEMVBook: %v", err)
+				}
 				_ = flowStore.EndSession(context.Background(), sessionID, nowMS(), model.SessionTotals{})
 				_ = flowStore.Close()
 			}

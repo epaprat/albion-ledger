@@ -32,8 +32,12 @@ const (
 	SelfEquipGUID = "self-equipped"
 )
 
-// emvScale: the server EMV is stored scaled by 10000 (silver = raw / 10000).
-const emvScale = 10000
+// silverScale: every silver amount on the wire is fixed-point ×10000 (EMV, vault
+// totals, market unit prices — one constant, one truth).
+const silverScale = 10000
+
+// emvScale: legacy alias for declaration EMV scaling.
+const emvScale = silverScale
 
 const objRegCap = 50_000
 
@@ -56,6 +60,9 @@ type Sink interface {
 	IngestPutItem(containerGUID string, objID int, ref holdings.ItemRef) bool
 	IngestDeleteItem(objID int)
 	IngestBankVault(owners, tabNames []string)
+	IngestVaultSummaryTab(tabGUID, city, tabName string, rows []holdings.ItemRef)
+	IngestCityVaultValues(values map[string]int64)
+	IngestMarketPrice(uniqueName string, quality int, silver int64)
 	IngestSilver(id string, net int64, ts int64, source string)
 	IngestLoot(id string, index, quality, count int, ts int64, source string)
 	IngestGather(id string, index, quality, count int, ts int64, source string)
@@ -97,6 +104,11 @@ type Pipeline struct {
 	// Holdings freshness glue (008): own-container GUID bridge + live bag slot map.
 	selfContainerGUIDs map[string]string
 	bagSlots           []int
+
+	// K bank-overview bridges (010): vault guid → city, tab guid → (city, name).
+	// vaultCity is REBUILT per R:516 (full list); tabMeta upserts, capped.
+	vaultCity map[string]string
+	tabMeta   map[string]tabInfo
 }
 
 // New wires a Pipeline. locs may be nil (zones stay raw cluster ids).
@@ -113,6 +125,8 @@ func New(sink Sink, clf *probe.Classifier, locs *locations.Locations, nowMS func
 		pendingLootResolve: pending.New[string](256, 10_000),
 		pendingPuts:        pending.New[string](256, 10_000),
 		selfContainerGUIDs: map[string]string{},
+		vaultCity:          map[string]string{},
+		tabMeta:            map[string]tabInfo{},
 	}
 }
 
@@ -172,7 +186,17 @@ func (p *Pipeline) updateSelf(params map[byte]interface{}) {
 	// so flow events know where they happened (per-zone analytics, 006). Open-world zones
 	// only surface here (event 163 covers cities); raw cluster id is fine, named later.
 	if zone, zok := params[8].(string); zok && zone != "" {
-		p.sink.SetZone(p.zoneName(zone))
+		name := p.zoneName(zone)
+		p.sink.SetZone(name)
+		// Mid-session starts miss the city-entry notification (event 163), leaving
+		// physically-opened bank tabs city-less ("Bank" ghost group, live-seen
+		// 2026-07-05 twice — the second time from a Lounge sub-cluster whose name
+		// only STARTS with the city). Any cluster name that maps to a royal city
+		// (exact, "Bank of X", or "<City> <suffix>" like Lounge/Markets) feeds the
+		// current city.
+		if city := cityOf(name); city != "" {
+			p.sink.SetCurrentCity(city)
+		}
 	}
 	// Own-container GUID bridge (008): bag (key 54, confirmed) + equipped candidate
 	// (key 51). Entries update INDEPENDENTLY — a Join variant carrying only one of the

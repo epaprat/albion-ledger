@@ -22,14 +22,22 @@ type priced struct {
 // Book is the in-memory price source: latest live market price and EMV per
 // item+quality. Bounded by the number of distinct items seen.
 type Book struct {
-	mu   sync.RWMutex
-	live map[key]priced
-	emv  map[key]priced
+	mu       sync.RWMutex
+	live     map[key]priced
+	emv      map[key]priced
+	external map[key]priced // community feed (AODP) — base layer, in-game data wins
 }
 
 // NewBook creates an empty price book.
 func NewBook() *Book {
-	return &Book{live: map[key]priced{}, emv: map[key]priced{}}
+	return &Book{live: map[key]priced{}, emv: map[key]priced{}, external: map[key]priced{}}
+}
+
+// SetExternal records a community-feed price (AODP) for item+quality (010).
+func (b *Book) SetExternal(index, quality int, amount, asOf int64) {
+	b.mu.Lock()
+	b.external[key{index, quality}] = priced{amount, asOf}
+	b.mu.Unlock()
 }
 
 // SetMarket records a live market price for item+quality.
@@ -44,6 +52,36 @@ func (b *Book) SetEMV(index, quality int, amount, asOf int64) {
 	b.mu.Lock()
 	b.emv[key{index, quality}] = priced{amount, asOf}
 	b.mu.Unlock()
+}
+
+// EMVEntry is one persisted server-estimate row (010: the book survives restarts so
+// values learned from declarations keep pricing K-overview summary rows next session).
+type EMVEntry struct {
+	Index, Quality int
+	Amount, AsOf   int64
+}
+
+// SnapshotEMV returns all recorded server estimates (for persistence).
+func (b *Book) SnapshotEMV() []EMVEntry {
+	b.mu.RLock()
+	defer b.mu.RUnlock()
+	out := make([]EMVEntry, 0, len(b.emv))
+	for k, p := range b.emv {
+		out = append(out, EMVEntry{Index: k.index, Quality: k.quality, Amount: p.amount, AsOf: p.asOf})
+	}
+	return out
+}
+
+// RestoreEMV loads persisted server estimates without touching newer live data.
+func (b *Book) RestoreEMV(entries []EMVEntry) {
+	b.mu.Lock()
+	defer b.mu.Unlock()
+	for _, e := range entries {
+		k := key{e.Index, e.Quality}
+		if cur, ok := b.emv[k]; !ok || e.AsOf > cur.asOf {
+			b.emv[k] = priced{e.Amount, e.AsOf}
+		}
+	}
 }
 
 // Valuer computes the best valuation from a Book against a staleness threshold.
@@ -65,14 +103,43 @@ func (v *Valuer) Value(index, quality int, nowMS int64) model.Valuation {
 	emv, hasEMV := v.book.emv[k]
 	v.book.mu.RUnlock()
 
+	v.book.mu.RLock()
+	ext, hasExt := v.book.external[k]
+	v.book.mu.RUnlock()
 	switch {
 	case hasLive:
 		return v.mk(live.amount, model.SourceLiveMarket, live.asOf, nowMS)
 	case hasEMV:
 		return v.mk(emv.amount, model.SourceServerEstimate, emv.asOf, nowMS)
-	default:
-		return model.Valuation{Amount: 0, Source: model.SourceUnknown, AsOf: 0, Stale: false}
+	case hasExt:
+		return v.mk(ext.amount, model.SourceExternal, ext.asOf, nowMS)
 	}
+
+	// Quality-0 fallback (010): type-based summary rows (K bank overview) don't know
+	// the item's quality, but the book is quality-keyed — a normal-quality miss left
+	// clearly-valued items showing as unvalued (live "EMV missing" report). Any
+	// recorded quality beats nothing; the LOWEST recorded quality wins so the
+	// estimate stays conservative.
+	if quality == 0 {
+		v.book.mu.RLock()
+		defer v.book.mu.RUnlock()
+		for q := 1; q <= 5; q++ {
+			if e, ok := v.book.live[key{index, q}]; ok {
+				return v.mk(e.amount, model.SourceLiveMarket, e.asOf, nowMS)
+			}
+		}
+		for q := 1; q <= 5; q++ {
+			if e, ok := v.book.emv[key{index, q}]; ok {
+				return v.mk(e.amount, model.SourceServerEstimate, e.asOf, nowMS)
+			}
+		}
+		for q := 1; q <= 5; q++ {
+			if e, ok := v.book.external[key{index, q}]; ok {
+				return v.mk(e.amount, model.SourceExternal, e.asOf, nowMS)
+			}
+		}
+	}
+	return model.Valuation{Amount: 0, Source: model.SourceUnknown, AsOf: 0, Stale: false}
 }
 
 func (v *Valuer) mk(amount int64, src model.ValuationSource, asOf, nowMS int64) model.Valuation {

@@ -33,6 +33,7 @@ type container struct {
 	items    map[int]model.HoldingItem // objId -> row
 	lastSeen int64
 	pinned   bool // player's own containers: never cap-evicted (a frozen bag is a defect)
+	summary  bool // K-overview type-based summary tab (010) — yields to physical data
 }
 
 // containerCap bounds the number of tracked containers (Principle XI; FR-011).
@@ -55,17 +56,21 @@ type Aggregator struct {
 	bankOwnerCity map[string]string // owner GUID -> city it belongs to (current city at 414 time)
 	currentCity   string            // latest observed city display name; "" if unknown
 	citySeen      map[string]int64  // city display name -> last-seen ms
+	// cityVaultValue: K-overview per-city vault totals (010); replaced wholesale
+	// each R:516, bounded by the game's location count.
+	cityVaultValue map[string]int64
 }
 
 // New creates an Aggregator.
 func New(cat port.Catalog, val port.Valuer, staleAfter int64) *Aggregator {
 	return &Aggregator{
 		cat: cat, val: val, staleAfter: staleAfter,
-		containers:    map[string]*container{},
-		objLoc:        map[int]string{},
-		bankOwners:    map[string]string{},
-		bankOwnerCity: map[string]string{},
-		citySeen:      map[string]int64{},
+		containers:     map[string]*container{},
+		objLoc:         map[int]string{},
+		bankOwners:     map[string]string{},
+		bankOwnerCity:  map[string]string{},
+		citySeen:       map[string]int64{},
+		cityVaultValue: map[string]int64{},
 	}
 }
 
@@ -73,8 +78,43 @@ func New(cat port.Catalog, val port.Valuer, staleAfter int64) *Aggregator {
 // containers are grouped under it. "" leaves the city unknown.
 func (a *Aggregator) SetCurrentCity(city string) {
 	a.mu.Lock()
+	defer a.mu.Unlock()
 	a.currentCity = city
-	a.mu.Unlock()
+	if city == "" {
+		return
+	}
+	// Backfill (010): tabs recorded before the city was known stranded in a generic
+	// city-less "Bank" group that can never merge with the K overview's city group
+	// (live-seen twice). The city arriving NOW is where those tabs physically are —
+	// a bank must be opened in its own city.
+	for o, c := range a.bankOwnerCity {
+		if c == "" {
+			a.bankOwnerCity[o] = city
+		}
+	}
+	migrated := false
+	for _, c := range a.containers {
+		if c.location == model.LocBank && c.city == "" {
+			c.city = city
+			migrated = true
+		}
+	}
+	if migrated {
+		// The generic "Bank" group's freshness belongs to the real city now, and any
+		// K-summary tab overlapping a just-migrated PHYSICAL tab must yield (the
+		// reverse-dedup can only match once the city is known).
+		if ts, ok := a.citySeen[bankCityName("")]; ok {
+			if ts > a.citySeen[city] {
+				a.citySeen[city] = ts
+			}
+			delete(a.citySeen, bankCityName(""))
+		}
+		for guid, c := range a.containers {
+			if c.location == model.LocBank && !c.summary && c.city == city {
+				a.evictSummaryOverlapsLocked(city, c.tab, guid)
+			}
+		}
+	}
 }
 
 // SetBankVault records the bank's tab owner GUIDs and names (from BankVaultInfo).
@@ -93,6 +133,35 @@ func (a *Aggregator) SetBankVault(owners, tabNames []string) {
 
 // SetContainer REPLACES a container's items from a full snapshot. A known bank-tab
 // owner → location bank under the current city + tab name; otherwise inventory.
+
+// evictSummaryOverlapsLocked removes K-summary containers covering the same
+// (city, tab) as a PHYSICAL container — the reverse direction of the
+// summary-yields-to-physical rule. Without it, a physical open AFTER a K browse
+// left both containers alive and Summary double-counted the tab (010 review).
+// Caller holds a.mu.
+func (a *Aggregator) evictSummaryOverlapsLocked(city, tab, keepGUID string) {
+	if city == "" {
+		return // unmatched until the city is known; the backfill re-runs this
+	}
+	for guid, c := range a.containers {
+		if guid == keepGUID || !c.summary || c.city != city || c.tab != tab {
+			continue
+		}
+		for objID := range c.items {
+			if a.objLoc[objID] == guid {
+				delete(a.objLoc, objID)
+			}
+		}
+		delete(a.containers, guid)
+		for i, g := range a.order {
+			if g == guid {
+				a.order = append(a.order[:i], a.order[i+1:]...)
+				break
+			}
+		}
+	}
+}
+
 func (a *Aggregator) SetContainer(containerGUID, ownerGUID string, slots []SlotItem, nowMS int64) model.Location {
 	a.mu.Lock()
 	defer a.mu.Unlock()
@@ -110,7 +179,11 @@ func (a *Aggregator) SetContainer(containerGUID, ownerGUID string, slots []SlotI
 		a.bankOwnerCity[ownerGUID] = city // opening the tab pins its city (most reliable)
 	}
 
+	if loc == model.LocBank {
+		a.evictSummaryOverlapsLocked(city, tab, containerGUID)
+	}
 	c := a.ensureContainer(containerGUID)
+	c.summary = false // a physical snapshot claims this container outright
 	// Drop this container's own old index entries (only those still pointing here, so
 	// we never steal an entry an object earned by moving to another container).
 	for objID := range c.items {
@@ -256,6 +329,58 @@ func (a *Aggregator) touchCity(loc model.Location, city string, nowMS int64) {
 // invName is the display name of the inventory pseudo-city group.
 const invName = "Inventory"
 
+// SetVaultSummaryTab REPLACES one bank tab from a K bank-overview content summary
+// (feature 010): city-tagged, REAL tab name, type-based rows. Row keys are SYNTHETIC
+// NEGATIVE ids (-(index*16+quality)-1) — real object ids are positive, so summary
+// rows can never collide with tracked objects or enter the 008 move/delete paths.
+// The same tab guid seen via a physical open (SetContainer/99) shares this container:
+// last writer wins, content AND name (contract rule 5).
+func (a *Aggregator) SetVaultSummaryTab(tabGUID, city, tabName string, rows []ItemRef, nowMS int64) {
+	a.mu.Lock()
+	defer a.mu.Unlock()
+	// A PHYSICAL container (object-based, from an actual bank open) already covering
+	// this (city, tab) always wins: it is richer (object ids, declared values, real
+	// qualities), and summing both sources would double-count the tab (live-seen
+	// 2026-07-05: the same bank showed under two city groups). The K summary only
+	// fills tabs the player has never physically opened.
+	for guid, other := range a.containers {
+		if guid != tabGUID && !other.summary && other.location == model.LocBank &&
+			other.city == city && other.tab == tabName && len(other.items) > 0 {
+			return
+		}
+	}
+	c := a.ensureContainer(tabGUID)
+	c.summary = true
+	for objID := range c.items {
+		if a.objLoc[objID] == tabGUID {
+			delete(a.objLoc, objID)
+		}
+	}
+	c.location, c.city, c.tab = model.LocBank, city, tabName
+	c.items = make(map[int]model.HoldingItem, len(rows))
+	c.lastSeen = nowMS
+	for _, r := range rows {
+		synthID := -(r.Index*16 + r.Quality) - 1
+		row := a.row(r.Index, r.Quality, r.Count, model.LocBank, city, tabName, nowMS)
+		row.ObjID = synthID
+		c.items[synthID] = row
+	}
+	a.touchCity(model.LocBank, city, nowMS)
+}
+
+// SetCityVaultValues REPLACES the game-reported per-city vault totals from the K
+// overview location list (R:516 k5, already scaled to silver by the caller). A fresh
+// K opening is the authority: stale cities drop wholesale (XI — no accretion).
+func (a *Aggregator) SetCityVaultValues(values map[string]int64, nowMS int64) {
+	a.mu.Lock()
+	defer a.mu.Unlock()
+	a.cityVaultValue = make(map[string]int64, len(values))
+	for city, v := range values {
+		a.cityVaultValue[city] = v
+		a.citySeen[bankCityName(city)] = nowMS
+	}
+}
+
 // bankCityName is the display name for a bank container's city group; an unknown
 // city ("") groups under a generic "Bank" until a current city is known (US3).
 func bankCityName(city string) string {
@@ -293,6 +418,21 @@ func (a *Aggregator) row(index, quality, count int, loc model.Location, city, gr
 
 // List returns all held items (containers + equipped). Items within a container are
 // ordered by display name for a stable view.
+// lastValuationRefresh picks a "now" for read-time re-valuation staleness checks:
+// the newest lastSeen across containers (the aggregator has no clock of its own).
+func (a *Aggregator) lastValuationRefresh() int64 {
+	var maxSeen int64
+	for _, c := range a.containers {
+		if c.lastSeen > maxSeen {
+			maxSeen = c.lastSeen
+		}
+	}
+	if a.equipped != nil && a.equipped.lastSeen > maxSeen {
+		maxSeen = a.equipped.lastSeen
+	}
+	return maxSeen
+}
+
 func (a *Aggregator) List() []model.HoldingItem {
 	a.mu.Lock()
 	defer a.mu.Unlock()
@@ -302,19 +442,34 @@ func (a *Aggregator) List() []model.HoldingItem {
 		guids = append(guids, g)
 	}
 	sort.Strings(guids)
-	appendSorted := func(items map[int]model.HoldingItem) {
+	nowMS := int64(0)
+	if len(a.containers) > 0 || a.equipped != nil {
+		nowMS = a.lastValuationRefresh()
+	}
+	appendSorted := func(items map[int]model.HoldingItem, loc model.Location, city, group string) {
 		rows := make([]model.HoldingItem, 0, len(items))
 		for _, it := range items {
+			// Re-resolve at READ time: prices can arrive AFTER a row was written
+			// (market browse pricing a bank summary) and a container's city can be
+			// backfilled late (mid-session city discovery) — write-time snapshots
+			// froze both out of existing rows (live-seen 2026-07-05).
+			it.Valuation = a.val.Value(it.Item.Index, it.Item.Quality, nowMS)
+			it.Location, it.City, it.Group = loc, city, group
 			rows = append(rows, it)
 		}
 		sort.Slice(rows, func(i, j int) bool { return rows[i].Item.DisplayName < rows[j].Item.DisplayName })
 		out = append(out, rows...)
 	}
 	for _, g := range guids {
-		appendSorted(a.containers[g].items)
+		c := a.containers[g]
+		cityName := c.city
+		if c.location == model.LocBank {
+			cityName = bankCityName(c.city)
+		}
+		appendSorted(c.items, c.location, cityName, c.tab)
 	}
 	if a.equipped != nil {
-		appendSorted(a.equipped.items)
+		appendSorted(a.equipped.items, model.LocEquipped, "", a.equipped.tab)
 	}
 	return out
 }
@@ -368,10 +523,13 @@ func (a *Aggregator) Summary(nowMS int64) model.HoldingsSummary {
 		}
 		for _, it := range c.items {
 			t.count++
-			if it.Valuation.Source == model.SourceUnknown {
+			// Read-time re-valuation (see List): prices arriving after the write
+			// must reflect in totals too.
+			v := a.val.Value(it.Item.Index, it.Item.Quality, nowMS)
+			if v.Source == model.SourceUnknown {
 				t.unvalued++
 			} else {
-				t.subtotal += it.Valuation.Amount * int64(it.Count) // stack value
+				t.subtotal += v.Amount * int64(it.Count) // stack value
 			}
 		}
 	}
@@ -388,6 +546,12 @@ func (a *Aggregator) Summary(nowMS int64) model.HoldingsSummary {
 		if _, ok := ca.tabs[name]; !ok {
 			ca.tabs[name] = &tabAcc{opened: false}
 		}
+	}
+
+	// Cities known only from the K-overview vault totals (010) still get a group:
+	// the user should see "Thetford: 11M in the vault" before any tab is browsed.
+	for city := range a.cityVaultValue {
+		getCity(bankCityName(city), false)
 	}
 
 	// Roll up into ordered DTOs.
@@ -438,9 +602,14 @@ func (a *Aggregator) Summary(nowMS int64) model.HoldingsSummary {
 		out = append(out, model.CitySummary{
 			Name: cn, IsInventory: ca.isInv, Total: cityTotal, UnvaluedCount: cityUnvalued,
 			Tabs: tabs, State: a.stateOf(a.citySeen[cn], a.citySeen[cn] > 0, nowMS),
+			VaultValue: a.cityVaultValue[cn], // 0 = not reported (010)
 		})
 	}
-	return model.HoldingsSummary{TotalValue: grand, UnvaluedCount: grandUnvalued, Cities: out}
+	var gameEst int64
+	for _, v := range a.cityVaultValue {
+		gameEst += v
+	}
+	return model.HoldingsSummary{TotalValue: grand, GameEstTotal: gameEst, UnvaluedCount: grandUnvalued, Cities: out}
 }
 
 // stateOf builds a SectionState from a last-seen ms (seen=false when not observed).

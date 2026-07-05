@@ -24,6 +24,10 @@
     { "kind": "response", "code": 81,  "category": "market_buy_orders" },
     { "kind": "response", "code": 95,  "category": "market_history" },
     { "kind": "response", "code": 248, "category": "gold_price" },
-    { "kind": "response", "code": 2,   "category": "character_spec", "guardKey": 55 }
+    { "kind": "response", "code": 2,   "category": "character_spec", "guardKey": 55 },
+    { "kind": "response", "code": 516, "category": "bank_locations" },
+    { "kind": "response", "code": 517, "category": "bank_tabs" },
+    { "kind": "response", "code": 1,   "category": "bank_tab_content" },
+    { "kind": "response", "code": 518, "category": "bank_tab_content" }
   ]
 }

@@ -64,6 +64,7 @@ const staleLabel = (st) => {
     <div class="total" role="status" aria-live="polite">
       <span>Holdings total</span>
       <strong>{{ compact(summary.totalValue) }}</strong>
+      <span class="muted" v-if="summary.gameEstTotal" :title="'Sum of the game-reported vault estimates (K overview)'">· in-game est {{ compact(summary.gameEstTotal) }}</span>
       <span class="muted" v-if="summary.unvaluedCount">· {{ summary.unvaluedCount }} unvalued</span>
       <span class="filters" v-if="cities.length">
         <label class="sr-pair">City
@@ -107,7 +108,10 @@ const staleLabel = (st) => {
             {{ city.name }}
             <span class="badge stale" v-if="staleLabel(city.state)">{{ staleLabel(city.state) }}</span>
           </h2>
-          <span class="city-total num">{{ compact(city.total) }}</span>
+          <span class="city-total num">
+            {{ compact(city.total) }}
+            <span class="muted" v-if="city.vaultValue" :title="'Game-reported vault total (K overview)'">· vault {{ compact(city.vaultValue) }}</span>
+          </span>
         </div>
 
         <div v-for="t in tabsOf(city)" :key="city.name + '/' + t.name" class="group">

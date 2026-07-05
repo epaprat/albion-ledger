@@ -10,6 +10,10 @@ export function EnsureSelfContainer(arg1, arg2) {
   return window['go']['wailsadapter']['Service']['EnsureSelfContainer'](arg1, arg2);
 }
 
+export function ExternalRefreshSignal() {
+  return window['go']['wailsadapter']['Service']['ExternalRefreshSignal']();
+}
+
 export function FlowBreakdown(arg1) {
   return window['go']['wailsadapter']['Service']['FlowBreakdown'](arg1);
 }
@@ -24,6 +28,10 @@ export function HoldingsSummary() {
 
 export function IngestBankVault(arg1, arg2) {
   return window['go']['wailsadapter']['Service']['IngestBankVault'](arg1, arg2);
+}
+
+export function IngestCityVaultValues(arg1) {
+  return window['go']['wailsadapter']['Service']['IngestCityVaultValues'](arg1);
 }
 
 export function IngestContainer(arg1, arg2, arg3) {
@@ -58,6 +66,10 @@ export function IngestMarket(arg1, arg2, arg3, arg4) {
   return window['go']['wailsadapter']['Service']['IngestMarket'](arg1, arg2, arg3, arg4);
 }
 
+export function IngestMarketPrice(arg1, arg2, arg3) {
+  return window['go']['wailsadapter']['Service']['IngestMarketPrice'](arg1, arg2, arg3);
+}
+
 export function IngestPutItem(arg1, arg2, arg3) {
   return window['go']['wailsadapter']['Service']['IngestPutItem'](arg1, arg2, arg3);
 }
@@ -70,6 +82,10 @@ export function IngestSilver(arg1, arg2, arg3, arg4) {
   return window['go']['wailsadapter']['Service']['IngestSilver'](arg1, arg2, arg3, arg4);
 }
 
+export function IngestVaultSummaryTab(arg1, arg2, arg3, arg4) {
+  return window['go']['wailsadapter']['Service']['IngestVaultSummaryTab'](arg1, arg2, arg3, arg4);
+}
+
 export function ListFlow() {
   return window['go']['wailsadapter']['Service']['ListFlow']();
 }
@@ -80,6 +96,10 @@ export function ListHoldings() {
 
 export function ListItems() {
   return window['go']['wailsadapter']['Service']['ListItems']();
+}
+
+export function RefreshExternalPrices(arg1, arg2) {
+  return window['go']['wailsadapter']['Service']['RefreshExternalPrices'](arg1, arg2);
 }
 
 export function SetCurrentCity(arg1) {

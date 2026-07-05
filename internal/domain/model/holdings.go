@@ -47,11 +47,15 @@ type CitySummary struct {
 	UnvaluedCount int          `json:"unvaluedCount"`
 	Tabs          []TabSummary `json:"tabs"`
 	State         SectionState `json:"state"`
+	// VaultValue is the game-reported total value of this city's vault from the
+	// K bank-overview (R:516 k5 ÷10000); 0 = not reported (frontend hides it).
+	VaultValue int64 `json:"vaultValue"`
 }
 
 // HoldingsSummary is the rolled-up holdings state, nested city → tab.
 type HoldingsSummary struct {
 	TotalValue    int64         `json:"totalValue"`    // grand total of known values
+	GameEstTotal  int64         `json:"gameEstTotal"`  // Σ game-reported vault values (K overview, 010)
 	UnvaluedCount int           `json:"unvaluedCount"` // total held items with no known value
 	Cities        []CitySummary `json:"cities"`        // inventory first, then cities by last-seen desc
 }

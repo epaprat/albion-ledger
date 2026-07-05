@@ -6,6 +6,7 @@ package wailsadapter
 import (
 	"context"
 	"log"
+	"sort"
 	"strconv"
 	"sync"
 	"sync/atomic"
@@ -56,6 +57,8 @@ type Service struct {
 	flowStopped bool                 // guards double-close of flowStop
 	flowDropped atomic.Int64         // events dropped on a full buffer (observability, VIII)
 
+	externalNudge chan struct{} // buffered(1) — K content signals the external price loop (010)
+
 	mu     sync.Mutex
 	items  map[int]*model.LiveViewItem // by item index
 	order  []int                       // insertion order for FIFO cap eviction
@@ -69,9 +72,10 @@ func NewService(cat port.Catalog, book *valuation.Book, val port.Valuer, emit Em
 	}
 	return &Service{
 		cat: cat, book: book, val: val, emit: emit, cap: cap, nowMS: nowMS,
-		items: map[int]*model.LiveViewItem{},
-		agg:   holdings.New(cat, val, model.DefaultStaleAfterMS),
-		flow:  flow.New(val, flow.DefaultIdleMS, flow.DefaultCap),
+		items:         map[int]*model.LiveViewItem{},
+		agg:           holdings.New(cat, val, model.DefaultStaleAfterMS),
+		flow:          flow.New(val, flow.DefaultIdleMS, flow.DefaultCap),
+		externalNudge: make(chan struct{}, 1),
 	}
 }
 
@@ -91,6 +95,68 @@ func (s *Service) IngestEMV(index, quality int, value, asOf int64) {
 	if len(revalued) > 0 {
 		s.emitFlow()
 	}
+}
+
+// ExternalRefreshSignal exposes the per-Service nudge channel to the price loop:
+// new potentially-unvalued rows arrived (K overview content), run soon instead of
+// waiting out the hourly timer (startup-race left fresh rows unpriced for an hour —
+// live-seen 2026-07-05). Buffered(1): repeated nudges collapse. Per-instance field,
+// not a package global — cross-Service nudging leaked tokens between tests (review).
+func (s *Service) ExternalRefreshSignal() <-chan struct{} { return s.externalNudge }
+
+func (s *Service) nudgeExternal() {
+	select {
+	case s.externalNudge <- struct{}{}:
+	default:
+	}
+}
+
+// RefreshExternalPrices fills valuation gaps from a community price feed (010):
+// only items currently HELD and still unvalued are queried — the base layer under
+// every in-game price source. Failures degrade silently (no network dependency).
+func (s *Service) RefreshExternalPrices(ctx context.Context, fetch port.PriceFetcher) int {
+	now := s.nowMS()
+	missing := map[string]bool{}
+	for _, r := range s.agg.List() {
+		if r.Valuation.Source == model.SourceUnknown && r.Item.UniqueName != "" {
+			missing[r.Item.UniqueName] = true
+		}
+	}
+	if len(missing) == 0 {
+		return 0
+	}
+	names := make([]string, 0, len(missing))
+	for n := range missing {
+		names = append(names, n)
+	}
+	sort.Strings(names) // deterministic batches
+	prices, err := fetch.Fetch(ctx, names)
+	if err != nil && len(prices) == 0 {
+		return 0
+	}
+	for _, p := range prices {
+		if idx, ok := s.cat.IndexOf(p.UniqueName); ok && p.Silver > 0 {
+			s.book.SetExternal(idx, p.Quality, p.Silver, now)
+		}
+	}
+	if len(prices) > 0 {
+		s.emitHoldings()
+	}
+	return len(prices)
+}
+
+// IngestMarketPrice records a market price identified by uniqueName (order feeds
+// carry names, not indexes — 010). The price doubles as a persisted server-estimate
+// so resources learned from a market browse keep pricing bank summaries next session.
+func (s *Service) IngestMarketPrice(uniqueName string, quality int, silver int64) {
+	idx, ok := s.cat.IndexOf(uniqueName)
+	if !ok {
+		return
+	}
+	now := s.nowMS()
+	s.book.SetMarket(idx, quality, silver, now)
+	s.book.SetEMV(idx, quality, silver, now)
+	s.upsert(idx, quality, now)
 }
 
 // IngestMarket records a live market price and refreshes its view row.
@@ -185,6 +251,20 @@ func (s *Service) IngestDeleteItem(objID int) {
 // SetCurrentCity records the player's current city display name (US3).
 func (s *Service) SetCurrentCity(city string) {
 	s.agg.SetCurrentCity(city)
+	s.emitHoldings()
+}
+
+// IngestVaultSummaryTab replaces one bank tab from a K bank-overview content
+// summary (city-tagged, real tab name, type-based rows — feature 010).
+func (s *Service) IngestVaultSummaryTab(tabGUID, city, tabName string, rows []holdings.ItemRef) {
+	s.agg.SetVaultSummaryTab(tabGUID, city, tabName, rows, s.nowMS())
+	s.emitHoldings()
+	s.nudgeExternal() // fresh summary rows may need the external base layer soon
+}
+
+// IngestCityVaultValues replaces the per-city vault totals from the K overview (010).
+func (s *Service) IngestCityVaultValues(values map[string]int64) {
+	s.agg.SetCityVaultValues(values, s.nowMS())
 	s.emitHoldings()
 }
 
