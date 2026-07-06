@@ -235,30 +235,30 @@ func (p *Pipeline) emitSpec() {
 	catalog := p.specNames.All()
 	masteries := make([]model.MasteryLevel, 0, len(catalog)+len(prog))
 	inCatalog := make(map[int]bool, len(catalog))
-	add := func(id int, name, category, subcategory string, n specboard.Node, touched bool, fameToMax int64) {
+	add := func(c model.SpecNodeCatalog, n specboard.Node, touched bool) {
 		masteries = append(masteries, model.MasteryLevel{
-			Index: id, Name: name, Level: n.Level, Progress: n.Progress, Fame: n.Fame,
-			Category: category, Subcategory: subcategory, Touched: touched, FameToMax: fameToMax,
+			Index: c.ID, Name: c.Name, Level: n.Level, Progress: n.Progress, Fame: n.Fame,
+			Category: c.Category, Subcategory: c.Subcategory, Slot: c.Slot, Touched: touched, FameToMax: c.FameToMax,
 		})
 	}
 	for _, c := range catalog {
 		inCatalog[c.ID] = true
 		if n, inProg := prog[c.ID]; inProg {
-			add(c.ID, c.Name, c.Category, c.Subcategory, n, n.Level > 0 || n.Fame > 0, c.FameToMax)
+			add(c, n, n.Level > 0 || n.Fame > 0)
 		} else if p.specUnlocked[c.ID] && p.specSnapshotSeen {
 			// Unlocked but not in the CURRENT in-progress snapshot → maxed. The
 			// snapshot is REQUIRED: the unlocked set alone (e.g. the persisted seed
 			// at startup, before any zone join) contains in-progress nodes too, and
 			// classifying against an empty board marked EVERYTHING level 100.
-			add(c.ID, c.Name, c.Category, c.Subcategory, specboard.Node{Level: 100, Progress: 1}, true, c.FameToMax)
+			add(c, specboard.Node{Level: 100, Progress: 1}, true)
 		} else {
-			add(c.ID, c.Name, c.Category, c.Subcategory, specboard.Node{}, false, c.FameToMax)
+			add(c, specboard.Node{}, false)
 		}
 	}
 	// A live node not in the catalog (unknown id) still shows, honestly labelled.
 	for id, n := range prog {
 		if !inCatalog[id] {
-			add(id, "Node #"+strconv.Itoa(id), "Other", "", n, true, 0)
+			add(model.SpecNodeCatalog{ID: id, Name: "Node #" + strconv.Itoa(id), Category: "Other"}, n, true)
 		}
 	}
 	count, totalFame := p.board.Totals()

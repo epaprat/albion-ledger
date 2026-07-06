@@ -41,24 +41,31 @@ const specTree = computed(() => {
   })
   const cats = new Map()
   for (const m of rows) {
-    const cat = m.category || 'Other'
+    // Top group = gear SLOT (Weapon / Off-Hand / Head / Chest / Shoes for combat, or the
+    // category for gathering/crafting/farming) so the tree reads like an equipment sheet.
+    const cat = m.slot || m.category || 'Other'
     const sub = m.subcategory || '—'
     if (!cats.has(cat)) cats.set(cat, { name: cat, nodes: 0, touched: 0, fame: 0, levelsum: 0, maxed: 0, subs: new Map() })
     const c = cats.get(cat)
     if (!c.subs.has(sub)) c.subs.set(sub, { name: sub, nodes: 0, touched: 0, fame: 0, levelsum: 0, maxed: 0, rows: [] })
     const sc = c.subs.get(sub)
     const lvl = m.level || 0
-    // The whole-line base "Fighter" node is the PARENT of the line — show it in the
-    // subcategory header, not as a row among the specific items.
-    if (/\(Fighter\)$/.test(m.name || '')) { sc.base = m; continue }
+    if (/\(Fighter\)$/.test(m.name || '')) { if (lvl > 0) sc.base = m; continue }
     sc.rows.push(m); sc.nodes++; sc.fame += m.fame || 0; sc.levelsum += lvl
     c.nodes++; c.fame += m.fame || 0; c.levelsum += lvl
     if (m.touched) { sc.touched++; c.touched++ }
     if (lvl >= 100) { sc.maxed++; c.maxed++ }
   }
-  const catList = [...cats.values()].sort((a, b) => b.fame - a.fame)
+  // Fixed slot order (equipment sheet), then non-combat categories by fame.
+  const order = ['Weapon', 'Off-Hand', 'Head', 'Chest', 'Shoes', 'Armor']
+  const catList = [...cats.values()].sort((a, b) => {
+    const ia = order.indexOf(a.name), ib = order.indexOf(b.name)
+    if (ia !== -1 || ib !== -1) return (ia === -1 ? 99 : ia) - (ib === -1 ? 99 : ib)
+    return b.fame - a.fame
+  })
   for (const c of catList) {
-    c.subList = [...c.subs.values()].sort((a, b) => b.fame - a.fame)
+    c.subList = [...c.subs.values()].sort((a, b) => b.maxed - a.maxed || b.fame - a.fame)
+    // maxed rows first, then by level desc, so what's done is at a glance.
     for (const sc of c.subList) sc.rows.sort((a, b) => (b.level - a.level) || (b.fame - a.fame))
   }
   return catList
@@ -223,7 +230,8 @@ onMounted(async () => {
               <button class="spec-head cat" @click="toggleSpec(c.name)" :aria-expanded="!specCollapsed(c.name)">
                 <span class="chev" :class="{ open: !specCollapsed(c.name) }">▸</span>
                 <span class="spec-name">{{ c.name }}</span>
-                <span class="muted">· {{ spec.complete ? '' : '≥' }}{{ pctMaxed(c) }}% maxed · {{ c.maxed }}/{{ c.nodes }} at 100 · {{ fmt(levelsToGo(c)) }} lvls to go</span>
+                <span class="slot-max" v-if="c.maxed">{{ c.maxed }} maxed</span>
+                <span class="muted">· {{ c.nodes }} specs · {{ spec.complete ? '' : '≥' }}{{ pctMaxed(c) }}%</span>
               </button>
               <div v-show="!specCollapsed(c.name)" class="spec-subs">
                 <div v-for="sc in c.subList" :key="sc.name" class="spec-sub">
@@ -237,12 +245,12 @@ onMounted(async () => {
                     <caption class="sr-only">{{ c.name }} — {{ sc.name }}</caption>
                     <thead><tr><th></th><th class="num">Lvl</th><th>Progress</th><th class="num">Fame</th><th class="num">To 100</th></tr></thead>
                     <tbody>
-                      <tr v-for="m in sc.rows" :key="m.index" :class="{ untouched: !m.touched }">
+                      <tr v-for="m in sc.rows" :key="m.index" :class="{ untouched: !m.touched, maxed: m.level >= 100 }">
                         <td>{{ m.name }}</td>
-                        <td class="num">{{ m.level }}</td>
+                        <td class="num"><span v-if="m.level >= 100" class="max-badge">MAX</span><span v-else>{{ m.level }}</span></td>
                         <td>
-                          <span class="bar" :title="Math.round(m.progress * 100) + '%'">
-                            <span class="bar-fill" :style="{ width: Math.round(m.progress * 100) + '%' }"></span>
+                          <span class="bar" :title="m.level >= 100 ? 'Maxed' : Math.round(m.progress * 100) + '% to next'">
+                            <span class="bar-fill" :class="{ full: m.level >= 100 }" :style="{ width: (m.level >= 100 ? 100 : Math.round(m.progress * 100)) + '%' }"></span>
                           </span>
                         </td>
                         <td class="num">{{ m.fame ? compact(m.fame) : '—' }}</td>
@@ -297,6 +305,11 @@ tbody tr:hover { background: var(--panel); }
 .spec-subs { display: flex; flex-direction: column; gap: 1px; }
 .spec-sub table { margin-left: 40px; width: calc(100% - 40px); }
 .untouched { opacity: 0.4; }
+tr.maxed td { color: var(--good); }
+tr.maxed td:first-child { font-weight: 600; }
+.slot-max { font-size: 11px; font-weight: 600; padding: 1px 7px; border-radius: 10px; background: color-mix(in srgb, var(--good) 25%, transparent); color: var(--good); flex: 0 0 auto; }
+.max-badge { font-size: 10px; font-weight: 700; padding: 1px 5px; border-radius: 3px; background: var(--good); color: #04120a; letter-spacing: 0.5px; }
+.bar-fill.full { background: var(--good); opacity: 0.85; }
 .fighter-lvl { font-size: 12px; padding: 1px 6px; border-radius: 4px; background: var(--border); color: var(--text); flex: 0 0 auto; }
 .bar { display: inline-block; width: 120px; height: 8px; background: var(--border); border-radius: 4px; overflow: hidden; vertical-align: middle; }
 .bar-fill { display: block; height: 100%; background: var(--good); }

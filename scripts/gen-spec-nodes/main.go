@@ -30,6 +30,7 @@ type node struct {
 	Name        string `json:"name"`
 	Category    string `json:"category,omitempty"`    // top breakdown (Combat, Gathering…)
 	Subcategory string `json:"subcategory,omitempty"` // mid breakdown (Axes, Fiber…)
+	Slot        string `json:"slot,omitempty"`        // gear slot (Weapon/Off-Hand/Head/Chest/Shoes…)
 	FameToMax   int64  `json:"fameToMax,omitempty"`   // total fame from 0 to level 100 (011)
 }
 
@@ -92,6 +93,39 @@ func isCombatBase(id string) bool {
 		}
 	}
 	return false
+}
+
+// slotOf classifies a node into a gear slot for the at-a-glance Spec view (012).
+// Armor lines split by piece (ARMORS→Chest, HEADS→Head, SHOES→Shoes); off-hand lines
+// (Torches, Shields, Books/tomes) group together; every other combat line is a Weapon.
+// Non-combat nodes take their category as the slot (Gathering/Crafting/Farming…).
+func slotOf(id, catDisplay string) string {
+	if catDisplay != "Combat" {
+		return catDisplay
+	}
+	parts := strings.Split(id, "_")
+	if len(parts) >= 3 {
+		switch parts[2] {
+		case "ARMORS":
+			return "Chest"
+		case "HEADS":
+			return "Head"
+		case "SHOES":
+			return "Shoes"
+		}
+	}
+	sub := ""
+	if len(parts) >= 2 {
+		sub = parts[1]
+	}
+	switch sub {
+	case "TORCHES", "SHIELDS", "BOOKS":
+		return "Off-Hand"
+	case "CLOTH", "LEATHER", "PLATE":
+		return "Armor" // base armor fighter node (no piece) — rare
+	default:
+		return "Weapon"
+	}
 }
 
 func subcategoryOf(id string) string {
@@ -282,11 +316,13 @@ func main() {
 		if total, ok := tmplFame[d.tmpl]; ok {
 			fameToMax = int64(float64(total) * d.fameMult)
 		}
+		catDisp := categoryDisplay(d.category)
 		out.Nodes = append(out.Nodes, node{
 			ID:          i,
 			Name:        name,
-			Category:    categoryDisplay(d.category),
+			Category:    catDisp,
 			Subcategory: subcategoryOf(d.id),
+			Slot:        slotOf(d.id, catDisp),
 			FameToMax:   fameToMax,
 		})
 	}
