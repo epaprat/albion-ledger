@@ -59,6 +59,7 @@ type Service struct {
 	externalNudge chan struct{} // buffered(1) — K content signals the external price loop (010)
 
 	specUnlockedIDs []int // latest E:155 unlocked-node set, for persistence (011)
+	specEnumIDs     []int // latest E:1 board enumeration (position→id), for persistence (012)
 
 	mu     sync.Mutex
 	items  map[int]*model.LiveViewItem // by item index
@@ -290,6 +291,20 @@ func (s *Service) SpecUnlockedSnapshot() []int {
 	s.mu.Lock()
 	defer s.mu.Unlock()
 	return append([]int(nil), s.specUnlockedIDs...)
+}
+
+// SetSpecEnum stores the latest E:1 board enumeration for background persistence (012).
+func (s *Service) SetSpecEnum(ids []int) {
+	s.mu.Lock()
+	s.specEnumIDs = append(s.specEnumIDs[:0], ids...)
+	s.mu.Unlock()
+}
+
+// SpecEnumSnapshot returns a copy of the enumeration for the persistence flush.
+func (s *Service) SpecEnumSnapshot() []int {
+	s.mu.Lock()
+	defer s.mu.Unlock()
+	return append([]int(nil), s.specEnumIDs...)
 }
 
 // SetSpec replaces the character Destiny Board and broadcasts it (011). The handler

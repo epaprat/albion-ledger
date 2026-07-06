@@ -239,3 +239,86 @@ func TestSpecUnlockedMergesNeverWipes(t *testing.T) {
 		t.Fatal("E:155 wiped the seeded idle-maxed node 999 — must merge, not replace")
 	}
 }
+
+// E:1 (012) is the COMPLETE board authority: k2 ids + k3 levels decode directly, so
+// maxed nodes show at login with no grind. Uses the real relog2 capture layout.
+func TestE1BoardAuthority(t *testing.T) {
+	svc, p := newGlue(t)
+	p.setSelfForTest(specSelf)
+	// Cold login E:1: k2 ids + k3 levels (id 22 maxed, id 6 in-progress).
+	p.dispatch(probe.KindEvent, 1, map[byte]interface{}{
+		0: int32(specSelf),
+		2: []int16{6, 22, 999},   // node ids (k2)
+		3: []uint8{10, 100, 55},  // levels (k3): 22 is maxed
+		252: int16(1),
+	})
+	sp := specOf(svc)
+	if !sp.Complete {
+		t.Fatal("E:1 board must mark the spec Complete (no banner)")
+	}
+	byIdx := map[int]model.MasteryLevel{}
+	for _, m := range sp.Masteries {
+		byIdx[m.Index] = m
+	}
+	if byIdx[22].Level != 100 {
+		t.Fatalf("E:1 maxed node must show level 100: %+v", byIdx[22])
+	}
+	if byIdx[6].Level != 10 {
+		t.Fatalf("E:1 in-progress level wrong: %+v", byIdx[6])
+	}
+}
+
+// Warm login E:1 (k2 absent) decodes via the enumeration learned from a prior cold
+// login — the whole point of persisting the id order.
+func TestE1WarmLoginUsesEnum(t *testing.T) {
+	svc, p := newGlue(t)
+	p.setSelfForTest(specSelf)
+	// Cold login learns the order 6,22,999.
+	p.dispatch(probe.KindEvent, 1, map[byte]interface{}{
+		0: int32(specSelf), 2: []int16{6, 22, 999}, 3: []uint8{5, 5, 5}, 252: int16(1),
+	})
+	// Warm login: NO k2, k3 position-indexed by the learned order.
+	p.dispatch(probe.KindEvent, 1, map[byte]interface{}{
+		0: int32(specSelf), 3: []uint8{11, 100, 60}, 252: int16(1),
+	})
+	byIdx := map[int]model.MasteryLevel{}
+	for _, m := range specOf(svc).Masteries {
+		byIdx[m.Index] = m
+	}
+	if byIdx[22].Level != 100 || byIdx[6].Level != 11 {
+		t.Fatalf("warm-login enum decode wrong: 22=%+v 6=%+v", byIdx[22], byIdx[6])
+	}
+}
+
+// The chat-settings E:1 (k0 []string) shares event code 1 — it must be rejected.
+func TestE1ChatSettingsRejected(t *testing.T) {
+	svc, p := newGlue(t)
+	p.setSelfForTest(specSelf)
+	p.dispatch(probe.KindEvent, 1, map[byte]interface{}{
+		0: []string{"@CHAT_TAB_GENERAL"}, 1: []int16{1, 2}, 252: int16(1),
+	})
+	if specOf(svc).NodeCount != 0 || specOf(svc).Complete {
+		t.Fatal("chat-settings E:1 must not touch the board")
+	}
+}
+
+// E:1 absent → the 011 path (E:154 + E:155 + banner) is untouched.
+func TestE1AbsentFallbackTo011(t *testing.T) {
+	svc, p := newGlue(t)
+	p.setSelfForTest(specSelf)
+	p.dispatch(probe.KindEvent, 154, snapshotParams(specSelf, []int16{22}, []byte{30}, nil, nil))
+	sp := specOf(svc)
+	if m := func() model.MasteryLevel {
+		for _, x := range sp.Masteries {
+			if x.Index == 22 {
+				return x
+			}
+		}
+		return model.MasteryLevel{}
+	}(); m.Level != 30 {
+		t.Fatalf("011 E:154 path must still work without E:1: %+v", m)
+	}
+	if sp.Complete {
+		t.Fatal("without E:1 or E:155, Complete must stay false (011 banner)")
+	}
+}

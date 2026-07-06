@@ -9,6 +9,11 @@ package capture
 //	E:153 AchievementProgressInfo (live delta): k0 self, k1 node id, k2 level
 //	  (OPTIONAL — absent means unchanged), k3 progress, k4 fame string.
 //	E:152 FinishedAchievement (level-up): k0 self, k1 node id, k2 new level.
+//	E:1 FullAchievementInfo (COLD login/relog full board — the complete authority,
+//	  012): k0 self, k1 anchors, k2 = []int16 NODE IDS (present on cold login;
+//	  omitted on warm logins where k3 is position-indexed by the last k2 order),
+//	  k3 = []uint8 LEVELS incl 100, k4 flags. k2[i] has level k3[i]. E:1 collides
+//	  with chat-settings E:1 (k0 []string) — reject by shape.
 //
 // Every integer array is read width-free (the Photon trap hit five keys in 010);
 // short parallel arrays leave the missing field zero rather than rejecting the row.
@@ -103,6 +108,36 @@ func AchievementDone(params map[byte]interface{}) (id, level int, ok bool) {
 	id, iok := toIntVal(params[1])
 	level, lok := toIntVal(params[2])
 	return id, level, iok && lok
+}
+
+// FullBoard is one E:1 board decode: paired node ids + levels. When the wire carried
+// the id list (k2), Ids is populated and IdsFromWire is true (a fresh authoritative
+// enumeration to persist). On a warm login k2 is absent — Ids is nil and the caller
+// maps Levels by the persisted enumeration.
+type FullBoard struct {
+	Self        int
+	Ids         []int // k2 node ids, position-aligned with Levels; nil if k2 absent
+	IdsFromWire bool
+	Levels      []int // k3 levels (incl 100 = maxed)
+}
+
+// AchievementFullBoard parses E:1 (012). Shape-locked against the chat-settings E:1:
+// k0 must be an integer self id and k3 a []uint8 level array (>=1, capped). k2, when
+// a []int16 of the same length, is the authoritative node-id enumeration.
+func AchievementFullBoard(params map[byte]interface{}) (FullBoard, bool) {
+	self, ok := toIntVal(params[0])
+	if !ok {
+		return FullBoard{}, false // chat-settings E:1 has k0 []string — rejected
+	}
+	levels := byteOrIntSlice(params[3])
+	if len(levels) == 0 || len(levels) > maxSpecNodes {
+		return FullBoard{}, false
+	}
+	fb := FullBoard{Self: self, Levels: levels}
+	if ids := byteOrIntSlice(params[2]); len(ids) == len(levels) {
+		fb.Ids, fb.IdsFromWire = ids, true
+	}
+	return fb, true
 }
 
 // parseFameWrapper extracts the number from the game's "[[<fame>]]" localization

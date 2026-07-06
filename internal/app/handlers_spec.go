@@ -24,6 +24,50 @@ func init() {
 	register(model.CatSpecDelta, handleSpecDelta)
 	register(model.CatSpecDone, handleSpecDone)
 	register(model.CatSpecUnlocked, handleSpecUnlocked)
+	register(model.CatSpecFullBoard, handleSpecFullBoard)
+}
+
+// handleSpecFullBoard — E:1: the COMPLETE board authority (012). k2 (node ids) + k3
+// (levels incl 100) decode directly to id→level pairs, so every maxed node shows at
+// login with zero grind. A cold login carries k2 (persisted as the enumeration); a
+// warm login omits it and its k3 is mapped through the learned enumeration. Rejected
+// if it doesn't match the E:1 board shape (the chat-settings E:1 shares event code 1).
+func handleSpecFullBoard(p *Pipeline, _ probe.Kind, _ int, params map[byte]interface{}) {
+	if !p.specSelfMatches(params) {
+		return
+	}
+	fb, ok := capture.AchievementFullBoard(params)
+	if !ok {
+		return
+	}
+	pairs := p.specEnum.Decode(fb.Ids, fb.Levels)
+	if len(pairs) == 0 {
+		return // warm login before any enum is known → 011 fallback stays in charge
+	}
+	nodes := make([]specboard.Node, len(pairs))
+	for i, pr := range pairs {
+		n := specboard.Node{ID: pr.ID, Level: pr.Level}
+		if pr.Level >= 100 {
+			n.Progress = 1
+		}
+		nodes[i] = n
+	}
+	p.board.ReplaceAll(nodes) // E:1 is authoritative and complete — it REPLACES.
+	p.specFullBoard = true
+	p.specSnapshotSeen = true
+	if fb.IdsFromWire {
+		p.sink.SetSpecEnum(p.specEnum.Snapshot()) // persist the learned id order
+	}
+	p.emitSpec()
+	if p.debug {
+		maxed := 0
+		for _, pr := range pairs {
+			if pr.Level >= 100 {
+				maxed++
+			}
+		}
+		log.Printf("[spec] E:1 board n=%d maxed=%d k2FromWire=%v", len(pairs), maxed, fb.IdsFromWire)
+	}
 }
 
 // handleSpecUnlocked — E:155: the full unlocked-node list (in-progress ∪ maxed). Any
@@ -97,7 +141,12 @@ func handleSpecSnapshot(p *Pipeline, _ probe.Kind, _ int, params map[byte]interf
 	}
 	// The board is sent as several E:154 packets per Join; the first after a Join
 	// clears (authority), the rest of the burst merge into it (live-seen 75+75+36).
-	if p.specReplacePending {
+	// Once E:1 has given the complete board (incl maxed), E:154 (in-progress only)
+	// must MERGE — it adds progress/fame to in-progress nodes but must never wipe the
+	// maxed E:1 established (a ReplaceAll would drop them).
+	if p.specFullBoard {
+		p.board.MergeAll(nodes)
+	} else if p.specReplacePending {
 		p.board.ReplaceAll(nodes)
 		p.specReplacePending = false
 	} else {
@@ -215,6 +264,6 @@ func (p *Pipeline) emitSpec() {
 	count, totalFame := p.board.Totals()
 	p.sink.SetSpec(model.CharacterSpec{
 		Masteries: masteries, NodeCount: count, TotalFame: totalFame,
-		Complete: p.specUnlockedSeen && p.specSnapshotSeen,
+		Complete: p.specFullBoard || (p.specUnlockedSeen && p.specSnapshotSeen),
 	})
 }

@@ -24,6 +24,7 @@ import (
 	"github.com/epaprat/albion-ledger/internal/loot"
 	"github.com/epaprat/albion-ledger/internal/pending"
 	"github.com/epaprat/albion-ledger/internal/specboard"
+	"github.com/epaprat/albion-ledger/internal/specenum"
 )
 
 // Fixed container ids for the player's own bag + equipped sets, which arrive in
@@ -71,6 +72,7 @@ type Sink interface {
 	IngestFame(id string, fame int64, ts int64)
 	SetSpec(spec model.CharacterSpec)
 	SetSpecUnlocked(ids []int)
+	SetSpecEnum(ids []int)
 }
 
 // SpecResolver maps a Destiny Board node id to a readable name + category (011).
@@ -130,6 +132,8 @@ type Pipeline struct {
 	specUnlockedSeen   bool         // true once E:155 (or a persisted seed) is known — data is complete
 	specSnapshotSeen   bool         // true once an E:154 burst arrived — REQUIRED before maxed
 	//                                 classification (unlocked ∖ empty-board would mark ALL 100)
+	specEnum      *specenum.Enum // E:1 board enumeration (012): position→id for warm logins
+	specFullBoard bool           // true once E:1 gave the complete board — it's the authority
 }
 
 // New wires a Pipeline. locs may be nil (zones stay raw cluster ids).
@@ -150,6 +154,7 @@ func New(sink Sink, clf *probe.Classifier, locs *locations.Locations, specNames 
 		tabMeta:            map[string]tabInfo{},
 		board:              specboard.New(),
 		specNames:          specNames,
+		specEnum:           specenum.New(),
 	}
 }
 
@@ -640,6 +645,14 @@ func firstInt64(v interface{}) (int64, bool) {
 // (level-100) branches show immediately, before any E:155 arrives this session
 // (E:155 only fires on completion, not login — 011 live finding). Emits if a board
 // snapshot is already present.
+// SeedSpecEnum restores the persisted E:1 board enumeration at startup (012) so a warm
+// login (E:1 without k2) decodes before any cold login this session.
+func (p *Pipeline) SeedSpecEnum(ids []int) {
+	if len(ids) > 0 {
+		p.specEnum.Restore(ids)
+	}
+}
+
 func (p *Pipeline) SeedSpecUnlocked(ids []int) {
 	if len(ids) == 0 {
 		return

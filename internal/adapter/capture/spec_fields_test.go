@@ -100,3 +100,32 @@ func TestAchievementDoneFromBytes(t *testing.T) {
 		t.Fatal("missing level must be not-ok")
 	}
 }
+
+// E:1 board (012): k2 ids + k3 levels direct; k2-less warm login; chat-E:1 reject.
+func TestAchievementFullBoard(t *testing.T) {
+	// Cold login: k2 present, same length as k3.
+	fb, ok := AchievementFullBoard(map[byte]interface{}{
+		0: int64(76685), 2: []int16{6, 22, 999}, 3: []uint8{10, 100, 55},
+	})
+	if !ok || !fb.IdsFromWire || len(fb.Ids) != 3 || fb.Ids[1] != 22 || fb.Levels[1] != 100 {
+		t.Fatalf("cold-login decode wrong: %+v ok=%v", fb, ok)
+	}
+	// Warm login: k2 absent → Ids nil, Levels present.
+	fb, ok = AchievementFullBoard(map[byte]interface{}{0: int64(76685), 3: []uint8{11, 90}})
+	if !ok || fb.IdsFromWire || fb.Ids != nil || len(fb.Levels) != 2 {
+		t.Fatalf("warm-login decode wrong: %+v ok=%v", fb, ok)
+	}
+	// k2 length mismatch → treated as warm (ids ignored).
+	fb, _ = AchievementFullBoard(map[byte]interface{}{0: int64(1), 2: []int16{1}, 3: []uint8{1, 2, 3}})
+	if fb.IdsFromWire {
+		t.Fatal("mismatched k2 length must not be used as the enumeration")
+	}
+	// Chat-settings E:1: k0 []string → rejected.
+	if _, ok := AchievementFullBoard(map[byte]interface{}{0: []string{"x"}, 3: []uint8{1}}); ok {
+		t.Fatal("chat-settings E:1 (k0 []string) must be rejected")
+	}
+	// No level array → rejected.
+	if _, ok := AchievementFullBoard(map[byte]interface{}{0: int64(1)}); ok {
+		t.Fatal("E:1 without a level array must be rejected")
+	}
+}
