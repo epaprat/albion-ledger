@@ -77,6 +77,23 @@ func categoryDisplay(cat string) string {
 // subcategoryOf derives the mid-breakdown from the id's second token (the weapon /
 // resource line): GATHER_FIBER_T3 → "Fiber", COMBAT_ARCANESTAFFS_ARCANE →
 // "Arcanestaffs", FARM_ALCHEMIST_ACID → "Alchemist". Single-token ids → "".
+// isCombatBase reports whether a fighting id is a base/aggregate "Fighter" node — the
+// whole weapon line (COMBAT_<LINE>) or an armor base (COMBAT_<TYPE>_ARMORS/HEADS/SHOES)
+// — rather than a specific item variant. Bases share their first variant's itemforsprite.
+func isCombatBase(id string) bool {
+	parts := strings.Split(id, "_")
+	if len(parts) == 2 {
+		return true // COMBAT_<LINE> weapon fighter
+	}
+	if len(parts) == 3 {
+		switch parts[2] {
+		case "ARMORS", "HEADS", "SHOES":
+			return true // COMBAT_<TYPE>_<PIECE> armor base
+		}
+	}
+	return false
+}
+
 func subcategoryOf(id string) string {
 	parts := strings.Split(id, "_")
 	if len(parts) < 2 {
@@ -249,10 +266,17 @@ func main() {
 		// (a sickle for every fiber tier), so there the id — minus its redundant
 		// category prefix — is the readable, tier-distinct name ("Fiber T5").
 		name := humanizeAfterFirst(d.id)
-		if d.category == "fighting" && d.item != "" {
+		// Base/aggregate combat nodes (the whole-line "Fighter" node — COMBAT_<LINE>,
+		// and the armor bases COMBAT_<TYPE>_ARMORS/HEADS/SHOES) carry the itemforsprite
+		// of their first variant, so itemforsprite naming collides them with a real
+		// item (the "Books Fighter" base rendered as "Diary"). Name those from the id
+		// with a "(Fighter)" tag instead; only the SPECIFIC variant nodes use the item.
+		if d.category == "fighting" && d.item != "" && !isCombatBase(d.id) {
 			if n, ok := itemNames[d.item]; ok {
 				name = n
 			}
+		} else if d.category == "fighting" && isCombatBase(d.id) {
+			name = humanizeAfterFirst(d.id) + " (Fighter)"
 		}
 		var fameToMax int64
 		if total, ok := tmplFame[d.tmpl]; ok {

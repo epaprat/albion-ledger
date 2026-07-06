@@ -39,7 +39,7 @@
   },
   {
    "id": 6,
-   "name": "Arcane Staff",
+   "name": "Arcanestaffs (Fighter)",
    "category": "Combat",
    "subcategory": "Arcanestaffs",
    "fameToMax": 14743573
@@ -102,7 +102,7 @@
   },
   {
    "id": 15,
-   "name": "Battleaxe",
+   "name": "Axes (Fighter)",
    "category": "Combat",
    "subcategory": "Axes",
    "fameToMax": 14743573
@@ -165,7 +165,7 @@
   },
   {
    "id": 24,
-   "name": "Diary",
+   "name": "Books (Fighter)",
    "category": "Combat",
    "subcategory": "Books",
    "fameToMax": 14743573
@@ -214,7 +214,7 @@
   },
   {
    "id": 31,
-   "name": "Bow",
+   "name": "Bows (Fighter)",
    "category": "Combat",
    "subcategory": "Bows",
    "fameToMax": 14743573
@@ -277,13 +277,13 @@
   },
   {
    "id": 40,
-   "name": "Scholar Robe",
+   "name": "Cloth (Fighter)",
    "category": "Combat",
    "subcategory": "Cloth"
   },
   {
    "id": 41,
-   "name": "Scholar Robe",
+   "name": "Cloth Armors (Fighter)",
    "category": "Combat",
    "subcategory": "Cloth",
    "fameToMax": 14743573
@@ -353,7 +353,7 @@
   },
   {
    "id": 51,
-   "name": "Scholar Cowl",
+   "name": "Cloth Heads (Fighter)",
    "category": "Combat",
    "subcategory": "Cloth",
    "fameToMax": 14743573
@@ -423,7 +423,7 @@
   },
   {
    "id": 61,
-   "name": "Scholar Sandals",
+   "name": "Cloth Shoes (Fighter)",
    "category": "Combat",
    "subcategory": "Cloth",
    "fameToMax": 14743573
@@ -493,7 +493,7 @@
   },
   {
    "id": 71,
-   "name": "Crossbow",
+   "name": "Crossbows (Fighter)",
    "category": "Combat",
    "subcategory": "Crossbows",
    "fameToMax": 14743573
@@ -556,7 +556,7 @@
   },
   {
    "id": 80,
-   "name": "Cursed Staff",
+   "name": "Cursedstaffs (Fighter)",
    "category": "Combat",
    "subcategory": "Cursedstaffs",
    "fameToMax": 14743573
@@ -619,7 +619,7 @@
   },
   {
    "id": 89,
-   "name": "Dagger",
+   "name": "Daggers (Fighter)",
    "category": "Combat",
    "subcategory": "Daggers",
    "fameToMax": 14743573
@@ -682,7 +682,7 @@
   },
   {
    "id": 98,
-   "name": "Fire Staff",
+   "name": "Firestaffs (Fighter)",
    "category": "Combat",
    "subcategory": "Firestaffs",
    "fameToMax": 14743573
@@ -745,7 +745,7 @@
   },
   {
    "id": 107,
-   "name": "Frost Staff",
+   "name": "Froststaffs (Fighter)",
    "category": "Combat",
    "subcategory": "Froststaffs",
    "fameToMax": 14743573
@@ -808,7 +808,7 @@
   },
   {
    "id": 116,
-   "name": "Hammer",
+   "name": "Hammers (Fighter)",
    "category": "Combat",
    "subcategory": "Hammers",
    "fameToMax": 14743573
@@ -871,7 +871,7 @@
   },
   {
    "id": 125,
-   "name": "Holy Staff",
+   "name": "Holystaffs (Fighter)",
    "category": "Combat",
    "subcategory": "Holystaffs",
    "fameToMax": 14743573
@@ -934,13 +934,13 @@
   },
   {
    "id": 134,
-   "name": "Hunter",
+   "name": "Hunter (Fighter)",
    "category": "Combat",
    "subcategory": "Hunter"
   },
   {
    "id": 135,
-   "name": "Brawler Gloves",
+   "name": "Knuckles (Fighter)",
    "category": "Combat",
    "subcategory": "Knuckles",
    "fameToMax": 14743573
@@ -1003,13 +1003,13 @@
   },
   {
    "id": 144,
-   "name": "Mercenary Jacket",
+   "name": "Leather (Fighter)",
    "category": "Combat",
    "subcategory": "Leather"
   },
   {
    "id": 145,
-   "name": "Mercenary Jacket",
+   "name": "Leather Armors (Fighter)",
    "category": "Combat",
    "subcategory": "Leather",
    "fameToMax": 14743573
@@ -1079,7 +1079,7 @@
   },
   {
    "id": 155,
-   "name": "Mercenary Hood",
+   "name": "Leather Heads (Fighter)",
    "category": "Combat",
    "subcategory": "Leather",
    "fameToMax": 14743573
@@ -1149,7 +1149,7 @@
   },
   {
    "id": 165,
-   "name": "Mercenary Shoes",
+   "name": "Leather Shoes (Fighter)",
    "category": "Combat",
    "subcategory": "Leather",
    "fameToMax": 14743573
@@ -1219,7 +1219,7 @@
   },
   {
    "id": 175,
-   "name": "Mace",
+   "name": "Maces (Fighter)",
    "category": "Combat",
    "subcategory": "Maces",
    "fameToMax": 14743573
@@ -1282,13 +1282,13 @@
   },
   {
    "id": 184,
-   "name": "Fire Staff",
+   "name": "Mage (Fighter)",
    "category": "Combat",
    "subcategory": "Mage"
   },
   {
    "id": 185,
-   "name": "Nature Staff",
+   "name": "Naturestaffs (Fighter)",
    "category": "Combat",
    "subcategory": "Naturestaffs",
    "fameToMax": 14743573
@@ -1351,13 +1351,13 @@
   },
   {
    "id": 194,
-   "name": "Soldier Armor",
+   "name": "Plate (Fighter)",
    "category": "Combat",
    "subcategory": "Plate"
   },
   {
    "id": 195,
-   "name": "Soldier Armor",
+   "name": "Plate Armors (Fighter)",
    "category": "Combat",
    "subcategory": "Plate",
    "fameToMax": 14743573
@@ -1427,7 +1427,7 @@
   },
   {
    "id": 205,
-   "name": "Soldier Helmet",
+   "name": "Plate Heads (Fighter)",
    "category": "Combat",
    "subcategory": "Plate",
    "fameToMax": 14743573
@@ -1497,7 +1497,7 @@
   },
   {
    "id": 215,
-   "name": "Soldier Boots",
+   "name": "Plate Shoes (Fighter)",
    "category": "Combat",
    "subcategory": "Plate",
    "fameToMax": 14743573
@@ -1567,7 +1567,7 @@
   },
   {
    "id": 225,
-   "name": "Quarterstaff",
+   "name": "Quarterstaffs (Fighter)",
    "category": "Combat",
    "subcategory": "Quarterstaffs",
    "fameToMax": 14743573
@@ -1630,7 +1630,7 @@
   },
   {
    "id": 234,
-   "name": "Prowling Staff",
+   "name": "Shapeshifter (Fighter)",
    "category": "Combat",
    "subcategory": "Shapeshifter",
    "fameToMax": 14743573
@@ -1693,7 +1693,7 @@
   },
   {
    "id": 243,
-   "name": "Shield",
+   "name": "Shields (Fighter)",
    "category": "Combat",
    "subcategory": "Shields",
    "fameToMax": 14743573
@@ -1742,7 +1742,7 @@
   },
   {
    "id": 250,
-   "name": "Spear",
+   "name": "Spears (Fighter)",
    "category": "Combat",
    "subcategory": "Spears",
    "fameToMax": 14743573
@@ -1805,7 +1805,7 @@
   },
   {
    "id": 259,
-   "name": "Broadsword",
+   "name": "Swords (Fighter)",
    "category": "Combat",
    "subcategory": "Swords",
    "fameToMax": 14743573
@@ -1868,7 +1868,7 @@
   },
   {
    "id": 268,
-   "name": "Torch",
+   "name": "Torches (Fighter)",
    "category": "Combat",
    "subcategory": "Torches",
    "fameToMax": 14743573
@@ -1917,13 +1917,13 @@
   },
   {
    "id": 275,
-   "name": "Trainee",
+   "name": "Trainee (Fighter)",
    "category": "Combat",
    "subcategory": "Trainee"
   },
   {
    "id": 276,
-   "name": "Broadsword",
+   "name": "Warrior (Fighter)",
    "category": "Combat",
    "subcategory": "Warrior"
   },
