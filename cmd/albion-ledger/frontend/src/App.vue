@@ -230,7 +230,7 @@ onMounted(async () => {
                   <button class="spec-head sub" @click="toggleSpec(c.name + '/' + sc.name)" :aria-expanded="!specCollapsed(c.name + '/' + sc.name)">
                     <span class="chev" :class="{ open: !specCollapsed(c.name + '/' + sc.name) }">▸</span>
                     <span class="spec-name">{{ sc.name }}</span>
-                    <span v-if="sc.base" class="fighter-lvl" :title="'Line fighter node level'">Fighter {{ sc.base.level }}<span v-if="sc.base.level >= 100"> ✓</span></span>
+                    <span v-if="sc.base && sc.base.level > 0" class="fighter-lvl" :title="'Line fighter node level (from the in-progress snapshot; the game omits it once maxed)'">Fighter {{ sc.base.level }}</span>
                     <span class="muted">· {{ spec.complete ? '' : '≥' }}{{ pctMaxed(sc) }}% maxed · {{ sc.maxed }}/{{ sc.nodes }} at 100 · {{ fmt(levelsToGo(sc)) }} lvls to go</span>
                   </button>
                   <table v-show="!specCollapsed(c.name + '/' + sc.name)">
