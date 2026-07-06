@@ -579,3 +579,28 @@ export namespace model {
 
 }
 
+export namespace wailsadapter {
+	
+	export class ExportResult {
+	    dataset: string;
+	    path: string;
+	    rows: number;
+	    canceled: boolean;
+	    err: string;
+	
+	    static createFrom(source: any = {}) {
+	        return new ExportResult(source);
+	    }
+	
+	    constructor(source: any = {}) {
+	        if ('string' === typeof source) source = JSON.parse(source);
+	        this.dataset = source["dataset"];
+	        this.path = source["path"];
+	        this.rows = source["rows"];
+	        this.canceled = source["canceled"];
+	        this.err = source["err"];
+	    }
+	}
+
+}
+

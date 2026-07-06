@@ -10,6 +10,14 @@ export function EnsureSelfContainer(arg1, arg2) {
   return window['go']['wailsadapter']['Service']['EnsureSelfContainer'](arg1, arg2);
 }
 
+export function ExportAll(arg1) {
+  return window['go']['wailsadapter']['Service']['ExportAll'](arg1);
+}
+
+export function ExportDataset(arg1, arg2) {
+  return window['go']['wailsadapter']['Service']['ExportDataset'](arg1, arg2);
+}
+
 export function ExternalRefreshSignal() {
   return window['go']['wailsadapter']['Service']['ExternalRefreshSignal']();
 }
@@ -128,6 +136,10 @@ export function SetSpecUnlocked(arg1) {
 
 export function SetStatus(arg1) {
   return window['go']['wailsadapter']['Service']['SetStatus'](arg1);
+}
+
+export function SetUIContext(arg1) {
+  return window['go']['wailsadapter']['Service']['SetUIContext'](arg1);
 }
 
 export function SetZone(arg1) {

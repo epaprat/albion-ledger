@@ -60,6 +60,7 @@ type Service struct {
 
 	specUnlockedIDs []int // latest E:155 unlocked-node set, for persistence (011)
 	specEnumIDs     []int // latest E:1 board enumeration (position→id), for persistence (012)
+	uiCtx           context.Context // wails runtime ctx for native dialogs (013); set at OnStartup
 
 	mu     sync.Mutex
 	items  map[int]*model.LiveViewItem // by item index
