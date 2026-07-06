@@ -251,10 +251,14 @@ onMounted(async () => {
                     <tbody>
                       <tr v-for="m in sc.rows" :key="m.index" :class="{ untouched: !m.touched, maxed: m.level >= 100 }">
                         <td>{{ m.name }}</td>
-                        <td class="num"><span v-if="m.level >= 100" class="max-badge">MAX</span><span v-else>{{ m.level }}</span></td>
+                        <td class="num">
+                          <template v-if="m.level >= 100"><span class="lvl-max">{{ m.level }}</span><span class="elite-cap">/120</span></template>
+                          <span v-else>{{ m.level }}</span>
+                        </td>
                         <td>
-                          <span class="bar" :title="m.level >= 100 ? 'Maxed' : Math.round(m.progress * 100) + '% to next'">
+                          <span class="bar" :class="{ elite: m.level >= 100 }" :title="m.level >= 100 ? ('Mastery maxed · elite ' + (m.level - 100) + '/20') : Math.round(m.progress * 100) + '% to next'">
                             <span class="bar-fill" :class="{ full: m.level >= 100 }" :style="{ width: (m.level >= 100 ? 100 : Math.round(m.progress * 100)) + '%' }"></span>
+                            <span v-if="m.level >= 100" class="bar-elite" :style="{ width: Math.round(Math.min(m.level - 100, 20) / 20 * 100) + '%' }"></span>
                           </span>
                         </td>
                         <td class="num">{{ m.fame ? compact(m.fame) : '—' }}</td>
@@ -312,7 +316,10 @@ tbody tr:hover { background: var(--panel); }
 tr.maxed td { color: var(--good); }
 tr.maxed td:first-child { font-weight: 600; }
 .slot-max { font-size: 11px; font-weight: 600; padding: 1px 7px; border-radius: 10px; background: color-mix(in srgb, var(--good) 25%, transparent); color: var(--good); flex: 0 0 auto; }
-.max-badge { font-size: 10px; font-weight: 700; padding: 1px 5px; border-radius: 3px; background: var(--good); color: #04120a; letter-spacing: 0.5px; }
+.lvl-max { color: var(--good); font-weight: 700; }
+.elite-cap { color: var(--muted); font-size: 11px; }
+.bar.elite { display: inline-flex; }
+.bar-elite { display: block; height: 100%; background: #d8a12a; }
 .bar-fill.full { background: var(--good); opacity: 0.85; }
 .fighter-lvl { font-size: 12px; padding: 1px 6px; border-radius: 4px; background: var(--border); color: var(--text); flex: 0 0 auto; }
 .bar { display: inline-block; width: 120px; height: 8px; background: var(--border); border-radius: 4px; overflow: hidden; vertical-align: middle; }
