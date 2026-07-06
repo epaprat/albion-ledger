@@ -118,6 +118,10 @@ export function SetSpec(arg1) {
   return window['go']['wailsadapter']['Service']['SetSpec'](arg1);
 }
 
+export function SetSpecEnum(arg1) {
+  return window['go']['wailsadapter']['Service']['SetSpecEnum'](arg1);
+}
+
 export function SetSpecUnlocked(arg1) {
   return window['go']['wailsadapter']['Service']['SetSpecUnlocked'](arg1);
 }
@@ -132,6 +136,10 @@ export function SetZone(arg1) {
 
 export function Spec() {
   return window['go']['wailsadapter']['Service']['Spec']();
+}
+
+export function SpecEnumSnapshot() {
+  return window['go']['wailsadapter']['Service']['SpecEnumSnapshot']();
 }
 
 export function SpecUnlockedSnapshot() {

@@ -30,6 +30,8 @@ type node struct {
 	Name        string `json:"name"`
 	Category    string `json:"category,omitempty"`    // top breakdown (Combat, Gathering…)
 	Subcategory string `json:"subcategory,omitempty"` // mid breakdown (Axes, Fiber…)
+	Slot        string `json:"slot,omitempty"`        // gear slot (Weapon/Off-Hand/Head/Chest/Shoes…)
+	Base        bool   `json:"base,omitempty"`        // true = whole-line "Fighter" aggregate node (012)
 	FameToMax   int64  `json:"fameToMax,omitempty"`   // total fame from 0 to level 100 (011)
 }
 
@@ -77,6 +79,56 @@ func categoryDisplay(cat string) string {
 // subcategoryOf derives the mid-breakdown from the id's second token (the weapon /
 // resource line): GATHER_FIBER_T3 → "Fiber", COMBAT_ARCANESTAFFS_ARCANE →
 // "Arcanestaffs", FARM_ALCHEMIST_ACID → "Alchemist". Single-token ids → "".
+// isCombatBase reports whether a fighting id is a base/aggregate "Fighter" node — the
+// whole weapon line (COMBAT_<LINE>) or an armor base (COMBAT_<TYPE>_ARMORS/HEADS/SHOES)
+// — rather than a specific item variant. Bases share their first variant's itemforsprite.
+func isCombatBase(id string) bool {
+	parts := strings.Split(id, "_")
+	if len(parts) == 2 {
+		return true // COMBAT_<LINE> weapon fighter
+	}
+	if len(parts) == 3 {
+		switch parts[2] {
+		case "ARMORS", "HEADS", "SHOES":
+			return true // COMBAT_<TYPE>_<PIECE> armor base
+		}
+	}
+	return false
+}
+
+// slotOf classifies a node into a gear slot for the at-a-glance Spec view (012).
+// Armor lines split by piece (ARMORS→Chest, HEADS→Head, SHOES→Shoes); off-hand lines
+// (Torches, Shields, Books/tomes) group together; every other combat line is a Weapon.
+// Non-combat nodes take their category as the slot (Gathering/Crafting/Farming…).
+func slotOf(id, catDisplay string) string {
+	if catDisplay != "Combat" {
+		return catDisplay
+	}
+	parts := strings.Split(id, "_")
+	if len(parts) >= 3 {
+		switch parts[2] {
+		case "ARMORS":
+			return "Chest"
+		case "HEADS":
+			return "Head"
+		case "SHOES":
+			return "Shoes"
+		}
+	}
+	sub := ""
+	if len(parts) >= 2 {
+		sub = parts[1]
+	}
+	switch sub {
+	case "TORCHES", "SHIELDS", "BOOKS":
+		return "Off-Hand"
+	case "CLOTH", "LEATHER", "PLATE":
+		return "Armor" // base armor fighter node (no piece) — rare
+	default:
+		return "Weapon"
+	}
+}
+
 func subcategoryOf(id string) string {
 	parts := strings.Split(id, "_")
 	if len(parts) < 2 {
@@ -249,20 +301,30 @@ func main() {
 		// (a sickle for every fiber tier), so there the id — minus its redundant
 		// category prefix — is the readable, tier-distinct name ("Fiber T5").
 		name := humanizeAfterFirst(d.id)
-		if d.category == "fighting" && d.item != "" {
+		// Base/aggregate combat nodes (the whole-line "Fighter" node — COMBAT_<LINE>,
+		// and the armor bases COMBAT_<TYPE>_ARMORS/HEADS/SHOES) carry the itemforsprite
+		// of their first variant, so itemforsprite naming collides them with a real
+		// item (the "Books Fighter" base rendered as "Diary"). Name those from the id
+		// with a "(Fighter)" tag instead; only the SPECIFIC variant nodes use the item.
+		if d.category == "fighting" && d.item != "" && !isCombatBase(d.id) {
 			if n, ok := itemNames[d.item]; ok {
 				name = n
 			}
+		} else if d.category == "fighting" && isCombatBase(d.id) {
+			name = humanizeAfterFirst(d.id) + " (Fighter)"
 		}
 		var fameToMax int64
 		if total, ok := tmplFame[d.tmpl]; ok {
 			fameToMax = int64(float64(total) * d.fameMult)
 		}
+		catDisp := categoryDisplay(d.category)
 		out.Nodes = append(out.Nodes, node{
 			ID:          i,
 			Name:        name,
-			Category:    categoryDisplay(d.category),
+			Category:    catDisp,
 			Subcategory: subcategoryOf(d.id),
+			Slot:        slotOf(d.id, catDisp),
+			Base:        catDisp == "Combat" && isCombatBase(d.id),
 			FameToMax:   fameToMax,
 		})
 	}

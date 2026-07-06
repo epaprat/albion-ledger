@@ -239,3 +239,119 @@ func TestSpecUnlockedMergesNeverWipes(t *testing.T) {
 		t.Fatal("E:155 wiped the seeded idle-maxed node 999 — must merge, not replace")
 	}
 }
+
+// e1Board builds a full-size E:1 (>= minBoardNodes) with the given (position→id) order
+// and per-position levels; the k2 id list is included when withIDs is true (cold login),
+// omitted for a warm login. Positions past the overrides are unique filler ids at level 0.
+func e1Board(self int, withIDs bool, ids []int16, levels []uint8) map[byte]interface{} {
+	n := 260
+	fullIDs := make([]int16, n)
+	fullLvls := make([]uint8, n)
+	flags := make([]bool, 133)
+	for i := 0; i < n; i++ {
+		fullIDs[i] = int16(400 + i) // filler ids, level 0 (not installed)
+	}
+	copy(fullIDs, ids)
+	copy(fullLvls, levels)
+	params := map[byte]interface{}{0: int32(self), 3: fullLvls, 4: flags, 252: int16(1)}
+	if withIDs {
+		params[2] = fullIDs
+	}
+	return params
+}
+
+// E:1 (012) is the COMPLETE board authority: k2 ids + k3 levels decode directly, so
+// maxed nodes show at login with no grind.
+func TestE1BoardAuthority(t *testing.T) {
+	svc, p := newGlue(t)
+	p.setSelfForTest(specSelf)
+	// Cold login E:1: id 22 maxed, id 6 in-progress (rest filler at level 0).
+	p.dispatch(probe.KindEvent, 1, e1Board(specSelf, true, []int16{6, 22}, []uint8{10, 100}))
+	sp := specOf(svc)
+	if !sp.Complete {
+		t.Fatal("E:1 board must mark the spec Complete (no banner)")
+	}
+	byIdx := map[int]model.MasteryLevel{}
+	for _, m := range sp.Masteries {
+		byIdx[m.Index] = m
+	}
+	if byIdx[22].Level != 100 {
+		t.Fatalf("E:1 maxed node must show level 100: %+v", byIdx[22])
+	}
+	if byIdx[6].Level != 10 {
+		t.Fatalf("E:1 in-progress level wrong: %+v", byIdx[6])
+	}
+	// Only TOUCHED nodes (level > 0) count — the hundreds of level-0 board nodes must
+	// NOT inflate NodeCount (finding: touched-only invariant).
+	if sp.NodeCount != 2 {
+		t.Fatalf("NodeCount must be touched-only (2), got %d", sp.NodeCount)
+	}
+}
+
+// Warm login E:1 (k2 absent) decodes via the enumeration learned from a prior cold
+// login — same length required, or it falls back (FR-004).
+func TestE1WarmLoginUsesEnum(t *testing.T) {
+	svc, p := newGlue(t)
+	p.setSelfForTest(specSelf)
+	// Cold login learns the full order.
+	p.dispatch(probe.KindEvent, 1, e1Board(specSelf, true, []int16{6, 22}, []uint8{5, 5}))
+	// Warm login: NO k2, k3 position-indexed by the learned order, SAME length.
+	p.dispatch(probe.KindEvent, 1, e1Board(specSelf, false, nil, []uint8{11, 100}))
+	byIdx := map[int]model.MasteryLevel{}
+	for _, m := range specOf(svc).Masteries {
+		byIdx[m.Index] = m
+	}
+	if byIdx[22].Level != 100 || byIdx[6].Level != 11 {
+		t.Fatalf("warm-login enum decode wrong: 22=%+v 6=%+v", byIdx[22], byIdx[6])
+	}
+}
+
+// A warm E:1 whose length differs from the learned enum is a different board version →
+// refused, board untouched (FR-004: never show a wrong node).
+func TestE1WarmLengthMismatchIgnored(t *testing.T) {
+	svc, p := newGlue(t)
+	p.setSelfForTest(specSelf)
+	p.dispatch(probe.KindEvent, 1, e1Board(specSelf, true, []int16{6, 22}, []uint8{5, 100}))
+	before := specOf(svc).NodeCount
+	// Warm login with a DIFFERENT-length k3 (still >= minBoardNodes) → must be ignored.
+	flags := make([]bool, 133)
+	longLvls := make([]uint8, 300)
+	longLvls[0] = 99
+	p.dispatch(probe.KindEvent, 1, map[byte]interface{}{0: int32(specSelf), 3: longLvls, 4: flags, 252: int16(1)})
+	if got := specOf(svc).NodeCount; got != before {
+		t.Fatalf("mismatched-length warm E:1 must not change the board: before=%d after=%d", before, got)
+	}
+}
+
+// The chat-settings E:1 (k0 []string) shares event code 1 — it must be rejected.
+func TestE1ChatSettingsRejected(t *testing.T) {
+	svc, p := newGlue(t)
+	p.setSelfForTest(specSelf)
+	p.dispatch(probe.KindEvent, 1, map[byte]interface{}{
+		0: []string{"@CHAT_TAB_GENERAL"}, 1: []int16{1, 2}, 252: int16(1),
+	})
+	if specOf(svc).NodeCount != 0 || specOf(svc).Complete {
+		t.Fatal("chat-settings E:1 must not touch the board")
+	}
+}
+
+// E:1 absent → the 011 path (E:154 + E:155 + banner) is untouched.
+func TestE1AbsentFallbackTo011(t *testing.T) {
+	svc, p := newGlue(t)
+	p.setSelfForTest(specSelf)
+	p.dispatch(probe.KindEvent, 154, snapshotParams(specSelf, []int16{22}, []byte{30}, nil, nil))
+	sp := specOf(svc)
+	if m := func() model.MasteryLevel {
+		for _, x := range sp.Masteries {
+			if x.Index == 22 {
+				return x
+			}
+		}
+		return model.MasteryLevel{}
+	}(); m.Level != 30 {
+		t.Fatalf("011 E:154 path must still work without E:1: %+v", m)
+	}
+	if sp.Complete {
+		t.Fatal("without E:1 or E:155, Complete must stay false (011 banner)")
+	}
+}

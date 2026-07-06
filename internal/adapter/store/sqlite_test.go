@@ -285,3 +285,26 @@ func TestSpecUnlockedRoundTrip(t *testing.T) {
 		t.Fatalf("round-trip/replace wrong: %v", got)
 	}
 }
+
+func TestSpecEnumRoundTrip(t *testing.T) {
+	db, err := Open(filepath.Join(t.TempDir(), "enum.db"))
+	if err != nil {
+		t.Fatal(err)
+	}
+	defer db.Close()
+	ctx := context.Background()
+	if err := db.SaveSpecEnum(ctx, []int{6, 22, 99, 150}); err != nil {
+		t.Fatal(err)
+	}
+	// REPLACE: a fresh cold login re-sends the order.
+	if err := db.SaveSpecEnum(ctx, []int{7, 8, 9}); err != nil {
+		t.Fatal(err)
+	}
+	got, err := db.LoadSpecEnum(ctx)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if len(got) != 3 || got[0] != 7 || got[2] != 9 {
+		t.Fatalf("enum round-trip/order wrong: %v", got)
+	}
+}

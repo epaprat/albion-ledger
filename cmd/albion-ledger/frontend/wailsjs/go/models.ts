@@ -83,6 +83,8 @@ export namespace model {
 	    fame: number;
 	    category: string;
 	    subcategory: string;
+	    slot: string;
+	    base: boolean;
 	    touched: boolean;
 	    fameToMax: number;
 	
@@ -99,6 +101,8 @@ export namespace model {
 	        this.fame = source["fame"];
 	        this.category = source["category"];
 	        this.subcategory = source["subcategory"];
+	        this.slot = source["slot"];
+	        this.base = source["base"];
 	        this.touched = source["touched"];
 	        this.fameToMax = source["fameToMax"];
 	    }

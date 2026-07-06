@@ -151,6 +151,11 @@ func main() {
 				} else if err != nil {
 					log.Printf("store LoadSpecUnlocked: %v", err)
 				}
+				if ids, err := flowStore.LoadSpecEnum(ctx); err == nil && len(ids) > 0 {
+					pipe.SeedSpecEnum(ids) // E:1 enumeration for warm-login decode (012)
+				} else if err != nil {
+					log.Printf("store LoadSpecEnum: %v", err)
+				}
 				if err := flowStore.StartSession(ctx, model.CaptureSession{
 					ID: sessionID, StartedAt: nowMS(), SourceKind: srcKind, Interface: *iface,
 				}); err != nil {
@@ -185,6 +190,11 @@ func main() {
 								log.Printf("store SaveSpecUnlocked (periodic): %v", err)
 							}
 						}
+						if ids := svc.SpecEnumSnapshot(); len(ids) > 0 {
+							if err := flowStore.SaveSpecEnum(ctx, ids); err != nil {
+								log.Printf("store SaveSpecEnum (periodic): %v", err)
+							}
+						}
 					}
 				}
 				for {
@@ -217,6 +227,11 @@ func main() {
 				if ids := svc.SpecUnlockedSnapshot(); len(ids) > 0 {
 					if err := flowStore.SaveSpecUnlocked(context.Background(), ids); err != nil {
 						log.Printf("store SaveSpecUnlocked: %v", err)
+					}
+				}
+				if ids := svc.SpecEnumSnapshot(); len(ids) > 0 {
+					if err := flowStore.SaveSpecEnum(context.Background(), ids); err != nil {
+						log.Printf("store SaveSpecEnum: %v", err)
 					}
 				}
 				_ = flowStore.EndSession(context.Background(), sessionID, nowMS(), model.SessionTotals{})

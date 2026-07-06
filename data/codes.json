@@ -32,6 +32,7 @@
     { "kind": "event", "code": 154, "category": "spec_snapshot" },
     { "kind": "event", "code": 153, "category": "spec_delta" },
     { "kind": "event", "code": 152, "category": "spec_done" },
-    { "kind": "event", "code": 155, "category": "spec_unlocked" }
+    { "kind": "event", "code": 155, "category": "spec_unlocked" },
+    { "kind": "event", "code": 1, "category": "spec_full_board" }
   ]
 }

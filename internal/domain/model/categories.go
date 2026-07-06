@@ -54,6 +54,10 @@ const (
 	// current E:154 in-progress snapshot are MAXED (level 100) — the source that was
 	// missing whole level-100 branches (011, research-confirmed 2026-07-05).
 	CatSpecUnlocked Category = "spec_unlocked"
+	// CatSpecFullBoard = E:1 FullAchievementInfo, the COMPLETE board authority (012):
+	// k2 node ids + k3 levels (incl 100). Cold login sends k2; warm login omits it.
+	// Shape-locked against the chat-settings E:1 (which shares event code 1).
+	CatSpecFullBoard Category = "spec_full_board"
 )
 
 // AllCategories is the full ordered set of target categories (13). The coverage

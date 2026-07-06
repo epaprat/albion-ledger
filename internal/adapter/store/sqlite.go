@@ -60,6 +60,9 @@ CREATE TABLE IF NOT EXISTS emv_book (
 CREATE TABLE IF NOT EXISTS spec_unlocked (
   node_id INTEGER PRIMARY KEY
 );
+CREATE TABLE IF NOT EXISTS spec_enum (
+  pos INTEGER PRIMARY KEY, node_id INTEGER
+);
 `
 
 // SQLite is a Store backed by a local SQLite database.
@@ -439,6 +442,49 @@ func (s *SQLite) SaveSpecUnlocked(ctx context.Context, ids []int) error {
 // LoadSpecUnlocked returns the persisted unlocked-node ids.
 func (s *SQLite) LoadSpecUnlocked(ctx context.Context) ([]int, error) {
 	rows, err := s.db.QueryContext(ctx, `SELECT node_id FROM spec_unlocked`)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	var out []int
+	for rows.Next() {
+		var id int
+		if err := rows.Scan(&id); err != nil {
+			return nil, err
+		}
+		out = append(out, id)
+	}
+	return out, rows.Err()
+}
+
+// SaveSpecEnum persists the E:1 board enumeration (position→node id, 012) so a warm
+// login whose E:1 omits the id list still decodes. REPLACE semantics (a fresh cold
+// login re-sends the full order).
+func (s *SQLite) SaveSpecEnum(ctx context.Context, ids []int) error {
+	tx, err := s.db.BeginTx(ctx, nil)
+	if err != nil {
+		return err
+	}
+	defer tx.Rollback()
+	if _, err := tx.ExecContext(ctx, `DELETE FROM spec_enum`); err != nil {
+		return err
+	}
+	stmt, err := tx.PrepareContext(ctx, `INSERT OR REPLACE INTO spec_enum(pos, node_id) VALUES (?, ?)`)
+	if err != nil {
+		return err
+	}
+	defer stmt.Close()
+	for pos, id := range ids {
+		if _, err := stmt.ExecContext(ctx, pos, id); err != nil {
+			return err
+		}
+	}
+	return tx.Commit()
+}
+
+// LoadSpecEnum returns the persisted enumeration as an id slice ordered by position.
+func (s *SQLite) LoadSpecEnum(ctx context.Context) ([]int, error) {
+	rows, err := s.db.QueryContext(ctx, `SELECT node_id FROM spec_enum ORDER BY pos`)
 	if err != nil {
 		return nil, err
 	}
