@@ -48,6 +48,9 @@ const specTree = computed(() => {
     if (!c.subs.has(sub)) c.subs.set(sub, { name: sub, nodes: 0, touched: 0, fame: 0, levelsum: 0, maxed: 0, rows: [] })
     const sc = c.subs.get(sub)
     const lvl = m.level || 0
+    // The whole-line base "Fighter" node is the PARENT of the line — show it in the
+    // subcategory header, not as a row among the specific items.
+    if (/\(Fighter\)$/.test(m.name || '')) { sc.base = m; continue }
     sc.rows.push(m); sc.nodes++; sc.fame += m.fame || 0; sc.levelsum += lvl
     c.nodes++; c.fame += m.fame || 0; c.levelsum += lvl
     if (m.touched) { sc.touched++; c.touched++ }
@@ -227,6 +230,7 @@ onMounted(async () => {
                   <button class="spec-head sub" @click="toggleSpec(c.name + '/' + sc.name)" :aria-expanded="!specCollapsed(c.name + '/' + sc.name)">
                     <span class="chev" :class="{ open: !specCollapsed(c.name + '/' + sc.name) }">▸</span>
                     <span class="spec-name">{{ sc.name }}</span>
+                    <span v-if="sc.base" class="fighter-lvl" :title="'Line fighter node level'">Fighter {{ sc.base.level }}<span v-if="sc.base.level >= 100"> ✓</span></span>
                     <span class="muted">· {{ spec.complete ? '' : '≥' }}{{ pctMaxed(sc) }}% maxed · {{ sc.maxed }}/{{ sc.nodes }} at 100 · {{ fmt(levelsToGo(sc)) }} lvls to go</span>
                   </button>
                   <table v-show="!specCollapsed(c.name + '/' + sc.name)">
@@ -293,6 +297,7 @@ tbody tr:hover { background: var(--panel); }
 .spec-subs { display: flex; flex-direction: column; gap: 1px; }
 .spec-sub table { margin-left: 40px; width: calc(100% - 40px); }
 .untouched { opacity: 0.4; }
+.fighter-lvl { font-size: 12px; padding: 1px 6px; border-radius: 4px; background: var(--border); color: var(--text); flex: 0 0 auto; }
 .bar { display: inline-block; width: 120px; height: 8px; background: var(--border); border-radius: 4px; overflow: hidden; vertical-align: middle; }
 .bar-fill { display: block; height: 100%; background: var(--good); }
 </style>
