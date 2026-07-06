@@ -19,6 +19,7 @@ type entry struct {
 	Category    string `json:"category"`
 	Subcategory string `json:"subcategory"`
 	Slot        string `json:"slot"`
+	Base        bool   `json:"base"`
 	FameToMax   int64  `json:"fameToMax"`
 }
 
@@ -70,7 +71,7 @@ func (c *Catalog) All() []model.SpecNodeCatalog {
 	defer c.mu.RUnlock()
 	out := make([]model.SpecNodeCatalog, 0, len(c.byID))
 	for _, e := range c.byID {
-		out = append(out, model.SpecNodeCatalog{ID: e.ID, Name: e.Name, Category: e.Category, Subcategory: e.Subcategory, Slot: e.Slot, FameToMax: e.FameToMax})
+		out = append(out, model.SpecNodeCatalog{ID: e.ID, Name: e.Name, Category: e.Category, Subcategory: e.Subcategory, Slot: e.Slot, Base: e.Base, FameToMax: e.FameToMax})
 	}
 	return out
 }

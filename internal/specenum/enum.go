@@ -35,8 +35,12 @@ type Pair struct {
 
 // Decode turns a board's (ids, levels) into id→level pairs. When ids is present (cold
 // login k2) it is used directly and also learned as the enumeration. When ids is nil
-// (warm login) the levels are mapped through the learned enumeration; if none is
-// known yet, Decode returns nil (the caller falls back to E:154/E:155 — feature 011).
+// (warm login) the levels are mapped through the learned enumeration — but ONLY when the
+// learned order is exactly as long as the level array. Any length mismatch means the
+// persisted order is for a different board version (an Albion patch added/removed/
+// reordered nodes between sessions): decoding through it would attribute levels to the
+// wrong node ids and show wrong maxed nodes (FR-004). On mismatch — or with no learned
+// order — Decode returns nil and the caller falls back to E:154/E:155 (feature 011).
 func (e *Enum) Decode(ids, levels []int) []Pair {
 	if len(ids) == len(levels) && len(ids) > 0 {
 		e.SetFromWire(ids)
@@ -46,16 +50,14 @@ func (e *Enum) Decode(ids, levels []int) []Pair {
 		}
 		return out
 	}
-	if !e.Known() {
+	// Warm login: the enum must match the wire k3 length EXACTLY — a stale/partial order
+	// is refused rather than silently truncated (which would mislabel or drop maxed nodes).
+	if len(e.pos2id) != len(levels) || len(levels) == 0 {
 		return nil
 	}
-	n := len(levels)
-	if len(e.pos2id) < n {
-		n = len(e.pos2id) // decode only the positions we know
-	}
-	out := make([]Pair, 0, n)
-	for i := 0; i < n; i++ {
-		out = append(out, Pair{ID: e.pos2id[i], Level: levels[i]})
+	out := make([]Pair, len(levels))
+	for i := range levels {
+		out[i] = Pair{ID: e.pos2id[i], Level: levels[i]}
 	}
 	return out
 }

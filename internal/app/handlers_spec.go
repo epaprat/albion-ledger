@@ -44,17 +44,26 @@ func handleSpecFullBoard(p *Pipeline, _ probe.Kind, _ int, params map[byte]inter
 	if len(pairs) == 0 {
 		return // warm login before any enum is known → 011 fallback stays in charge
 	}
-	nodes := make([]specboard.Node, len(pairs))
-	for i, pr := range pairs {
+	// Install only TOUCHED nodes (level > 0). E:1 enumerates the WHOLE board — hundreds
+	// of level-0 nodes with no fame — and installing those would inflate NodeCount to the
+	// full board size and (since E:154 now merges, never clears) keep it inflated all
+	// session, breaking the touched-only NodeCount/TotalFame invariant. Untouched nodes
+	// still render from the catalog at level 0 in emitSpec; maxed (level 100) install here.
+	nodes := make([]specboard.Node, 0, len(pairs))
+	for _, pr := range pairs {
+		if pr.Level <= 0 {
+			continue
+		}
 		n := specboard.Node{ID: pr.ID, Level: pr.Level}
 		if pr.Level >= 100 {
 			n.Progress = 1
 		}
-		nodes[i] = n
+		nodes = append(nodes, n)
 	}
 	p.board.ReplaceAll(nodes) // E:1 is authoritative and complete — it REPLACES.
 	p.specFullBoard = true
 	p.specSnapshotSeen = true
+	p.specReplacePending = false // E:1 already replaced; the next E:154 merges onto it.
 	if fb.IdsFromWire {
 		p.sink.SetSpecEnum(p.specEnum.Snapshot()) // persist the learned id order
 	}
@@ -238,7 +247,7 @@ func (p *Pipeline) emitSpec() {
 	add := func(c model.SpecNodeCatalog, n specboard.Node, touched bool) {
 		masteries = append(masteries, model.MasteryLevel{
 			Index: c.ID, Name: c.Name, Level: n.Level, Progress: n.Progress, Fame: n.Fame,
-			Category: c.Category, Subcategory: c.Subcategory, Slot: c.Slot, Touched: touched, FameToMax: c.FameToMax,
+			Category: c.Category, Subcategory: c.Subcategory, Slot: c.Slot, Base: c.Base, Touched: touched, FameToMax: c.FameToMax,
 		})
 	}
 	for _, c := range catalog {

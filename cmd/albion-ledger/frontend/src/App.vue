@@ -50,14 +50,18 @@ const specTree = computed(() => {
     if (!c.subs.has(sub)) c.subs.set(sub, { name: sub, nodes: 0, touched: 0, fame: 0, levelsum: 0, maxed: 0, rows: [] })
     const sc = c.subs.get(sub)
     const lvl = m.level || 0
-    if (/\(Fighter\)$/.test(m.name || '')) { if (lvl > 0) sc.base = m; continue }
-    sc.rows.push(m); sc.nodes++; sc.fame += m.fame || 0; sc.levelsum += lvl
-    c.nodes++; c.fame += m.fame || 0; c.levelsum += lvl
+    // Base "Fighter" aggregate → line header chip (structured flag, not a name suffix).
+    if (m.base) { if (lvl > 0) sc.base = m; continue }
+    // Clamp the rollup contribution to 100 — elite levels (100–120) must not push
+    // "% maxed" past 100 or "lvls to go" negative.
+    const capped = lvl > 100 ? 100 : lvl
+    sc.rows.push(m); sc.nodes++; sc.fame += m.fame || 0; sc.levelsum += capped
+    c.nodes++; c.fame += m.fame || 0; c.levelsum += capped
     if (m.touched) { sc.touched++; c.touched++ }
     if (lvl >= 100) { sc.maxed++; c.maxed++ }
   }
   // Fixed slot order (equipment sheet), then non-combat categories by fame.
-  const order = ['Weapon', 'Off-Hand', 'Head', 'Chest', 'Shoes', 'Armor']
+  const order = ['Weapon', 'Off-Hand', 'Head', 'Chest', 'Shoes']
   let catList = [...cats.values()].sort((a, b) => {
     const ia = order.indexOf(a.name), ib = order.indexOf(b.name)
     if (ia !== -1 || ib !== -1) return (ia === -1 ? 99 : ia) - (ib === -1 ? 99 : ib)

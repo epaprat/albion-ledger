@@ -43,12 +43,19 @@ func TestSnapshotRestore(t *testing.T) {
 	}
 }
 
-func TestWarmShorterThanEnum(t *testing.T) {
+func TestWarmLengthMismatchRefused(t *testing.T) {
 	e := New()
 	e.Decode([]int{6, 17, 22, 30}, []int{1, 2, 3, 4}) // enum len 4
-	// A shorter warm k3 decodes only the positions it covers (no OOB).
-	pairs := e.Decode(nil, []int{9, 9})
-	if len(pairs) != 2 || pairs[1].ID != 17 {
-		t.Fatalf("short warm decode wrong: %+v", pairs)
+	// A warm k3 whose length differs from the learned order is a different board
+	// version — refuse it (nil → 011 fallback) rather than mislabel/drop nodes (FR-004).
+	if got := e.Decode(nil, []int{9, 9}); got != nil {
+		t.Fatalf("shorter warm k3 must be refused, got %+v", got)
+	}
+	if got := e.Decode(nil, []int{9, 9, 9, 9, 9}); got != nil {
+		t.Fatalf("longer warm k3 must be refused, got %+v", got)
+	}
+	// Exact length still decodes.
+	if got := e.Decode(nil, []int{1, 2, 3, 4}); len(got) != 4 {
+		t.Fatalf("exact-length warm decode should work: %+v", got)
 	}
 }

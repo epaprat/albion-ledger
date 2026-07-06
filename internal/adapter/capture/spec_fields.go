@@ -121,17 +121,29 @@ type FullBoard struct {
 	Levels      []int // k3 levels (incl 100 = maxed)
 }
 
-// AchievementFullBoard parses E:1 (012). Shape-locked against the chat-settings E:1:
-// k0 must be an integer self id and k3 a []uint8 level array (>=1, capped). k2, when
-// a []int16 of the same length, is the authoritative node-id enumeration.
+// minBoardNodes is the shape-lock floor for E:1. The real Destiny Board is ~495-697
+// nodes; any code-1 event with a much shorter int array at k3 is NOT the board (a
+// truncated/hostile packet, or some other event that happens to share event code 1).
+// Rejecting them keeps a stray packet from collapsing the board and persisting a
+// truncated enumeration (Principle IV/XI: hostile-input-safe).
+const minBoardNodes = 256
+
+// AchievementFullBoard parses E:1 (012). Shape-locked against the chat-settings E:1 and
+// any other code-1 traffic: k0 must be an integer self id, k3 a level array of at least
+// minBoardNodes entries (the board is always full-size), and k4 the board's []bool flag
+// array (present on every real E:1). k2, when a []int16 of the same length as k3, is the
+// authoritative node-id enumeration; any other length is ignored (warm-login shape).
 func AchievementFullBoard(params map[byte]interface{}) (FullBoard, bool) {
 	self, ok := toIntVal(params[0])
 	if !ok {
 		return FullBoard{}, false // chat-settings E:1 has k0 []string — rejected
 	}
+	if _, isFlags := params[4].([]bool); !isFlags {
+		return FullBoard{}, false // real E:1 always carries the k4 []bool flag array
+	}
 	levels := byteOrIntSlice(params[3])
-	if len(levels) == 0 || len(levels) > maxSpecNodes {
-		return FullBoard{}, false
+	if len(levels) < minBoardNodes || len(levels) > maxSpecNodes {
+		return FullBoard{}, false // too short/long to be the board
 	}
 	fb := FullBoard{Self: self, Levels: levels}
 	if ids := byteOrIntSlice(params[2]); len(ids) == len(levels) {

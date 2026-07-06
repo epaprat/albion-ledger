@@ -101,31 +101,45 @@ func TestAchievementDoneFromBytes(t *testing.T) {
 	}
 }
 
+// board260 builds a full-size E:1 k3 level array (>= minBoardNodes) with per-index
+// overrides, plus the matching k2 id list and k4 flag array.
+func board260(overrides map[int]int) (ids []int16, levels []uint8, flags []bool) {
+	n := minBoardNodes + 4
+	ids = make([]int16, n)
+	levels = make([]uint8, n)
+	flags = make([]bool, 133)
+	for i := 0; i < n; i++ {
+		ids[i] = int16(i + 6)
+		if v, ok := overrides[i]; ok {
+			levels[i] = uint8(v)
+		}
+	}
+	return
+}
+
 // E:1 board (012): k2 ids + k3 levels direct; k2-less warm login; chat-E:1 reject.
 func TestAchievementFullBoard(t *testing.T) {
+	ids, levels, flags := board260(map[int]int{0: 10, 15: 100, 40: 55})
 	// Cold login: k2 present, same length as k3.
-	fb, ok := AchievementFullBoard(map[byte]interface{}{
-		0: int64(76685), 2: []int16{6, 22, 999}, 3: []uint8{10, 100, 55},
-	})
-	if !ok || !fb.IdsFromWire || len(fb.Ids) != 3 || fb.Ids[1] != 22 || fb.Levels[1] != 100 {
-		t.Fatalf("cold-login decode wrong: %+v ok=%v", fb, ok)
+	fb, ok := AchievementFullBoard(map[byte]interface{}{0: int64(76685), 2: ids, 3: levels, 4: flags})
+	if !ok || !fb.IdsFromWire || len(fb.Ids) != len(levels) || fb.Levels[15] != 100 {
+		t.Fatalf("cold-login decode wrong: ok=%v fromWire=%v", ok, fb.IdsFromWire)
 	}
 	// Warm login: k2 absent → Ids nil, Levels present.
-	fb, ok = AchievementFullBoard(map[byte]interface{}{0: int64(76685), 3: []uint8{11, 90}})
-	if !ok || fb.IdsFromWire || fb.Ids != nil || len(fb.Levels) != 2 {
+	fb, ok = AchievementFullBoard(map[byte]interface{}{0: int64(76685), 3: levels, 4: flags})
+	if !ok || fb.IdsFromWire || fb.Ids != nil || len(fb.Levels) != len(levels) {
 		t.Fatalf("warm-login decode wrong: %+v ok=%v", fb, ok)
 	}
-	// k2 length mismatch → treated as warm (ids ignored).
-	fb, _ = AchievementFullBoard(map[byte]interface{}{0: int64(1), 2: []int16{1}, 3: []uint8{1, 2, 3}})
-	if fb.IdsFromWire {
-		t.Fatal("mismatched k2 length must not be used as the enumeration")
+	// Too-short level array (below minBoardNodes) → rejected (truncated/hostile packet).
+	if _, ok := AchievementFullBoard(map[byte]interface{}{0: int64(1), 3: []uint8{1, 2, 3}, 4: flags}); ok {
+		t.Fatal("a k3 shorter than the board must be rejected")
+	}
+	// Missing k4 flag array → not a real board → rejected.
+	if _, ok := AchievementFullBoard(map[byte]interface{}{0: int64(1), 3: levels}); ok {
+		t.Fatal("E:1 without the k4 []bool flag array must be rejected")
 	}
 	// Chat-settings E:1: k0 []string → rejected.
-	if _, ok := AchievementFullBoard(map[byte]interface{}{0: []string{"x"}, 3: []uint8{1}}); ok {
+	if _, ok := AchievementFullBoard(map[byte]interface{}{0: []string{"x"}, 3: levels, 4: flags}); ok {
 		t.Fatal("chat-settings E:1 (k0 []string) must be rejected")
-	}
-	// No level array → rejected.
-	if _, ok := AchievementFullBoard(map[byte]interface{}{0: int64(1)}); ok {
-		t.Fatal("E:1 without a level array must be rejected")
 	}
 }

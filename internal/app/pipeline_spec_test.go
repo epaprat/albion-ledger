@@ -240,18 +240,33 @@ func TestSpecUnlockedMergesNeverWipes(t *testing.T) {
 	}
 }
 
+// e1Board builds a full-size E:1 (>= minBoardNodes) with the given (position→id) order
+// and per-position levels; the k2 id list is included when withIDs is true (cold login),
+// omitted for a warm login. Positions past the overrides are unique filler ids at level 0.
+func e1Board(self int, withIDs bool, ids []int16, levels []uint8) map[byte]interface{} {
+	n := 260
+	fullIDs := make([]int16, n)
+	fullLvls := make([]uint8, n)
+	flags := make([]bool, 133)
+	for i := 0; i < n; i++ {
+		fullIDs[i] = int16(400 + i) // filler ids, level 0 (not installed)
+	}
+	copy(fullIDs, ids)
+	copy(fullLvls, levels)
+	params := map[byte]interface{}{0: int32(self), 3: fullLvls, 4: flags, 252: int16(1)}
+	if withIDs {
+		params[2] = fullIDs
+	}
+	return params
+}
+
 // E:1 (012) is the COMPLETE board authority: k2 ids + k3 levels decode directly, so
-// maxed nodes show at login with no grind. Uses the real relog2 capture layout.
+// maxed nodes show at login with no grind.
 func TestE1BoardAuthority(t *testing.T) {
 	svc, p := newGlue(t)
 	p.setSelfForTest(specSelf)
-	// Cold login E:1: k2 ids + k3 levels (id 22 maxed, id 6 in-progress).
-	p.dispatch(probe.KindEvent, 1, map[byte]interface{}{
-		0: int32(specSelf),
-		2: []int16{6, 22, 999},   // node ids (k2)
-		3: []uint8{10, 100, 55},  // levels (k3): 22 is maxed
-		252: int16(1),
-	})
+	// Cold login E:1: id 22 maxed, id 6 in-progress (rest filler at level 0).
+	p.dispatch(probe.KindEvent, 1, e1Board(specSelf, true, []int16{6, 22}, []uint8{10, 100}))
 	sp := specOf(svc)
 	if !sp.Complete {
 		t.Fatal("E:1 board must mark the spec Complete (no banner)")
@@ -266,27 +281,45 @@ func TestE1BoardAuthority(t *testing.T) {
 	if byIdx[6].Level != 10 {
 		t.Fatalf("E:1 in-progress level wrong: %+v", byIdx[6])
 	}
+	// Only TOUCHED nodes (level > 0) count — the hundreds of level-0 board nodes must
+	// NOT inflate NodeCount (finding: touched-only invariant).
+	if sp.NodeCount != 2 {
+		t.Fatalf("NodeCount must be touched-only (2), got %d", sp.NodeCount)
+	}
 }
 
 // Warm login E:1 (k2 absent) decodes via the enumeration learned from a prior cold
-// login — the whole point of persisting the id order.
+// login — same length required, or it falls back (FR-004).
 func TestE1WarmLoginUsesEnum(t *testing.T) {
 	svc, p := newGlue(t)
 	p.setSelfForTest(specSelf)
-	// Cold login learns the order 6,22,999.
-	p.dispatch(probe.KindEvent, 1, map[byte]interface{}{
-		0: int32(specSelf), 2: []int16{6, 22, 999}, 3: []uint8{5, 5, 5}, 252: int16(1),
-	})
-	// Warm login: NO k2, k3 position-indexed by the learned order.
-	p.dispatch(probe.KindEvent, 1, map[byte]interface{}{
-		0: int32(specSelf), 3: []uint8{11, 100, 60}, 252: int16(1),
-	})
+	// Cold login learns the full order.
+	p.dispatch(probe.KindEvent, 1, e1Board(specSelf, true, []int16{6, 22}, []uint8{5, 5}))
+	// Warm login: NO k2, k3 position-indexed by the learned order, SAME length.
+	p.dispatch(probe.KindEvent, 1, e1Board(specSelf, false, nil, []uint8{11, 100}))
 	byIdx := map[int]model.MasteryLevel{}
 	for _, m := range specOf(svc).Masteries {
 		byIdx[m.Index] = m
 	}
 	if byIdx[22].Level != 100 || byIdx[6].Level != 11 {
 		t.Fatalf("warm-login enum decode wrong: 22=%+v 6=%+v", byIdx[22], byIdx[6])
+	}
+}
+
+// A warm E:1 whose length differs from the learned enum is a different board version →
+// refused, board untouched (FR-004: never show a wrong node).
+func TestE1WarmLengthMismatchIgnored(t *testing.T) {
+	svc, p := newGlue(t)
+	p.setSelfForTest(specSelf)
+	p.dispatch(probe.KindEvent, 1, e1Board(specSelf, true, []int16{6, 22}, []uint8{5, 100}))
+	before := specOf(svc).NodeCount
+	// Warm login with a DIFFERENT-length k3 (still >= minBoardNodes) → must be ignored.
+	flags := make([]bool, 133)
+	longLvls := make([]uint8, 300)
+	longLvls[0] = 99
+	p.dispatch(probe.KindEvent, 1, map[byte]interface{}{0: int32(specSelf), 3: longLvls, 4: flags, 252: int16(1)})
+	if got := specOf(svc).NodeCount; got != before {
+		t.Fatalf("mismatched-length warm E:1 must not change the board: before=%d after=%d", before, got)
 	}
 }
 

@@ -31,6 +31,7 @@ type node struct {
 	Category    string `json:"category,omitempty"`    // top breakdown (Combat, Gathering…)
 	Subcategory string `json:"subcategory,omitempty"` // mid breakdown (Axes, Fiber…)
 	Slot        string `json:"slot,omitempty"`        // gear slot (Weapon/Off-Hand/Head/Chest/Shoes…)
+	Base        bool   `json:"base,omitempty"`        // true = whole-line "Fighter" aggregate node (012)
 	FameToMax   int64  `json:"fameToMax,omitempty"`   // total fame from 0 to level 100 (011)
 }
 
@@ -323,6 +324,7 @@ func main() {
 			Category:    catDisp,
 			Subcategory: subcategoryOf(d.id),
 			Slot:        slotOf(d.id, catDisp),
+			Base:        catDisp == "Combat" && isCombatBase(d.id),
 			FameToMax:   fameToMax,
 		})
 	}
