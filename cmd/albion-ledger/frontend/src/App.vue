@@ -58,16 +58,20 @@ const specTree = computed(() => {
   }
   // Fixed slot order (equipment sheet), then non-combat categories by fame.
   const order = ['Weapon', 'Off-Hand', 'Head', 'Chest', 'Shoes', 'Armor']
-  const catList = [...cats.values()].sort((a, b) => {
+  let catList = [...cats.values()].sort((a, b) => {
     const ia = order.indexOf(a.name), ib = order.indexOf(b.name)
     if (ia !== -1 || ib !== -1) return (ia === -1 ? 99 : ia) - (ib === -1 ? 99 : ib)
     return b.fame - a.fame
   })
   for (const c of catList) {
-    c.subList = [...c.subs.values()].sort((a, b) => b.maxed - a.maxed || b.fame - a.fame)
+    // Drop empty lines (path anchors — Trainee/Warrior/Hunter/Mage — carry no gear items).
+    c.subList = [...c.subs.values()].filter(sc => sc.rows.length > 0).sort((a, b) => b.maxed - a.maxed || b.fame - a.fame)
     // maxed rows first, then by level desc, so what's done is at a glance.
     for (const sc of c.subList) sc.rows.sort((a, b) => (b.level - a.level) || (b.fame - a.fame))
+    c.nodes = c.subList.reduce((n, sc) => n + sc.nodes, 0)
+    c.maxed = c.subList.reduce((n, sc) => n + sc.maxed, 0)
   }
+  catList = catList.filter(c => c.subList.length > 0)
   return catList
 })
 const marketRows = computed(() =>
