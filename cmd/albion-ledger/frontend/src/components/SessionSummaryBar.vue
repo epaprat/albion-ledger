@@ -62,7 +62,7 @@ const fameRate = computed(() => props.summary.rateReady ? compact(props.summary.
 }
 .support { display: flex; gap: var(--space-5); padding: var(--space-3) 0; }
 .stat { display: flex; flex-direction: column; gap: 2px; min-width: 72px; }
-.stat.fame { padding-left: var(--space-4); border-left: 2px solid var(--warn); }
+.stat.fame { padding-left: var(--space-4); border-left: 1px solid var(--border); }
 .label { font-size: 10px; color: var(--muted); text-transform: uppercase; letter-spacing: .06em; }
 .value { font-size: var(--text-lg); font-weight: 700; }
 .sub { font-size: var(--text-sm); color: var(--muted); }

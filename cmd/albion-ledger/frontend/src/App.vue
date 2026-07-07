@@ -373,7 +373,7 @@ onMounted(async () => {
 .muted { color: var(--muted); }
 .tabs { margin-left: auto; display: flex; gap: 4px; }
 .tabs button { background: transparent; border: 1px solid transparent; color: var(--muted); padding: 5px 14px; border-radius: 6px; cursor: pointer; font-size: 13px; box-shadow: none; }
-.tabs button.active { background: var(--bg); color: var(--text); border-color: var(--border); box-shadow: inset 0 -2px 0 var(--accent); }
+.tabs button.active { background: var(--panel-2); color: var(--text); border-color: var(--border); }
 .drift { padding: 8px 16px; background: #3a2d00; color: var(--warn); font-size: 13px; }
 main { flex: 1; overflow: auto; }
 .state { padding: 56px 24px; text-align: center; color: var(--muted); }
