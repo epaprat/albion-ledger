@@ -9,6 +9,7 @@ package wailsadapter
 import (
 	"context"
 	"fmt"
+	"log"
 	"os"
 	"os/user"
 	"path/filepath"
@@ -20,19 +21,33 @@ import (
 	"github.com/epaprat/albion-ledger/internal/export"
 )
 
-// realUser resolves the human behind the process. The app runs under sudo (pcap
-// needs root), so os.UserHomeDir() is root's home — dialogs would default to
-// /var/root and written files would be root-owned. SUDO_USER names the real user.
+// realUser resolves the human behind the process. The app runs as root (pcap
+// needs it), so os.UserHomeDir() is root's home — dialogs would default to
+// /var/root and written files would be root-owned. We recover the real user via,
+// in order: SUDO_USER, SUDO_UID, then (when launched as root WITHOUT sudo — a
+// root login shell / `sudo su` / LaunchDaemon, where neither SUDO_* is set) the
+// owner of /dev/console, i.e. the logged-in GUI user on macOS. That last fallback
+// is why exports previously landed in /var/root/Documents: SUDO_USER was empty.
 func realUser() (*user.User, bool) {
-	name := os.Getenv("SUDO_USER")
-	if name == "" || name == "root" {
-		return nil, false
+	// sudo <cmd>: SUDO_USER names the invoking human.
+	if name := os.Getenv("SUDO_USER"); name != "" && name != "root" {
+		if u, err := user.Lookup(name); err == nil {
+			return u, true
+		}
 	}
-	u, err := user.Lookup(name)
-	if err != nil {
-		return nil, false
+	// sudo can propagate only the numeric id (SUDO_UID) in some setups.
+	if uid := os.Getenv("SUDO_UID"); uid != "" && uid != "0" {
+		if u, err := user.LookupId(uid); err == nil {
+			return u, true
+		}
 	}
-	return u, true
+	// Launched as root with no sudo context → fall back to the console owner.
+	if os.Geteuid() == 0 {
+		if u, ok := consoleUser(); ok {
+			return u, true
+		}
+	}
+	return nil, false
 }
 
 // defaultExportDir picks the save-dialog starting point: the real user's
@@ -66,12 +81,25 @@ func chownToRealUser(path string) {
 	if err1 != nil || err2 != nil {
 		return
 	}
-	_ = os.Chown(path, uid, gid)
+	// The whole point of this shell is handing root-written files back to the human;
+	// a silent miss would leave a file they can't manage without sudo, so log it.
+	if err := os.Chown(path, uid, gid); err != nil {
+		log.Printf("export: chown %s to %s failed (file stays root-owned): %v", path, u.Username, err)
+	}
 }
 
 // DatasetKeys is the fixed export order (contract §4.4) — no dataset is ever
 // silently skipped.
 var DatasetKeys = []string{"holdings", "flow", "zones", "market", "spec"}
+
+func validDataset(key string) bool {
+	for _, k := range DatasetKeys {
+		if k == key {
+			return true
+		}
+	}
+	return false
+}
 
 // ExportResult reports one dataset export back to the UI (data-model.md).
 type ExportResult struct {
@@ -147,9 +175,10 @@ func (s *Service) writeDataset(key, window, path string) ExportResult {
 // ExportDataset saves one dataset via the native save dialog. Cancel returns
 // {Canceled:true} — no file, no error (contract §3).
 func (s *Service) ExportDataset(key, window string) ExportResult {
-	// Validate the key BEFORE opening a dialog — an unknown key must not prompt.
-	if _, _, err := s.buildDataset(key, window); err != nil {
-		return ExportResult{Dataset: key, Err: err.Error()}
+	// Validate the key BEFORE opening a dialog — an unknown key must not prompt. A
+	// membership check suffices; the full dataset is built once, after the dialog.
+	if !validDataset(key) {
+		return ExportResult{Dataset: key, Err: fmt.Sprintf("unknown dataset %q", key)}
 	}
 	ctx := s.uiContext()
 	if ctx == nil {

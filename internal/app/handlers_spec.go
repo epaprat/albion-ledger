@@ -64,19 +64,32 @@ func handleSpecFullBoard(p *Pipeline, _ probe.Kind, _ int, params map[byte]inter
 	p.specFullBoard = true
 	p.specSnapshotSeen = true
 	p.specReplacePending = false // E:1 already replaced; the next E:154 merges onto it.
-	// E:1 knows EXACTLY which nodes are maxed — REBUILD the persisted maxed set from it
-	// (replace, not union). The old E:155-derived set had accumulated unlocked-but-level-0
-	// ids (a node unlocks when its prerequisite is met, before any fame — e.g. Realmbreaker),
-	// which the 011 fallback would then resurrect as false 100s. E:1 supersedes that.
-	maxedSet := make(map[int]bool)
+	// Reconcile the persisted maxed set with E:1's CERTAIN levels — prune, then union.
+	// The old E:155-derived set had accumulated unlocked-but-level-0 ids (a node unlocks
+	// when its prerequisite is met, before any fame — e.g. Realmbreaker), which the 011
+	// fallback resurrected as false 100s. For every id E:1 COVERS: drop it if E:1 shows
+	// it below 100 (proven not maxed), keep/add it if E:1 shows 100. Ids E:1 does NOT
+	// cover are left untouched — that preserves 011's union guarantee for long-idle maxed
+	// nodes captured via noteMaxed that fall outside E:1's board (never lose them).
+	if p.specUnlocked == nil {
+		p.specUnlocked = map[int]bool{}
+	}
+	covered := make(map[int]int, len(pairs))
 	for _, pr := range pairs {
-		if pr.Level >= 100 && len(maxedSet) < maxSpecUnlocked {
-			maxedSet[pr.ID] = true
+		covered[pr.ID] = pr.Level
+	}
+	for id := range p.specUnlocked {
+		if lvl, ok := covered[id]; ok && lvl < 100 {
+			delete(p.specUnlocked, id)
 		}
 	}
-	p.specUnlocked = maxedSet
-	unlockedIDs := make([]int, 0, len(maxedSet))
-	for id := range maxedSet {
+	for _, pr := range pairs {
+		if pr.Level >= 100 && len(p.specUnlocked) < maxSpecUnlocked {
+			p.specUnlocked[pr.ID] = true
+		}
+	}
+	unlockedIDs := make([]int, 0, len(p.specUnlocked))
+	for id := range p.specUnlocked {
 		unlockedIDs = append(unlockedIDs, id)
 	}
 	p.sink.SetSpecUnlocked(unlockedIDs)

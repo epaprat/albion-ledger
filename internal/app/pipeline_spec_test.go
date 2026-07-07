@@ -402,3 +402,27 @@ func TestE1SupersedesUnlockedHeuristic(t *testing.T) {
 		t.Fatalf("genuinely maxed node must still show 100, got %d", byIdx[22].Level)
 	}
 }
+
+// Union guarantee (011): an unlocked/maxed id OUTSIDE E:1's board coverage must SURVIVE
+// the E:1 reconcile — E:1 prunes only ids it actually covers below 100, never ids it
+// doesn't mention (long-idle maxed captured via noteMaxed, absent from the board).
+func TestE1PreservesUncoveredMaxed(t *testing.T) {
+	svc, p := newGlue(t)
+	p.setSelfForTest(specSelf)
+	// noteMaxed captures a level-100 node id 999 that E:1's board will NOT cover.
+	p.dispatch(probe.KindEvent, 152, map[byte]interface{}{
+		0: int32(specSelf), 1: int32(999), 2: int32(100), 252: int16(152),
+	})
+	if !p.specUnlocked[999] {
+		t.Fatal("precondition: noteMaxed must record id 999")
+	}
+	// Cold login E:1 covering ids 6,22 only (999 not in the board).
+	p.dispatch(probe.KindEvent, 1, e1Board(specSelf, true, []int16{6, 22}, []uint8{5, 100}))
+	if !p.specUnlocked[999] {
+		t.Fatal("id 999 (maxed, outside E:1 coverage) must survive the reconcile (011 union guarantee)")
+	}
+	if !p.specUnlocked[22] {
+		t.Fatal("E:1 maxed id 22 must be in the set")
+	}
+	_ = svc
+}
