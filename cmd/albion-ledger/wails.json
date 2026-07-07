@@ -8,5 +8,10 @@
   "frontend:dev:serverUrl": "auto",
   "author": {
     "name": "Ertac Paprat"
+  },
+  "info": {
+    "productName": "Albion Ledger",
+    "productVersion": "0.1.0",
+    "comments": "Passive Albion Online own-assets & market tool"
   }
 }
