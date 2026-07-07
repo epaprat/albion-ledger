@@ -2,6 +2,8 @@
 import { ref, computed, watch } from 'vue'
 import HoldingRow from './HoldingRow.vue'
 import HoldingTile from './HoldingTile.vue'
+import StateBlock from './StateBlock.vue'
+import FilterBar from './FilterBar.vue'
 import { compact } from '../format.js'
 
 const viewMode = ref('grid') // 'grid' | 'list'
@@ -15,6 +17,17 @@ const props = defineProps({
 
 const cityFilter = ref('all')
 const tabFilter = ref('all')
+const itemQuery = ref('') // free-text item filter across every bank/tab (014)
+
+// Filter holdings by item name/uniqueName, then group; keeps the city→tab nesting.
+const filteredHoldings = computed(() => {
+  const q = itemQuery.value.trim().toLowerCase()
+  if (!q) return props.holdings
+  return props.holdings.filter((r) =>
+    (r.item?.displayName || '').toLowerCase().includes(q) ||
+    (r.item?.uniqueName || '').toLowerCase().includes(q))
+})
+const shownCount = computed(() => filteredHoldings.value.length)
 
 const cities = computed(() => props.summary?.cities || [])
 
@@ -26,7 +39,9 @@ const rowTab = (r) => r.group || 'Bank'
 const SEP = '\u0000'
 const itemsByKey = computed(() => {
   const m = {}
-  for (const r of props.holdings) (m[rowCity(r) + SEP + rowTab(r)] ||= []).push(r)
+  for (const r of filteredHoldings.value) (m[rowCity(r) + SEP + rowTab(r)] ||= []).push(r)
+  // Most valuable first within each tab (stable-ish; ties keep insertion order).
+  for (const k in m) m[k].sort((a, b) => (b.valuation?.amount || 0) - (a.valuation?.amount || 0))
   return m
 })
 const rowsFor = (cityName, tabName) => itemsByKey.value[cityName + SEP + tabName] || []
@@ -86,23 +101,27 @@ const staleLabel = (st) => {
       </span>
     </div>
 
-    <!-- States -->
-    <div v-if="error" class="state" role="alert">
-      <p class="big">Something went wrong</p>
-      <p class="muted">{{ error }}</p>
-    </div>
-    <div v-else-if="encrypted" class="state">
-      <p class="big">Stream is encrypted</p>
-      <p class="muted">The game traffic is encrypted right now, so holdings can't be read. This usually clears on its own.</p>
-    </div>
-    <div v-else-if="cities.length === 0" class="state">
-      <p class="big">No holdings seen yet</p>
-      <p class="muted">Open your inventory or a bank in game — held items appear here, valued.</p>
+    <!-- Item filter (across every bank/tab) -->
+    <div v-if="cities.length" class="item-filter">
+      <FilterBar v-model="itemQuery" :shown="shownCount" :total="holdings.length" placeholder="Find an item across all banks…" />
     </div>
 
-    <!-- City → tab nesting -->
+    <!-- States -->
+    <StateBlock v-if="error" variant="error" title="Something went wrong">{{ error }}</StateBlock>
+    <StateBlock v-else-if="encrypted" variant="encrypted" title="Stream is encrypted">
+      The game traffic is encrypted right now, so holdings can’t be read. This usually clears on its own.
+    </StateBlock>
+    <StateBlock v-else-if="cities.length === 0" variant="empty" title="No holdings seen yet">
+      Open your inventory or a bank in game — held items appear here, valued.
+    </StateBlock>
+    <StateBlock v-else-if="itemQuery && shownCount === 0" variant="empty" title="No matching items"
+      :action="{ label: 'Clear filter', onClick: () => { itemQuery = '' } }">
+      Nothing across your banks matches the current filter.
+    </StateBlock>
+
+    <!-- City → tab nesting. While filtering, skip tabs/cities with no matching items. -->
     <template v-else>
-      <div v-for="city in visibleCities" :key="city.name" class="city">
+      <div v-for="city in visibleCities" :key="city.name" v-show="!itemQuery || tabsOf(city).some((t) => rowsFor(city.name, t.name).length)" class="city">
         <div class="city-head">
           <h2>
             {{ city.name }}
@@ -114,7 +133,7 @@ const staleLabel = (st) => {
           </span>
         </div>
 
-        <div v-for="t in tabsOf(city)" :key="city.name + '/' + t.name" class="group">
+        <div v-for="t in tabsOf(city)" :key="city.name + '/' + t.name" v-show="!itemQuery || rowsFor(city.name, t.name).length" class="group">
           <h3>
             {{ t.name }}
             <span class="muted">· {{ t.itemCount }}</span>
@@ -160,6 +179,7 @@ const staleLabel = (st) => {
 .sr-only { position: absolute; width: 1px; height: 1px; padding: 0; margin: -1px; overflow: hidden; clip: rect(0,0,0,0); white-space: nowrap; border: 0; }
 .filters select:focus-visible { outline: 2px solid var(--accent); outline-offset: 1px; }
 .not-opened { padding: 2px 16px 8px; font-style: italic; }
+.item-filter { padding: var(--space-3) var(--space-4) 0; }
 .state { padding: 56px 24px; text-align: center; color: var(--muted); }
 .state .big { font-size: 18px; color: var(--text); margin: 0 0 8px; }
 table { width: 100%; border-collapse: collapse; }
