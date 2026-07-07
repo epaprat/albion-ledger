@@ -5,6 +5,22 @@ All notable changes to Albion Ledger are documented here. The format follows
 [Semantic Versioning](https://semver.org/). Pre-1.0, minor versions may still
 change the public surface.
 
+## [0.1.1] — 2026-07-07
+
+Repository and release-process maturation — no application feature change.
+
+### Added
+
+- Open-source documentation for external contributors: a rewritten README, a
+  CONTRIBUTING guide (build, test, git-flow, and a governance summary), a
+  Contributor Covenant code of conduct, a security policy, an architecture
+  overview, and GitHub issue/PR templates.
+- A tag-triggered release workflow that builds per-OS binaries and attaches them
+  to the GitHub Release: macOS (live-capture), Linux (experimental), and Windows
+  (build-only preview).
+
+[0.1.1]: https://github.com/epaprat/albion-ledger/releases/tag/v0.1.1
+
 ## [0.1.0] — 2026-07-07
 
 First tagged release. A passive, ToS-safe desktop tool that reads the local
