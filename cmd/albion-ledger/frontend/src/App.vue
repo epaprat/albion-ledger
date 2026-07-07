@@ -126,7 +126,7 @@ const exportSets = computed(() => ([
   { key: 'flow', name: 'Activity Flow', rows: flowEvents.value.length },
   { key: 'zones', name: 'Zone Analytics', rows: flowZones.value.length },
   { key: 'market', name: 'Market Prices', rows: market.value.size },
-  { key: 'spec', name: 'Destiny Board', rows: (spec.value.masteries || []).filter(m => m.touched).length },
+  { key: 'spec', name: 'Destiny Board', rows: (spec.value.masteries || []).length },
 ]))
 async function exportOne(key) {
   const s = svc(); if (!s || exportBusy.value) return

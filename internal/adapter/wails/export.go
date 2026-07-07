@@ -10,13 +10,64 @@ import (
 	"context"
 	"fmt"
 	"os"
+	"os/user"
 	"path/filepath"
+	"strconv"
 	"time"
 
 	"github.com/wailsapp/wails/v2/pkg/runtime"
 
 	"github.com/epaprat/albion-ledger/internal/export"
 )
+
+// realUser resolves the human behind the process. The app runs under sudo (pcap
+// needs root), so os.UserHomeDir() is root's home — dialogs would default to
+// /var/root and written files would be root-owned. SUDO_USER names the real user.
+func realUser() (*user.User, bool) {
+	name := os.Getenv("SUDO_USER")
+	if name == "" || name == "root" {
+		return nil, false
+	}
+	u, err := user.Lookup(name)
+	if err != nil {
+		return nil, false
+	}
+	return u, true
+}
+
+// defaultExportDir picks the save-dialog starting point: the real user's
+// Documents folder when running under sudo, else the process user's.
+func defaultExportDir() string {
+	home := ""
+	if u, ok := realUser(); ok {
+		home = u.HomeDir
+	} else if h, err := os.UserHomeDir(); err == nil {
+		home = h
+	}
+	if home == "" {
+		return ""
+	}
+	docs := filepath.Join(home, "Documents")
+	if fi, err := os.Stat(docs); err == nil && fi.IsDir() {
+		return docs
+	}
+	return home
+}
+
+// chownToRealUser hands a root-written export back to the human user so they
+// can open/move/delete it without privileges. Best-effort.
+func chownToRealUser(path string) {
+	u, ok := realUser()
+	if !ok {
+		return
+	}
+	uid, err1 := strconv.Atoi(u.Uid)
+	gid, err2 := strconv.Atoi(u.Gid)
+	if err1 != nil || err2 != nil {
+		return
+	}
+	_ = os.Chown(path, uid, gid)
+}
 
 // DatasetKeys is the fixed export order (contract §4.4) — no dataset is ever
 // silently skipped.
@@ -89,6 +140,7 @@ func (s *Service) writeDataset(key, window, path string) ExportResult {
 		os.Remove(path)
 		return ExportResult{Dataset: key, Err: err.Error()}
 	}
+	chownToRealUser(path)
 	return ExportResult{Dataset: key, Path: path, Rows: len(rows)}
 }
 
@@ -104,9 +156,10 @@ func (s *Service) ExportDataset(key, window string) ExportResult {
 		return ExportResult{Dataset: key, Err: "UI not ready"}
 	}
 	path, err := runtime.SaveFileDialog(ctx, runtime.SaveDialogOptions{
-		DefaultFilename: export.Filename(key, time.Now()),
-		Title:           "Export " + key + " as CSV",
-		Filters:         []runtime.FileFilter{{DisplayName: "CSV", Pattern: "*.csv"}},
+		DefaultDirectory: defaultExportDir(),
+		DefaultFilename:  export.Filename(key, time.Now()),
+		Title:            "Export " + key + " as CSV",
+		Filters:          []runtime.FileFilter{{DisplayName: "CSV", Pattern: "*.csv"}},
 	})
 	if err != nil {
 		return ExportResult{Dataset: key, Err: err.Error()}
@@ -126,7 +179,8 @@ func (s *Service) ExportAll(window string) []ExportResult {
 		return allErr("UI not ready")
 	}
 	dir, err := runtime.OpenDirectoryDialog(ctx, runtime.OpenDialogOptions{
-		Title: "Export all datasets (CSV per dataset)",
+		DefaultDirectory: defaultExportDir(),
+		Title:            "Export all datasets (CSV per dataset)",
 	})
 	if err != nil {
 		return allErr(err.Error())
