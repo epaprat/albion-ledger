@@ -291,10 +291,9 @@ onMounted(async () => {
 
       <!-- SPEC (Destiny Board, 011) -->
       <section v-else>
-        <div v-if="!spec.masteries || spec.masteries.length === 0" class="state">
-          <p class="big">Destiny Board not captured yet</p>
-          <p class="muted">Change zones (or relog) so your skill tree streams in.</p>
-        </div>
+        <StateBlock v-if="!spec.masteries || spec.masteries.length === 0" variant="empty" title="Destiny Board not captured yet">
+          Log out to character select and back in — your full skill tree streams in at login.
+        </StateBlock>
         <template v-else>
           <div class="total" role="status" aria-live="polite">
             <span>Destiny Board</span>
@@ -315,7 +314,11 @@ onMounted(async () => {
             skills (no elite progress yet) may show as level 0 until their next progress
             tick; everything else is exact.
           </div>
-          <div class="spec-tree">
+          <StateBlock v-if="specTree.length === 0" variant="empty" title="No matching nodes"
+            :action="{ label: 'Clear filter', onClick: () => { specFilter = '' } }">
+            No skill nodes match the current filter.
+          </StateBlock>
+          <div v-else class="spec-tree">
             <div v-for="c in specTree" :key="c.name" class="spec-cat">
               <button class="spec-head cat" @click="toggleSpec(c.name)" :aria-expanded="!specCollapsed(c.name)">
                 <span class="chev" :class="{ open: !specCollapsed(c.name) }">▸</span>
