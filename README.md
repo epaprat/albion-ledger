@@ -1,90 +1,85 @@
 # Albion Ledger
 
-**Albion Ledger Client** — a cross-platform, **ToS-safe** desktop tool for Albion Online. It
-passively reads the local Photon network stream to surface market data and your own account
-data, and turns it into a clear earnings (profit/loss) ledger.
+[![Release](https://img.shields.io/github/v/release/epaprat/albion-ledger?sort=semver)](https://github.com/epaprat/albion-ledger/releases)
+[![License: MIT](https://img.shields.io/badge/license-MIT-blue.svg)](LICENSE)
+[![Platform](https://img.shields.io/badge/platform-macOS%20%C2%B7%20Windows%20%C2%B7%20Linux-lightgrey.svg)](#install)
 
-> **Status:** early work in progress. Architecture and scope are defined; implementation is starting.
+**Albion Ledger** is a passive, **ToS-safe** desktop tool for Albion Online. It reads
+the local game network stream — no memory reading, no injection, no automation — and
+turns it into a clear answer to *"what do I own, and how much am I earning right now?"*
+
+<!-- Screenshot: add docs/screenshots/hero.png (the Flow / silver-per-hour screen) and uncomment:
+![Albion Ledger — earnings and flow](docs/screenshots/hero.png) -->
 
 ## What it does
 
-- **Market data** — sell/buy orders, price history, gold prices.
-- **Your own assets** — bank, inventory, equipment, and character specs.
-- **Activity** — loot, gathering/fishing, silver and fame gains.
-- **Valuation (EMV)** — every item priced from live market data (server estimate as fallback).
-- **Earnings / P&L** — net +/- silver per session / hour / 24h / day, with rate breakdowns
-  (silver/hr, loot value/hr, gather value/hr).
-- **Zone analytics** — every earning is stamped with the zone it happened in; the Flow panel's
-  *By zone* view ranks zones by silver/hr, gather value/hr and fame/hr over your active time
-  there (session / today / 7 days / all-time windows) — data-driven "where should I farm".
+- **Live earnings** — silver, loot, gather, and fame as they happen, with a headline
+  **silver/hour** figure so you can see at a glance whether the current activity pays.
+- **Zone analytics** — per-zone earning rates over session / today / 7-day / all-time
+  windows: a data-driven "where should I farm?".
+- **Holdings** — your inventory and every city bank, valued, grouped by city and tab,
+  with freshness indicators; the bank overview syncs whole cities from the in-game
+  K screen without opening each tab.
+- **Valuation** — a layered price model: live marketplace prices where seen, a
+  persisted server estimate otherwise, and an optional external fallback.
+- **Destiny Board** — your full skill tree decoded from the achievement stream,
+  including maxed skills shown correctly at login, organized by gear slot.
+- **CSV export** — every dataset (holdings, flow, zones, market, destiny board) exports
+  to Excel-compatible CSV, one dataset or all at once.
+
+Every screen has sortable/filterable tables and a designed state for empty, stale,
+encrypted, and error conditions.
 
 ### Not in scope
 
-No radar, ESP, entity positions, or anything that grants a real-time competitive advantage.
-This tool is strictly passive (reads network traffic only — no memory reading, no injection, no
-automation) and limited to market data and your own account data.
+Strictly passive: it reads network traffic only — **no** radar/ESP, entity positions,
+memory reading, injection, or automation, and nothing that grants a real-time
+competitive advantage. It surfaces **market data and your own account data** only, and
+your own data stays local unless you explicitly opt in to sharing.
 
-## Tech
+## Install
 
-- **Go** for packet capture (libpcap/Npcap) and Photon (Protocol16/18) parsing.
-- **Wails** desktop shell with a web UI.
-- **SQLite** local-first store; data is uploaded later in batches.
-- Single self-contained binary per OS — Windows, macOS, Linux.
+> **Status.** Live capture is verified on **macOS** today. Windows and Linux binaries
+> build but their capture path (Npcap / `cap_net_raw`) is not yet verified — treat them
+> as experimental. See [releases](https://github.com/epaprat/albion-ledger/releases).
 
-## Development
-
-```sh
-git clone <repo-url>
-cd albion-ledger
-scripts/setup-hooks.sh   # activate local git gates (lint/hygiene/CI before push)
-```
-
-Packet capture requires capture privileges: Npcap on Windows, BPF permissions on macOS,
-`cap_net_raw` on Linux. Installers will bundle this step.
-
-### Sniff probe
-
-A measurement CLI that reports which data categories can be sniffed and how completely:
+**Download** the binary for your OS from the
+[latest release](https://github.com/epaprat/albion-ledger/releases/latest), or build
+from source (below). Live capture needs elevated privileges to read the network
+interface.
 
 ```sh
-go build -o bin/probe ./cmd/probe
-./bin/probe genfixture testdata/fixtures/synthetic.pcap   # deterministic offline sample
-./bin/probe replay testdata/fixtures/synthetic.pcap       # → coverage report (text or --json)
+# macOS — run with capture privileges
+sudo /Applications/albion-ledger.app/Contents/MacOS/albion-ledger -iface en0
 ```
 
-Live capture (reads the local game stream) needs the libpcap build tag:
+## Build from source
+
+Requires Go 1.26+, Node 18+, and the [Wails](https://wails.io) v2 CLI.
 
 ```sh
-go build -tags pcap -o bin/probe ./cmd/probe
-sudo ./bin/probe live                                     # passive; market + own-account data only
+git clone https://github.com/epaprat/albion-ledger.git
+cd albion-ledger/cmd/albion-ledger
+wails build -tags pcap        # live-capture build (omit the tag for a pure-Go build)
+sudo ./build/bin/albion-ledger.app/Contents/MacOS/albion-ledger -iface en0
 ```
 
-Capture stores default to `captures/` (created automatically, gitignored), so
-local session databases never clutter the repo root.
+See [CONTRIBUTING.md](CONTRIBUTING.md) for tests, the branching model, and the full
+development workflow, and [ARCHITECTURE.md](ARCHITECTURE.md) for how the code fits
+together.
 
-### Game-change agility
+## Game-patch resilience
 
-The data the game can change between patches lives in editable files under `data/`:
+Data that the game can change between patches lives in editable files under `data/`
+(`items.json` — item catalog; `codes.json` — message-code map). Both are embedded
+defaults and reloadable at runtime, so a patch that shifts item names or message codes
+is fixed by editing a file, not the source.
 
-- `data/items.json` — item index → name/tier/enchant catalog (generated from ao-bin-dumps)
-- `data/codes.json` — message code → category map
+## Contributing
 
-Both are bundled (embedded) defaults and can be reloaded at runtime without recompiling, so a patch
-that shifts item names or message codes is fixed by editing a file, not the source.
-
-The default build is pure-Go (no libpcap) so tests and replay run anywhere.
-
-Validated against live traffic: all target categories (market sell/buy/history,
-gold, inventory, equipment, bank, character spec, loot, gather, silver, fame,
-item value) are captured, and the market stream is unencrypted.
-
-### Quality gates
-
-Enforcement runs **locally** (no CI minutes burned):
-
-- `pre-commit` — repo hygiene + docs freshness
-- `commit-msg` — commit message checks
-- `pre-push` — full local CI (`scripts/ci-local.sh`)
+Contributions are welcome — please read [CONTRIBUTING.md](CONTRIBUTING.md) and the
+[Code of Conduct](CODE_OF_CONDUCT.md). To report a security issue, see
+[SECURITY.md](SECURITY.md).
 
 ## License
 
