@@ -17,6 +17,8 @@ const flowView = ref('items')        // active FlowPanel view ('zones' gates the
 const zoneWindow = ref('session')    // time window for zone stats
 const flowSummary = ref({ active: false, netSilver: 0, silverPerHour: 0, lootValue: 0, gatherValue: 0, fame: 0, famePerHour: 0, rateReady: false, unvaluedCount: 0, eventCount: 0 })
 const spec = ref({ masteries: [], nodeCount: 0, totalFame: 0, complete: false })
+const exportResults = ref({})        // dataset key -> last ExportResult (013)
+const exportBusy = ref(false)
 const specFilter = ref('')
 const specHideUntouched = ref(false)
 const status = ref({ capturing: false, interface: '', encryptedRate: 0, driftAlert: '' })
@@ -117,6 +119,33 @@ async function refreshFlow() {
 }
 function setFlowView(v) { flowView.value = v; if (v === 'zones') refreshFlow() }
 function setZoneWindow(w) { zoneWindow.value = w; refreshFlow() }
+
+// ── CSV export (013) ─────────────────────────────────────────────────────────
+const exportSets = computed(() => ([
+  { key: 'holdings', name: 'Holdings', rows: holdings.value.length },
+  { key: 'flow', name: 'Activity Flow', rows: flowEvents.value.length },
+  { key: 'zones', name: 'Zone Analytics', rows: flowZones.value.length },
+  { key: 'market', name: 'Market Prices', rows: market.value.size },
+  { key: 'spec', name: 'Destiny Board', rows: (spec.value.masteries || []).length },
+]))
+async function exportOne(key) {
+  const s = svc(); if (!s || exportBusy.value) return
+  exportBusy.value = true
+  try {
+    const res = await s.ExportDataset(key, zoneWindow.value)
+    if (res && !res.canceled) exportResults.value = { ...exportResults.value, [key]: res }
+  } finally { exportBusy.value = false }
+}
+async function exportAll() {
+  const s = svc(); if (!s || exportBusy.value) return
+  exportBusy.value = true
+  try {
+    const results = await s.ExportAll(zoneWindow.value)
+    const next = { ...exportResults.value }
+    for (const r of results || []) { if (!r.canceled) next[r.dataset] = r }
+    exportResults.value = next
+  } finally { exportBusy.value = false }
+}
 // Coalesce flow:changed bursts into one refresh (Principle XI — bounded UI).
 let flowQueued = false
 function scheduleFlowRefresh() {
@@ -163,6 +192,7 @@ onMounted(async () => {
         <button :class="{ active: tab === 'holdings' }" @click="tab = 'holdings'" role="tab" :aria-selected="tab === 'holdings'">Holdings</button>
         <button :class="{ active: tab === 'market' }" @click="tab = 'market'" role="tab" :aria-selected="tab === 'market'">Market</button>
         <button :class="{ active: tab === 'spec' }" @click="tab = 'spec'" role="tab" :aria-selected="tab === 'spec'">Spec</button>
+        <button :class="{ active: tab === 'export' }" @click="tab = 'export'" role="tab" :aria-selected="tab === 'export'">Export</button>
       </nav>
     </header>
 
@@ -205,6 +235,35 @@ onMounted(async () => {
             </tr>
           </tbody>
         </table>
+      </section>
+
+      <!-- EXPORT (CSV, 013) -->
+      <section v-else-if="tab === 'export'" class="export-page">
+        <div class="export-head">
+          <div>
+            <h2>Export</h2>
+            <p class="muted">Save any dataset as an Excel-compatible CSV (UTF-8).</p>
+          </div>
+          <button class="export-all" :disabled="exportBusy" @click="exportAll">Export all…</button>
+        </div>
+        <table>
+          <thead><tr><th>Dataset</th><th class="num">Rows</th><th>Last export</th><th></th></tr></thead>
+          <tbody>
+            <tr v-for="d in exportSets" :key="d.key">
+              <td>{{ d.name }}</td>
+              <td class="num" :class="{ dim: d.rows === 0 }">{{ d.rows === 0 ? '0 rows' : d.rows }}</td>
+              <td class="export-status">
+                <template v-if="exportResults[d.key]">
+                  <span v-if="exportResults[d.key].err" class="export-err">{{ exportResults[d.key].err }}</span>
+                  <span v-else class="export-ok">{{ exportResults[d.key].rows }} rows → {{ exportResults[d.key].path }}</span>
+                </template>
+                <span v-else class="dim">—</span>
+              </td>
+              <td class="num"><button :disabled="exportBusy" @click="exportOne(d.key)">Export…</button></td>
+            </tr>
+          </tbody>
+        </table>
+        <p class="muted export-note">Zone Analytics exports the currently selected time window ({{ zoneWindow }}).</p>
       </section>
 
       <!-- SPEC (Destiny Board, 011) -->
@@ -317,6 +376,14 @@ tbody tr:hover { background: var(--panel); }
 .spec-subs { display: flex; flex-direction: column; gap: 1px; }
 .spec-sub table { margin-left: 40px; width: calc(100% - 40px); }
 .untouched { opacity: 0.4; }
+.export-page { max-width: 860px; }
+.export-head { display: flex; justify-content: space-between; align-items: center; gap: 12px; margin-bottom: 12px; }
+.export-head h2 { margin: 0 0 2px; font-size: 18px; }
+.export-all { font-weight: 600; }
+.export-status { max-width: 380px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; font-size: 12px; }
+.export-ok { color: var(--good); }
+.export-err { color: var(--bad, #e5534b); }
+.export-note { margin-top: 10px; font-size: 12px; }
 tr.maxed td { color: var(--good); }
 tr.maxed td:first-child { font-weight: 600; }
 .slot-max { font-size: 11px; font-weight: 600; padding: 1px 7px; border-radius: 10px; background: color-mix(in srgb, var(--good) 25%, transparent); color: var(--good); flex: 0 0 auto; }

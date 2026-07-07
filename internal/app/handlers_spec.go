@@ -64,6 +64,35 @@ func handleSpecFullBoard(p *Pipeline, _ probe.Kind, _ int, params map[byte]inter
 	p.specFullBoard = true
 	p.specSnapshotSeen = true
 	p.specReplacePending = false // E:1 already replaced; the next E:154 merges onto it.
+	// Reconcile the persisted maxed set with E:1's CERTAIN levels — prune, then union.
+	// The old E:155-derived set had accumulated unlocked-but-level-0 ids (a node unlocks
+	// when its prerequisite is met, before any fame — e.g. Realmbreaker), which the 011
+	// fallback resurrected as false 100s. For every id E:1 COVERS: drop it if E:1 shows
+	// it below 100 (proven not maxed), keep/add it if E:1 shows 100. Ids E:1 does NOT
+	// cover are left untouched — that preserves 011's union guarantee for long-idle maxed
+	// nodes captured via noteMaxed that fall outside E:1's board (never lose them).
+	if p.specUnlocked == nil {
+		p.specUnlocked = map[int]bool{}
+	}
+	covered := make(map[int]int, len(pairs))
+	for _, pr := range pairs {
+		covered[pr.ID] = pr.Level
+	}
+	for id := range p.specUnlocked {
+		if lvl, ok := covered[id]; ok && lvl < 100 {
+			delete(p.specUnlocked, id)
+		}
+	}
+	for _, pr := range pairs {
+		if pr.Level >= 100 && len(p.specUnlocked) < maxSpecUnlocked {
+			p.specUnlocked[pr.ID] = true
+		}
+	}
+	unlockedIDs := make([]int, 0, len(p.specUnlocked))
+	for id := range p.specUnlocked {
+		unlockedIDs = append(unlockedIDs, id)
+	}
+	p.sink.SetSpecUnlocked(unlockedIDs)
 	if fb.IdsFromWire {
 		p.sink.SetSpecEnum(p.specEnum.Snapshot()) // persist the learned id order
 	}
@@ -254,9 +283,18 @@ func (p *Pipeline) emitSpec() {
 		inCatalog[c.ID] = true
 		if n, inProg := prog[c.ID]; inProg {
 			add(c, n, n.Level > 0 || n.Fame > 0)
-		} else if p.specUnlocked[c.ID] && p.specSnapshotSeen {
-			// Unlocked but not in the CURRENT in-progress snapshot → maxed. The
-			// snapshot is REQUIRED: the unlocked set alone (e.g. the persisted seed
+		} else if !p.specFullBoard && p.specUnlocked[c.ID] && p.specSnapshotSeen {
+			// Unlocked but not in the CURRENT in-progress snapshot → maxed. This is a
+			// HEURISTIC and only sound WITHOUT E:1: the "unlocked" set (E:155) also
+			// contains nodes that are merely unlocked at level 0 (a node unlocks when
+			// its prerequisite is met, before any fame is spent — e.g. Realmbreaker),
+			// so treating every unlocked-but-not-in-progress node as maxed falsely
+			// showed level-0 unlocked nodes as 100/120. When E:1 has given the COMPLETE
+			// authoritative board (specFullBoard), it already carries every real level
+			// incl 0 → a node absent from it is genuinely level 0, NOT maxed; trust E:1
+			// and skip this heuristic. Without E:1 the heuristic stays as the only way
+			// to recover long-idle maxed nodes the game omits from E:154.
+			// The snapshot is REQUIRED: the unlocked set alone (e.g. the persisted seed
 			// at startup, before any zone join) contains in-progress nodes too, and
 			// classifying against an empty board marked EVERYTHING level 100.
 			add(c, specboard.Node{Level: 100, Progress: 1}, true)

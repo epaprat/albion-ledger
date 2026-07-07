@@ -131,6 +131,7 @@ func main() {
 		},
 		OnStartup: func(ctx context.Context) {
 			emitter.ctx = ctx
+			svc.SetUIContext(ctx) // native export dialogs (013)
 			// Pre-create the player's virtual containers (pinned, marked not-yet-
 			// observed) so live puts bridged to them land even before the first
 			// own-state snapshot, without faking a fresh empty inventory in the UI.

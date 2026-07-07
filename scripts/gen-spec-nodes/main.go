@@ -21,6 +21,7 @@ import (
 	"encoding/xml"
 	"fmt"
 	"os"
+	"regexp"
 	"strconv"
 	"strings"
 )
@@ -135,6 +136,24 @@ func subcategoryOf(id string) string {
 		return ""
 	}
 	return humanize(parts[1])
+}
+
+var tierPrefix = regexp.MustCompile(`^T\d+_`)
+
+// lineName resolves a combat itemforsprite to its GENERIC line name by preferring the
+// LOWEST tier of the item family. Most weapons keep one name across tiers (Battleaxe),
+// but some T8 items carry a special flavour name (T8_2H_AXE = "The Hand of Khor") while
+// the line node is really "Greataxe" (T4_2H_AXE = "Adept's Greataxe"). Lower tiers hold
+// the generic name, so we scan T2..T8 of the same family and take the first hit; the
+// exact sprite is the fallback. Returns "" if nothing resolves.
+func lineName(item string, names map[string]string) string {
+	fam := tierPrefix.ReplaceAllString(item, "")
+	for t := 2; t <= 8; t++ {
+		if n, ok := names[fmt.Sprintf("T%d_%s", t, fam)]; ok {
+			return n
+		}
+	}
+	return names[item]
 }
 
 // loadItemNames reads the item catalog (2nd CLI arg, default data/items.json) and
@@ -307,7 +326,7 @@ func main() {
 		// item (the "Books Fighter" base rendered as "Diary"). Name those from the id
 		// with a "(Fighter)" tag instead; only the SPECIFIC variant nodes use the item.
 		if d.category == "fighting" && d.item != "" && !isCombatBase(d.id) {
-			if n, ok := itemNames[d.item]; ok {
+			if n := lineName(d.item, itemNames); n != "" {
 				name = n
 			}
 		} else if d.category == "fighting" && isCombatBase(d.id) {

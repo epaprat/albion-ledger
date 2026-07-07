@@ -151,7 +151,7 @@
   },
   {
    "id": 19,
-   "name": "The Hand of Khor",
+   "name": "Greataxe",
    "category": "Combat",
    "subcategory": "Axes",
    "slot": "Weapon",
@@ -208,7 +208,7 @@
   },
   {
    "id": 26,
-   "name": "Diary",
+   "name": "Tome of Spells",
    "category": "Combat",
    "subcategory": "Books",
    "slot": "Off-Hand",
@@ -824,7 +824,7 @@
   },
   {
    "id": 102,
-   "name": "Wrath",
+   "name": "Great Fire Staff",
    "category": "Combat",
    "subcategory": "Firestaffs",
    "slot": "Weapon",
