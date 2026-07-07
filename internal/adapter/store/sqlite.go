@@ -6,12 +6,15 @@ import (
 	"context"
 	"database/sql"
 	"fmt"
+	"log"
 	"os"
 	"path/filepath"
 
 	_ "modernc.org/sqlite"
 
 	"github.com/epaprat/albion-ledger/internal/domain/model"
+	"github.com/epaprat/albion-ledger/internal/valuation"
+	"github.com/epaprat/albion-ledger/internal/zonestats"
 )
 
 const schema = `
@@ -43,6 +46,23 @@ CREATE TABLE IF NOT EXISTS reconciliation_notes (
   session_id TEXT, category TEXT, captured_value TEXT, ingame_value TEXT,
   result TEXT, notes TEXT, created_at INTEGER
 );
+CREATE TABLE IF NOT EXISTS flow_events (
+  session_id TEXT, event_id TEXT, kind TEXT, ts INTEGER,
+  item_index INTEGER, quality INTEGER, count INTEGER,
+  silver INTEGER, fame INTEGER, valued INTEGER, source TEXT, zone TEXT,
+  PRIMARY KEY (session_id, event_id)
+);
+CREATE INDEX IF NOT EXISTS idx_flow_session_ts ON flow_events(session_id, ts);
+CREATE TABLE IF NOT EXISTS emv_book (
+  item_index INTEGER, quality INTEGER, amount INTEGER, as_of INTEGER,
+  PRIMARY KEY (item_index, quality)
+);
+CREATE TABLE IF NOT EXISTS spec_unlocked (
+  node_id INTEGER PRIMARY KEY
+);
+CREATE TABLE IF NOT EXISTS spec_enum (
+  pos INTEGER PRIMARY KEY, node_id INTEGER
+);
 `
 
 // SQLite is a Store backed by a local SQLite database.
@@ -67,7 +87,43 @@ func Open(path string) (*SQLite, error) {
 		db.Close()
 		return nil, err
 	}
+	if err := migrate(db); err != nil {
+		db.Close()
+		return nil, err
+	}
 	return &SQLite{db: db}, nil
+}
+
+// migrate applies additive schema upgrades to databases created by older builds.
+// CREATE TABLE IF NOT EXISTS never alters an existing table, so any column added to
+// the schema later must ALSO be added here — otherwise inserts fail on old DBs
+// ("no column named ..."), silently stalling persistence (live-hit 2026-07-02: the
+// flow_events table predated the zone column; every write errored and zone analytics
+// read nothing).
+func migrate(db *sql.DB) error {
+	addColumnIfMissing := func(table, column, decl string) error {
+		rows, err := db.Query(`SELECT name FROM pragma_table_info(?)`, table)
+		if err != nil {
+			return err
+		}
+		defer rows.Close()
+		for rows.Next() {
+			var name string
+			if err := rows.Scan(&name); err != nil {
+				return err
+			}
+			if name == column {
+				return rows.Err()
+			}
+		}
+		if err := rows.Err(); err != nil {
+			return err
+		}
+		log.Printf("store migration: adding %s.%s", table, column)
+		_, err = db.Exec(fmt.Sprintf(`ALTER TABLE %s ADD COLUMN %s %s`, table, column, decl))
+		return err
+	}
+	return addColumnIfMissing("flow_events", "zone", `TEXT DEFAULT ''`)
 }
 
 // Close closes the database.
@@ -116,6 +172,89 @@ func (s *SQLite) AppendObservations(ctx context.Context, batch []model.Observati
 		}
 	}
 	return tx.Commit()
+}
+
+// AppendFlowEvents inserts a batch of earnings events within one transaction. It is
+// idempotent on (session_id, event_id): a re-sent event upserts, never duplicating
+// (Principle VIII at-least-once + stable id; FR-008). Flow rows are the durable
+// history behind the bounded in-memory ledger (Principle XI).
+func (s *SQLite) AppendFlowEvents(ctx context.Context, sessionID string, batch []model.FlowEvent) error {
+	if len(batch) == 0 {
+		return nil
+	}
+	tx, err := s.db.BeginTx(ctx, nil)
+	if err != nil {
+		return err
+	}
+	stmt, err := tx.PrepareContext(ctx,
+		`INSERT INTO flow_events
+		 (session_id, event_id, kind, ts, item_index, quality, count, silver, fame, valued, source, zone)
+		 VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+		 ON CONFLICT(session_id, event_id) DO UPDATE SET
+		   silver=excluded.silver, valued=excluded.valued`)
+	if err != nil {
+		tx.Rollback()
+		return err
+	}
+	defer stmt.Close()
+	for _, e := range batch {
+		valued := 0
+		if e.Valued {
+			valued = 1
+		}
+		if _, err := stmt.ExecContext(ctx, sessionID, e.ID, string(e.Kind), e.TS,
+			e.Item.Index, e.Item.Quality, e.Count, e.Silver, e.Fame, valued, e.Source, e.Zone); err != nil {
+			tx.Rollback()
+			return err
+		}
+	}
+	return tx.Commit()
+}
+
+// LoadFlowEvents reads flow events for zone analytics (006): ts >= sinceMS, optionally
+// scoped to one capture session, ordered ts ASC, with only the columns the compute
+// needs. On overflow the NEWEST `limit` rows are kept and the truncation is logged —
+// never a silent cap (spec FR-006). limit <= 0 falls back to a 500k guard.
+func (s *SQLite) LoadFlowEvents(ctx context.Context, sessionID string, sinceMS int64, limit int) ([]zonestats.StoredEvent, error) {
+	if limit <= 0 {
+		limit = 500_000
+	}
+	q := `SELECT session_id, kind, ts, silver, fame, count, zone FROM flow_events WHERE ts >= ?`
+	args := []interface{}{sinceMS}
+	if sessionID != "" {
+		q += ` AND session_id = ?`
+		args = append(args, sessionID)
+	}
+	// DESC+LIMIT keeps the newest rows when the window exceeds the guard; reversed below.
+	q += ` ORDER BY ts DESC LIMIT ?`
+	args = append(args, limit)
+
+	rows, err := s.db.QueryContext(ctx, q, args...)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	var out []zonestats.StoredEvent
+	for rows.Next() {
+		var e zonestats.StoredEvent
+		var kind string
+		if err := rows.Scan(&e.SessionID, &kind, &e.TS, &e.Silver, &e.Fame, &e.Count, &e.Zone); err != nil {
+			return nil, err
+		}
+		e.Kind = model.FlowKind(kind)
+		out = append(out, e)
+	}
+	if err := rows.Err(); err != nil {
+		return nil, err
+	}
+	if len(out) == limit {
+		log.Printf("flow query hit the %d-row guard — oldest rows in the window were truncated", limit)
+	}
+	// Reverse DESC → ASC (compute sorts internally, but keep the documented order).
+	for i, j := 0, len(out)-1; i < j; i, j = i+1, j-1 {
+		out[i], out[j] = out[j], out[i]
+	}
+	return out, nil
 }
 
 // UpsertCoverage replaces the coverage rows for the session's categories.
@@ -224,6 +363,139 @@ func (s *SQLite) LoadReconciliations(ctx context.Context, sessionID string) ([]m
 		}
 		n.SessionID, n.Category = sessionID, model.Category(cat)
 		out = append(out, n)
+	}
+	return out, rows.Err()
+}
+
+// SaveEMVBook upserts the whole server-estimate book in one transaction (010: the
+// book survives restarts so values learned from declarations keep pricing the K
+// bank-overview summary rows in later sessions). Newest as_of wins.
+func (s *SQLite) SaveEMVBook(ctx context.Context, entries []valuation.EMVEntry) error {
+	if len(entries) == 0 {
+		return nil
+	}
+	tx, err := s.db.BeginTx(ctx, nil)
+	if err != nil {
+		return err
+	}
+	defer tx.Rollback()
+	stmt, err := tx.PrepareContext(ctx, `INSERT INTO emv_book (item_index, quality, amount, as_of)
+		VALUES (?,?,?,?)
+		ON CONFLICT(item_index, quality) DO UPDATE SET
+		  amount=excluded.amount, as_of=excluded.as_of
+		WHERE excluded.as_of >= emv_book.as_of`)
+	if err != nil {
+		return err
+	}
+	defer stmt.Close()
+	for _, e := range entries {
+		if _, err := stmt.ExecContext(ctx, e.Index, e.Quality, e.Amount, e.AsOf); err != nil {
+			return err
+		}
+	}
+	return tx.Commit()
+}
+
+// LoadEMVBook reads all persisted server estimates.
+func (s *SQLite) LoadEMVBook(ctx context.Context) ([]valuation.EMVEntry, error) {
+	rows, err := s.db.QueryContext(ctx, `SELECT item_index, quality, amount, as_of FROM emv_book`)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	var out []valuation.EMVEntry
+	for rows.Next() {
+		var e valuation.EMVEntry
+		if err := rows.Scan(&e.Index, &e.Quality, &e.Amount, &e.AsOf); err != nil {
+			return nil, err
+		}
+		out = append(out, e)
+	}
+	return out, rows.Err()
+}
+
+// SaveSpecUnlocked persists the Destiny Board unlocked-node set (E:155): the full
+// list so maxed (level-100) branches survive restarts, since E:155 only arrives on
+// node completion, not at login (011, live-confirmed 2026-07-05). REPLACE semantics.
+func (s *SQLite) SaveSpecUnlocked(ctx context.Context, ids []int) error {
+	tx, err := s.db.BeginTx(ctx, nil)
+	if err != nil {
+		return err
+	}
+	defer tx.Rollback()
+	if _, err := tx.ExecContext(ctx, `DELETE FROM spec_unlocked`); err != nil {
+		return err
+	}
+	stmt, err := tx.PrepareContext(ctx, `INSERT OR IGNORE INTO spec_unlocked(node_id) VALUES (?)`)
+	if err != nil {
+		return err
+	}
+	defer stmt.Close()
+	for _, id := range ids {
+		if _, err := stmt.ExecContext(ctx, id); err != nil {
+			return err
+		}
+	}
+	return tx.Commit()
+}
+
+// LoadSpecUnlocked returns the persisted unlocked-node ids.
+func (s *SQLite) LoadSpecUnlocked(ctx context.Context) ([]int, error) {
+	rows, err := s.db.QueryContext(ctx, `SELECT node_id FROM spec_unlocked`)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	var out []int
+	for rows.Next() {
+		var id int
+		if err := rows.Scan(&id); err != nil {
+			return nil, err
+		}
+		out = append(out, id)
+	}
+	return out, rows.Err()
+}
+
+// SaveSpecEnum persists the E:1 board enumeration (position→node id, 012) so a warm
+// login whose E:1 omits the id list still decodes. REPLACE semantics (a fresh cold
+// login re-sends the full order).
+func (s *SQLite) SaveSpecEnum(ctx context.Context, ids []int) error {
+	tx, err := s.db.BeginTx(ctx, nil)
+	if err != nil {
+		return err
+	}
+	defer tx.Rollback()
+	if _, err := tx.ExecContext(ctx, `DELETE FROM spec_enum`); err != nil {
+		return err
+	}
+	stmt, err := tx.PrepareContext(ctx, `INSERT OR REPLACE INTO spec_enum(pos, node_id) VALUES (?, ?)`)
+	if err != nil {
+		return err
+	}
+	defer stmt.Close()
+	for pos, id := range ids {
+		if _, err := stmt.ExecContext(ctx, pos, id); err != nil {
+			return err
+		}
+	}
+	return tx.Commit()
+}
+
+// LoadSpecEnum returns the persisted enumeration as an id slice ordered by position.
+func (s *SQLite) LoadSpecEnum(ctx context.Context) ([]int, error) {
+	rows, err := s.db.QueryContext(ctx, `SELECT node_id FROM spec_enum ORDER BY pos`)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	var out []int
+	for rows.Next() {
+		var id int
+		if err := rows.Scan(&id); err != nil {
+			return nil, err
+		}
+		out = append(out, id)
 	}
 	return out, rows.Err()
 }

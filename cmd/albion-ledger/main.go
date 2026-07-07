@@ -7,8 +7,10 @@ import (
 	"context"
 	"embed"
 	"flag"
+	"fmt"
 	"log"
-	"sync"
+	"os"
+	"path/filepath"
 	"time"
 
 	"github.com/wailsapp/wails/v2"
@@ -17,13 +19,17 @@ import (
 	"github.com/wailsapp/wails/v2/pkg/runtime"
 
 	"github.com/epaprat/albion-ledger/data"
+	"github.com/epaprat/albion-ledger/internal/adapter/aodp"
 	"github.com/epaprat/albion-ledger/internal/adapter/capture"
+	"github.com/epaprat/albion-ledger/internal/adapter/store"
 	wailsadapter "github.com/epaprat/albion-ledger/internal/adapter/wails"
+	"github.com/epaprat/albion-ledger/internal/app"
 	"github.com/epaprat/albion-ledger/internal/catalog"
 	"github.com/epaprat/albion-ledger/internal/codes"
 	"github.com/epaprat/albion-ledger/internal/domain/model"
 	"github.com/epaprat/albion-ledger/internal/domain/probe"
-	"github.com/epaprat/albion-ledger/internal/holdings"
+	"github.com/epaprat/albion-ledger/internal/locations"
+	"github.com/epaprat/albion-ledger/internal/specnames"
 	"github.com/epaprat/albion-ledger/internal/photon"
 	"github.com/epaprat/albion-ledger/internal/port"
 	"github.com/epaprat/albion-ledger/internal/valuation"
@@ -32,9 +38,16 @@ import (
 //go:embed all:frontend/dist
 var assets embed.FS
 
-const emvEventCode = 466
-
 func nowMS() int64 { return time.Now().UnixMilli() }
+
+// defaultStorePath is the local ledger DB location — OS config dir when available
+// (e.g. ~/Library/Application Support/albion-ledger on macOS), else ./captures.
+func defaultStorePath() string {
+	if dir, err := os.UserConfigDir(); err == nil && dir != "" {
+		return filepath.Join(dir, "albion-ledger", "ledger.db")
+	}
+	return filepath.Join("captures", "ledger.db")
+}
 
 // wailsEmitter bridges the service's Emitter to the Wails event runtime.
 type wailsEmitter struct{ ctx context.Context }
@@ -50,6 +63,9 @@ func main() {
 	replay := flag.String("replay", "", "replay a recorded pcap instead of live capture")
 	catalogPath := flag.String("catalog", "", "override item catalog file (data/items.json format)")
 	codesPath := flag.String("codes", "", "override code map file (data/codes.json format)")
+	debugFlowFlag := flag.Bool("debugflow", false, "log flow (silver/loot/gather/fame) attribution to stderr")
+	noExternal := flag.Bool("noexternal", false, "disable the community price feed (AODP) — no outbound HTTP")
+	specNodesPath := flag.String("specnodes", "", "override Destiny Board node-name catalog (data/specnodes.json format)")
 	flag.Parse()
 
 	cat, err := catalog.New(data.ItemsJSON)
@@ -65,6 +81,12 @@ func main() {
 	if err != nil {
 		log.Fatal(err)
 	}
+	var locs *locations.Locations // nil = zones show raw cluster ids
+	if l, err := locations.New(data.ClustersJSON); err != nil {
+		log.Printf("cluster map unavailable, zones show raw ids: %v", err)
+	} else {
+		locs = l
+	}
 	if *codesPath != "" {
 		_ = reg.Reload(*codesPath)
 	}
@@ -74,9 +96,33 @@ func main() {
 	emitter := &wailsEmitter{}
 	svc := wailsadapter.NewService(cat, book, val, emitter, 5000, nowMS)
 
-	clf := probe.New(reg)
+	specCat, err := specnames.New(data.SpecNodesJSON)
+	if err != nil {
+		log.Fatal(err)
+	}
+	if *specNodesPath != "" {
+		if err := specCat.Reload(*specNodesPath); err != nil {
+			log.Printf("spec-nodes override failed, using bundled: %v", err)
+		}
+	}
+	pipe := app.New(svc, probe.New(reg), locs, specCat, nowMS, *debugFlowFlag)
 
-	app := wails.Run(&options.App{
+	// Local-first store (Principle VIII): earnings events are persisted to SQLite as
+	// they arrive; the in-memory ledger stays bounded (Principle XI). Best-effort — if
+	// the store can't open, the app still runs (in-memory only).
+	var flowStore *store.SQLite
+	sessionID := fmt.Sprintf("app-%d", nowMS())
+	if db, err := store.Open(defaultStorePath()); err != nil {
+		log.Printf("local store unavailable, running in-memory only: %v", err)
+	} else {
+		flowStore = db
+	}
+	srcKind := model.SourceLive
+	if *replay != "" {
+		srcKind = model.SourceReplay
+	}
+
+	runErr := wails.Run(&options.App{
 		Title:  "Albion Ledger",
 		Width:  1100,
 		Height: 720,
@@ -85,18 +131,125 @@ func main() {
 		},
 		OnStartup: func(ctx context.Context) {
 			emitter.ctx = ctx
-			go runCapture(ctx, *iface, *replay, clf, svc)
+			svc.SetUIContext(ctx) // native export dialogs (013)
+			// Pre-create the player's virtual containers (pinned, marked not-yet-
+			// observed) so live puts bridged to them land even before the first
+			// own-state snapshot, without faking a fresh empty inventory in the UI.
+			svc.EnsureSelfContainer(app.SelfBagGUID, "Bag")
+			svc.EnsureSelfContainer(app.SelfEquipGUID, "Equipped")
+			if flowStore != nil {
+				// Persisted EMV book (010): values learned in earlier sessions keep
+				// pricing K-overview summary rows now; the book flushes on shutdown.
+				if entries, err := flowStore.LoadEMVBook(ctx); err == nil {
+					book.RestoreEMV(entries)
+				} else {
+					log.Printf("store LoadEMVBook: %v", err)
+				}
+				// Persisted maxed set (011): E:155 only arrives on completion, not at
+				// login, so seed the level-100 branches from the last session's list.
+				if ids, err := flowStore.LoadSpecUnlocked(ctx); err == nil && len(ids) > 0 {
+					pipe.SeedSpecUnlocked(ids)
+				} else if err != nil {
+					log.Printf("store LoadSpecUnlocked: %v", err)
+				}
+				if ids, err := flowStore.LoadSpecEnum(ctx); err == nil && len(ids) > 0 {
+					pipe.SeedSpecEnum(ids) // E:1 enumeration for warm-login decode (012)
+				} else if err != nil {
+					log.Printf("store LoadSpecEnum: %v", err)
+				}
+				if err := flowStore.StartSession(ctx, model.CaptureSession{
+					ID: sessionID, StartedAt: nowMS(), SourceKind: srcKind, Interface: *iface,
+				}); err != nil {
+					log.Printf("store StartSession: %v", err)
+				}
+				svc.StartFlowPersistence(ctx, flowStore, sessionID)
+				svc.SetFlowReader(flowStore, sessionID) // zone analytics read side (006)
+			}
+			go runCapture(ctx, *iface, *replay, pipe, svc)
+			// Community price base layer (AODP, 010): fills valuation gaps for held
+			// items shortly after startup, then hourly. In-game observations always
+			// override; network failures degrade silently.
+			go func() {
+				if *noExternal {
+					return // explicit opt-out: zero outbound HTTP (Principle V transparency)
+				}
+				client := aodp.New("")
+				t := time.NewTimer(20 * time.Second)
+				defer t.Stop()
+				refresh := func() {
+					if n := svc.RefreshExternalPrices(ctx, client); n > 0 {
+						log.Printf("aodp: %d prices fetched", n)
+					}
+					// Periodic durability: a crash must not discard the session's learned
+					// prices — the upsert is idempotent and newest-wins (010 review).
+					if flowStore != nil {
+						if err := flowStore.SaveEMVBook(ctx, book.SnapshotEMV()); err != nil {
+							log.Printf("store SaveEMVBook (periodic): %v", err)
+						}
+						if ids := svc.SpecUnlockedSnapshot(); len(ids) > 0 {
+							if err := flowStore.SaveSpecUnlocked(ctx, ids); err != nil {
+								log.Printf("store SaveSpecUnlocked (periodic): %v", err)
+							}
+						}
+						if ids := svc.SpecEnumSnapshot(); len(ids) > 0 {
+							if err := flowStore.SaveSpecEnum(ctx, ids); err != nil {
+								log.Printf("store SaveSpecEnum (periodic): %v", err)
+							}
+						}
+					}
+				}
+				for {
+					select {
+					case <-ctx.Done():
+						return
+					case <-t.C:
+						refresh()
+						t.Reset(time.Hour)
+					case <-svc.ExternalRefreshSignal():
+						// New vault rows just landed (K overview): give the burst a
+						// moment to finish, then fill the gaps — don't wait the hour.
+						select {
+						case <-ctx.Done():
+							return
+						case <-time.After(3 * time.Second):
+						}
+						refresh()
+						t.Reset(time.Hour)
+					}
+				}
+			}()
+		},
+		OnShutdown: func(context.Context) {
+			if flowStore != nil {
+				svc.StopFlowPersistence() // drain the final batch before the DB closes
+				if err := flowStore.SaveEMVBook(context.Background(), book.SnapshotEMV()); err != nil {
+					log.Printf("store SaveEMVBook: %v", err)
+				}
+				if ids := svc.SpecUnlockedSnapshot(); len(ids) > 0 {
+					if err := flowStore.SaveSpecUnlocked(context.Background(), ids); err != nil {
+						log.Printf("store SaveSpecUnlocked: %v", err)
+					}
+				}
+				if ids := svc.SpecEnumSnapshot(); len(ids) > 0 {
+					if err := flowStore.SaveSpecEnum(context.Background(), ids); err != nil {
+						log.Printf("store SaveSpecEnum: %v", err)
+					}
+				}
+				_ = flowStore.EndSession(context.Background(), sessionID, nowMS(), model.SessionTotals{})
+				_ = flowStore.Close()
+			}
 		},
 		Bind: []interface{}{svc},
 	})
-	if app != nil {
-		log.Fatal(app)
+	if runErr != nil {
+		log.Fatal(runErr)
 	}
 }
 
-// runCapture drives capture → Photon parse → classify → service ingest, and
-// periodically pushes capture status to the UI.
-func runCapture(ctx context.Context, iface, replay string, clf *probe.Classifier, svc *wailsadapter.Service) {
+// runCapture drives capture → Photon parse → pipeline dispatch, and periodically
+// pushes capture status to the UI. All classification/handler glue lives in
+// internal/app (feature 009); this function is setup only.
+func runCapture(ctx context.Context, iface, replay string, pipe *app.Pipeline, svc *wailsadapter.Service) {
 	var src port.PacketSource
 	var err error
 	if replay != "" {
@@ -109,23 +262,15 @@ func runCapture(ctx context.Context, iface, replay string, clf *probe.Classifier
 		}
 	}
 
-	parser := photon.NewPhotonParser(
-		nil,
-		func(opByte byte, _ int16, _ string, params map[byte]interface{}) {
-			ingest(clf, svc, probe.KindResponse, int(opByte), params)
-		},
-		func(evByte byte, params map[byte]interface{}) {
-			code := codeFrom(params, 252, int(evByte))
-			registerNewItem(code, params) // declare object ids before containers reference them
-			ingest(clf, svc, probe.KindEvent, code, params)
-		},
-	)
+	parser := photon.NewPhotonParser(pipe.OnRequest, pipe.OnResponse, pipe.OnEvent)
 	parser.OnEncrypted = func() {}
 
-	// Status ticker.
+	// Status ticker. Every 30th tick it also re-broadcasts the flow summary so the
+	// session's idle auto-close and live elapsed/rate stay visible between earnings.
 	go func() {
 		t := time.NewTicker(time.Second)
 		defer t.Stop()
+		ticks := 0
 		for {
 			select {
 			case <-ctx.Done():
@@ -135,7 +280,11 @@ func runCapture(ctx context.Context, iface, replay string, clf *probe.Classifier
 				svc.SetStatus(model.CaptureStatusView{
 					Capturing: st.Capturing, Interface: st.Interface,
 					GameServer: st.GameServer, EncryptedRate: st.EncryptedRate,
+					Decoded: st.Decoded,
 				})
+				if ticks++; ticks%30 == 0 {
+					svc.EmitFlowNow()
+				}
 			}
 		}
 	}()
@@ -148,160 +297,4 @@ func runCapture(ctx context.Context, iface, replay string, clf *probe.Classifier
 	for payload := range ch {
 		parser.ReceivePacket(payload)
 	}
-}
-
-// objReg maps in-world object ids to their item type+quality. Container slots
-// reference object ids (not item types), so New*Item events (codes 30-37, which
-// declare objectId→itemType) must be captured first to resolve a container.
-var (
-	objMu    sync.Mutex
-	objReg   = map[int]holdings.ItemRef{}
-	objOrder []int
-)
-
-const objRegCap = 50_000
-
-// registerNewItem records objectId → {itemIndex, quality} from a New*Item event.
-func registerNewItem(code int, params map[byte]interface{}) {
-	if code < 30 || code > 37 { // NewEquipmentItem..NewEquipmentItemLegendarySoul
-		return
-	}
-	objID, ok1 := capture.IntParam(params, 0)
-	idx, ok2 := capture.IntParam(params, 1)
-	if !ok1 || !ok2 {
-		return
-	}
-	// Quality lives at a different param key per New*Item variant (live-verified):
-	// equipment(30) → key 6; furniture(33)/trophy(34) → key 2; others have none.
-	quality := 0
-	switch code {
-	case 30:
-		quality, _ = capture.IntParam(params, 6)
-	case 33, 34:
-		quality, _ = capture.IntParam(params, 2)
-	}
-	if quality < 0 || quality > 5 {
-		quality = 0
-	}
-	objMu.Lock()
-	if _, exists := objReg[objID]; !exists {
-		if len(objReg) >= objRegCap && len(objOrder) > 0 {
-			delete(objReg, objOrder[0])
-			objOrder = objOrder[1:]
-		}
-		objOrder = append(objOrder, objID)
-	}
-	objReg[objID] = holdings.ItemRef{Index: idx, Quality: quality}
-	objMu.Unlock()
-}
-
-// resolveObjects maps container object ids to item refs, skipping unresolved ones.
-func resolveObjects(objIDs []int) []holdings.ItemRef {
-	objMu.Lock()
-	defer objMu.Unlock()
-	refs := make([]holdings.ItemRef, 0, len(objIDs))
-	for _, id := range objIDs {
-		if r, ok := objReg[id]; ok {
-			refs = append(refs, r)
-		}
-	}
-	return refs
-}
-
-// ingest routes a classified message into the views (market value + holdings + spec).
-func ingest(clf *probe.Classifier, svc *wailsadapter.Service, kind probe.Kind, code int, params map[byte]interface{}) {
-	cl, ok := clf.Classify(kind, code, params)
-	if !ok {
-		return
-	}
-	switch cl.Category {
-	case model.CatItemValueEMV:
-		if idx, quality, value, ok := extractEMV(params); ok {
-			svc.IngestEMV(idx, quality, value, nowMS())
-		}
-	case model.CatInventory: // AttachItemContainer — slots reference object ids
-		if cGUID, ownerGUID, objIDs, ok := capture.ContainerItems(params); ok {
-			svc.IngestContainer(cGUID, ownerGUID, resolveObjects(objIDs))
-		}
-	case model.CatBank: // BankVaultInfo — declares the bank tabs (owner GUIDs + names)
-		if owners, tabNames, ok := capture.BankVault(params); ok {
-			svc.IngestBankVault(owners, tabNames)
-		}
-	// NewEquipmentItem(30) is an equipment-item DECLARATION (handled by the object
-	// registry), not the player's worn loadout — so it does not populate "equipped".
-	// The real equipped source is the equipment container; identifying it is future work.
-	case model.CatCharacterSpec: // own-state masteries
-		if levels, ok := capture.MasteryLevels(params); ok {
-			svc.SetSpec(levels)
-		}
-	}
-}
-
-// emvScale: the server EMV is stored scaled by 10000 (silver = raw / 10000).
-const emvScale = 10000
-
-// extractEMV pulls (index, quality, silver value) from the two EMV layouts.
-func extractEMV(params map[byte]interface{}) (index, quality int, value int64, ok bool) {
-	if id, okId := firstInt(params[0]); okId {
-		if v, okV := firstInt64(params[1]); okV {
-			return id, 0, v / emvScale, true
-		}
-	}
-	if id, okId := firstInt(params[2]); okId {
-		v, _ := firstInt64(params[4])
-		q, _ := firstInt(params[3])
-		return id, q, v / emvScale, true
-	}
-	return 0, 0, 0, false
-}
-
-func codeFrom(params map[byte]interface{}, key byte, fallback int) int {
-	if v, ok := params[key]; ok {
-		if n, ok := firstInt(v); ok {
-			return n
-		}
-		switch n := v.(type) {
-		case int16:
-			return int(n)
-		case int32:
-			return int(n)
-		}
-	}
-	return fallback
-}
-
-func firstInt(v interface{}) (int, bool) {
-	switch a := v.(type) {
-	case []int16:
-		if len(a) > 0 {
-			return int(a[0]), true
-		}
-	case []int32:
-		if len(a) > 0 {
-			return int(a[0]), true
-		}
-	case []byte:
-		if len(a) > 0 {
-			return int(a[0]), true
-		}
-	case int16:
-		return int(a), true
-	case int32:
-		return int(a), true
-	}
-	return 0, false
-}
-
-func firstInt64(v interface{}) (int64, bool) {
-	switch a := v.(type) {
-	case []int32:
-		if len(a) > 0 {
-			return int64(a[0]), true
-		}
-	case []int64:
-		if len(a) > 0 {
-			return a[0], true
-		}
-	}
-	return 0, false
 }

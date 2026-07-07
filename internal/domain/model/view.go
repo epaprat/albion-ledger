@@ -28,7 +28,10 @@ type ValuationSource string
 const (
 	SourceLiveMarket     ValuationSource = "live_market"
 	SourceServerEstimate ValuationSource = "server_estimate" // EMV
-	SourceUnknown        ValuationSource = "unknown"
+	// SourceExternal is a community price feed (AODP) — the lowest-priority base
+	// layer; any in-game observation (live market, declared EMV) overrides it (010).
+	SourceExternal ValuationSource = "external"
+	SourceUnknown  ValuationSource = "unknown"
 )
 
 // DefaultStaleAfterMS is the freshness threshold (30 minutes) past which a value
@@ -60,6 +63,7 @@ type CaptureStatusView struct {
 	Interface     string  `json:"interface"`
 	GameServer    string  `json:"gameServer,omitempty"`
 	EncryptedRate float64 `json:"encryptedRate"`
+	Decoded       uint64  `json:"decoded"` // decoded Photon packets so far (is capture actually flowing?)
 	DriftAlert    string  `json:"driftAlert,omitempty"`
 }
 

@@ -1,0 +1,5586 @@
+{
+ "_comment": "Destiny Board node names from ao-bin-dumps achievements.xml (version c3980dfe-1309-4811-aa3e-1a3a670ac675). id = DOCUMENT-ORDER index (0-based) over \u003cachievement\u003e+\u003ctemplateachievement\u003e defs — the wire E:154 alignment assumption, live-verified per 011 quickstart. Regenerate: scripts/gen-spec-nodes.",
+ "nodes": [
+  {
+   "id": 0,
+   "name": "Adept",
+   "category": "Adventurer",
+   "subcategory": "Adept",
+   "slot": "Adventurer"
+  },
+  {
+   "id": 1,
+   "name": "Elder",
+   "category": "Adventurer",
+   "subcategory": "Elder",
+   "slot": "Adventurer"
+  },
+  {
+   "id": 2,
+   "name": "Expert",
+   "category": "Adventurer",
+   "subcategory": "Expert",
+   "slot": "Adventurer"
+  },
+  {
+   "id": 3,
+   "name": "Grandmaster",
+   "category": "Adventurer",
+   "subcategory": "Grandmaster",
+   "slot": "Adventurer"
+  },
+  {
+   "id": 4,
+   "name": "Journeyman",
+   "category": "Adventurer",
+   "subcategory": "Journeyman",
+   "slot": "Adventurer"
+  },
+  {
+   "id": 5,
+   "name": "Master",
+   "category": "Adventurer",
+   "subcategory": "Master",
+   "slot": "Adventurer"
+  },
+  {
+   "id": 6,
+   "name": "Arcanestaffs (Fighter)",
+   "category": "Combat",
+   "subcategory": "Arcanestaffs",
+   "slot": "Weapon",
+   "base": true,
+   "fameToMax": 14743573
+  },
+  {
+   "id": 7,
+   "name": "Arcane Staff",
+   "category": "Combat",
+   "subcategory": "Arcanestaffs",
+   "slot": "Weapon",
+   "fameToMax": 101729060
+  },
+  {
+   "id": 8,
+   "name": "Evensong",
+   "category": "Combat",
+   "subcategory": "Arcanestaffs",
+   "slot": "Weapon",
+   "fameToMax": 101729060
+  },
+  {
+   "id": 9,
+   "name": "Astral Staff",
+   "category": "Combat",
+   "subcategory": "Arcanestaffs",
+   "slot": "Weapon",
+   "fameToMax": 101729060
+  },
+  {
+   "id": 10,
+   "name": "Enigmatic Staff",
+   "category": "Combat",
+   "subcategory": "Arcanestaffs",
+   "slot": "Weapon",
+   "fameToMax": 101729060
+  },
+  {
+   "id": 11,
+   "name": "Great Arcane Staff",
+   "category": "Combat",
+   "subcategory": "Arcanestaffs",
+   "slot": "Weapon",
+   "fameToMax": 101729060
+  },
+  {
+   "id": 12,
+   "name": "Occult Staff",
+   "category": "Combat",
+   "subcategory": "Arcanestaffs",
+   "slot": "Weapon",
+   "fameToMax": 101729060
+  },
+  {
+   "id": 13,
+   "name": "Malevolent Locus",
+   "category": "Combat",
+   "subcategory": "Arcanestaffs",
+   "slot": "Weapon",
+   "fameToMax": 101729060
+  },
+  {
+   "id": 14,
+   "name": "Witchwork Staff",
+   "category": "Combat",
+   "subcategory": "Arcanestaffs",
+   "slot": "Weapon",
+   "fameToMax": 101729060
+  },
+  {
+   "id": 15,
+   "name": "Axes (Fighter)",
+   "category": "Combat",
+   "subcategory": "Axes",
+   "slot": "Weapon",
+   "base": true,
+   "fameToMax": 14743573
+  },
+  {
+   "id": 16,
+   "name": "Realmbreaker",
+   "category": "Combat",
+   "subcategory": "Axes",
+   "slot": "Weapon",
+   "fameToMax": 101729060
+  },
+  {
+   "id": 17,
+   "name": "Battleaxe",
+   "category": "Combat",
+   "subcategory": "Axes",
+   "slot": "Weapon",
+   "fameToMax": 101729060
+  },
+  {
+   "id": 18,
+   "name": "Crystal Reaper",
+   "category": "Combat",
+   "subcategory": "Axes",
+   "slot": "Weapon",
+   "fameToMax": 101729060
+  },
+  {
+   "id": 19,
+   "name": "Greataxe",
+   "category": "Combat",
+   "subcategory": "Axes",
+   "slot": "Weapon",
+   "fameToMax": 101729060
+  },
+  {
+   "id": 20,
+   "name": "Halberd",
+   "category": "Combat",
+   "subcategory": "Axes",
+   "slot": "Weapon",
+   "fameToMax": 101729060
+  },
+  {
+   "id": 21,
+   "name": "Infernal Scythe",
+   "category": "Combat",
+   "subcategory": "Axes",
+   "slot": "Weapon",
+   "fameToMax": 101729060
+  },
+  {
+   "id": 22,
+   "name": "Bear Paws",
+   "category": "Combat",
+   "subcategory": "Axes",
+   "slot": "Weapon",
+   "fameToMax": 101729060
+  },
+  {
+   "id": 23,
+   "name": "Carrioncaller",
+   "category": "Combat",
+   "subcategory": "Axes",
+   "slot": "Weapon",
+   "fameToMax": 101729060
+  },
+  {
+   "id": 24,
+   "name": "Books (Fighter)",
+   "category": "Combat",
+   "subcategory": "Books",
+   "slot": "Off-Hand",
+   "base": true,
+   "fameToMax": 14743573
+  },
+  {
+   "id": 25,
+   "name": "Celestial Censer",
+   "category": "Combat",
+   "subcategory": "Books",
+   "slot": "Off-Hand",
+   "fameToMax": 101729060
+  },
+  {
+   "id": 26,
+   "name": "Tome of Spells",
+   "category": "Combat",
+   "subcategory": "Books",
+   "slot": "Off-Hand",
+   "fameToMax": 101729060
+  },
+  {
+   "id": 27,
+   "name": "Timelocked Grimoire",
+   "category": "Combat",
+   "subcategory": "Books",
+   "slot": "Off-Hand",
+   "fameToMax": 101729060
+  },
+  {
+   "id": 28,
+   "name": "Muisak",
+   "category": "Combat",
+   "subcategory": "Books",
+   "slot": "Off-Hand",
+   "fameToMax": 101729060
+  },
+  {
+   "id": 29,
+   "name": "Taproot",
+   "category": "Combat",
+   "subcategory": "Books",
+   "slot": "Off-Hand",
+   "fameToMax": 101729060
+  },
+  {
+   "id": 30,
+   "name": "Eye of Secrets",
+   "category": "Combat",
+   "subcategory": "Books",
+   "slot": "Off-Hand",
+   "fameToMax": 101729060
+  },
+  {
+   "id": 31,
+   "name": "Bows (Fighter)",
+   "category": "Combat",
+   "subcategory": "Bows",
+   "slot": "Weapon",
+   "base": true,
+   "fameToMax": 14743573
+  },
+  {
+   "id": 32,
+   "name": "Mistpiercer",
+   "category": "Combat",
+   "subcategory": "Bows",
+   "slot": "Weapon",
+   "fameToMax": 101729060
+  },
+  {
+   "id": 33,
+   "name": "Bow",
+   "category": "Combat",
+   "subcategory": "Bows",
+   "slot": "Weapon",
+   "fameToMax": 101729060
+  },
+  {
+   "id": 34,
+   "name": "Skystrider Bow",
+   "category": "Combat",
+   "subcategory": "Bows",
+   "slot": "Weapon",
+   "fameToMax": 101729060
+  },
+  {
+   "id": 35,
+   "name": "Wailing Bow",
+   "category": "Combat",
+   "subcategory": "Bows",
+   "slot": "Weapon",
+   "fameToMax": 101729060
+  },
+  {
+   "id": 36,
+   "name": "Bow of Badon",
+   "category": "Combat",
+   "subcategory": "Bows",
+   "slot": "Weapon",
+   "fameToMax": 101729060
+  },
+  {
+   "id": 37,
+   "name": "Longbow",
+   "category": "Combat",
+   "subcategory": "Bows",
+   "slot": "Weapon",
+   "fameToMax": 101729060
+  },
+  {
+   "id": 38,
+   "name": "Whispering Bow",
+   "category": "Combat",
+   "subcategory": "Bows",
+   "slot": "Weapon",
+   "fameToMax": 101729060
+  },
+  {
+   "id": 39,
+   "name": "Warbow",
+   "category": "Combat",
+   "subcategory": "Bows",
+   "slot": "Weapon",
+   "fameToMax": 101729060
+  },
+  {
+   "id": 40,
+   "name": "Cloth (Fighter)",
+   "category": "Combat",
+   "subcategory": "Cloth",
+   "slot": "Armor",
+   "base": true
+  },
+  {
+   "id": 41,
+   "name": "Cloth Armors (Fighter)",
+   "category": "Combat",
+   "subcategory": "Cloth",
+   "slot": "Chest",
+   "base": true,
+   "fameToMax": 14743573
+  },
+  {
+   "id": 42,
+   "name": "Robe of Purity",
+   "category": "Combat",
+   "subcategory": "Cloth",
+   "slot": "Chest",
+   "fameToMax": 101729060
+  },
+  {
+   "id": 43,
+   "name": "Feyscale Robe",
+   "category": "Combat",
+   "subcategory": "Cloth",
+   "slot": "Chest",
+   "fameToMax": 101729060
+  },
+  {
+   "id": 44,
+   "name": "Fiend Robe",
+   "category": "Combat",
+   "subcategory": "Cloth",
+   "slot": "Chest",
+   "fameToMax": 101729060
+  },
+  {
+   "id": 45,
+   "name": "Druid Robe",
+   "category": "Combat",
+   "subcategory": "Cloth",
+   "slot": "Chest",
+   "fameToMax": 101729060
+  },
+  {
+   "id": 46,
+   "name": "Cultist Robe",
+   "category": "Combat",
+   "subcategory": "Cloth",
+   "slot": "Chest",
+   "fameToMax": 101729060
+  },
+  {
+   "id": 47,
+   "name": "Royal Robe",
+   "category": "Combat",
+   "subcategory": "Cloth",
+   "slot": "Chest",
+   "fameToMax": 101729060
+  },
+  {
+   "id": 48,
+   "name": "Scholar Robe",
+   "category": "Combat",
+   "subcategory": "Cloth",
+   "slot": "Chest",
+   "fameToMax": 101729060
+  },
+  {
+   "id": 49,
+   "name": "Cleric Robe",
+   "category": "Combat",
+   "subcategory": "Cloth",
+   "slot": "Chest",
+   "fameToMax": 101729060
+  },
+  {
+   "id": 50,
+   "name": "Mage Robe",
+   "category": "Combat",
+   "subcategory": "Cloth",
+   "slot": "Chest",
+   "fameToMax": 101729060
+  },
+  {
+   "id": 51,
+   "name": "Cloth Heads (Fighter)",
+   "category": "Combat",
+   "subcategory": "Cloth",
+   "slot": "Head",
+   "base": true,
+   "fameToMax": 14743573
+  },
+  {
+   "id": 52,
+   "name": "Cowl of Purity",
+   "category": "Combat",
+   "subcategory": "Cloth",
+   "slot": "Head",
+   "fameToMax": 101729060
+  },
+  {
+   "id": 53,
+   "name": "Feyscale Hat",
+   "category": "Combat",
+   "subcategory": "Cloth",
+   "slot": "Head",
+   "fameToMax": 101729060
+  },
+  {
+   "id": 54,
+   "name": "Fiend Cowl",
+   "category": "Combat",
+   "subcategory": "Cloth",
+   "slot": "Head",
+   "fameToMax": 101729060
+  },
+  {
+   "id": 55,
+   "name": "Druid Cowl",
+   "category": "Combat",
+   "subcategory": "Cloth",
+   "slot": "Head",
+   "fameToMax": 101729060
+  },
+  {
+   "id": 56,
+   "name": "Cultist Cowl",
+   "category": "Combat",
+   "subcategory": "Cloth",
+   "slot": "Head",
+   "fameToMax": 101729060
+  },
+  {
+   "id": 57,
+   "name": "Royal Cowl",
+   "category": "Combat",
+   "subcategory": "Cloth",
+   "slot": "Head",
+   "fameToMax": 101729060
+  },
+  {
+   "id": 58,
+   "name": "Scholar Cowl",
+   "category": "Combat",
+   "subcategory": "Cloth",
+   "slot": "Head",
+   "fameToMax": 101729060
+  },
+  {
+   "id": 59,
+   "name": "Cleric Cowl",
+   "category": "Combat",
+   "subcategory": "Cloth",
+   "slot": "Head",
+   "fameToMax": 101729060
+  },
+  {
+   "id": 60,
+   "name": "Mage Cowl",
+   "category": "Combat",
+   "subcategory": "Cloth",
+   "slot": "Head",
+   "fameToMax": 101729060
+  },
+  {
+   "id": 61,
+   "name": "Cloth Shoes (Fighter)",
+   "category": "Combat",
+   "subcategory": "Cloth",
+   "slot": "Shoes",
+   "base": true,
+   "fameToMax": 14743573
+  },
+  {
+   "id": 62,
+   "name": "Sandals of Purity",
+   "category": "Combat",
+   "subcategory": "Cloth",
+   "slot": "Shoes",
+   "fameToMax": 101729060
+  },
+  {
+   "id": 63,
+   "name": "Feyscale Sandals",
+   "category": "Combat",
+   "subcategory": "Cloth",
+   "slot": "Shoes",
+   "fameToMax": 101729060
+  },
+  {
+   "id": 64,
+   "name": "Fiend Sandals",
+   "category": "Combat",
+   "subcategory": "Cloth",
+   "slot": "Shoes",
+   "fameToMax": 101729060
+  },
+  {
+   "id": 65,
+   "name": "Druid Sandals",
+   "category": "Combat",
+   "subcategory": "Cloth",
+   "slot": "Shoes",
+   "fameToMax": 101729060
+  },
+  {
+   "id": 66,
+   "name": "Cultist Sandals",
+   "category": "Combat",
+   "subcategory": "Cloth",
+   "slot": "Shoes",
+   "fameToMax": 101729060
+  },
+  {
+   "id": 67,
+   "name": "Royal Sandals",
+   "category": "Combat",
+   "subcategory": "Cloth",
+   "slot": "Shoes",
+   "fameToMax": 101729060
+  },
+  {
+   "id": 68,
+   "name": "Scholar Sandals",
+   "category": "Combat",
+   "subcategory": "Cloth",
+   "slot": "Shoes",
+   "fameToMax": 101729060
+  },
+  {
+   "id": 69,
+   "name": "Cleric Sandals",
+   "category": "Combat",
+   "subcategory": "Cloth",
+   "slot": "Shoes",
+   "fameToMax": 101729060
+  },
+  {
+   "id": 70,
+   "name": "Mage Sandals",
+   "category": "Combat",
+   "subcategory": "Cloth",
+   "slot": "Shoes",
+   "fameToMax": 101729060
+  },
+  {
+   "id": 71,
+   "name": "Crossbows (Fighter)",
+   "category": "Combat",
+   "subcategory": "Crossbows",
+   "slot": "Weapon",
+   "base": true,
+   "fameToMax": 14743573
+  },
+  {
+   "id": 72,
+   "name": "Energy Shaper",
+   "category": "Combat",
+   "subcategory": "Crossbows",
+   "slot": "Weapon",
+   "fameToMax": 101729060
+  },
+  {
+   "id": 73,
+   "name": "Crossbow",
+   "category": "Combat",
+   "subcategory": "Crossbows",
+   "slot": "Weapon",
+   "fameToMax": 101729060
+  },
+  {
+   "id": 74,
+   "name": "Arclight Blasters",
+   "category": "Combat",
+   "subcategory": "Crossbows",
+   "slot": "Weapon",
+   "fameToMax": 101729060
+  },
+  {
+   "id": 75,
+   "name": "Boltcasters",
+   "category": "Combat",
+   "subcategory": "Crossbows",
+   "slot": "Weapon",
+   "fameToMax": 101729060
+  },
+  {
+   "id": 76,
+   "name": "Heavy Crossbow",
+   "category": "Combat",
+   "subcategory": "Crossbows",
+   "slot": "Weapon",
+   "fameToMax": 101729060
+  },
+  {
+   "id": 77,
+   "name": "Siegebow",
+   "category": "Combat",
+   "subcategory": "Crossbows",
+   "slot": "Weapon",
+   "fameToMax": 101729060
+  },
+  {
+   "id": 78,
+   "name": "Light Crossbow",
+   "category": "Combat",
+   "subcategory": "Crossbows",
+   "slot": "Weapon",
+   "fameToMax": 101729060
+  },
+  {
+   "id": 79,
+   "name": "Weeping Repeater",
+   "category": "Combat",
+   "subcategory": "Crossbows",
+   "slot": "Weapon",
+   "fameToMax": 101729060
+  },
+  {
+   "id": 80,
+   "name": "Cursedstaffs (Fighter)",
+   "category": "Combat",
+   "subcategory": "Cursedstaffs",
+   "slot": "Weapon",
+   "base": true,
+   "fameToMax": 14743573
+  },
+  {
+   "id": 81,
+   "name": "Shadowcaller",
+   "category": "Combat",
+   "subcategory": "Cursedstaffs",
+   "slot": "Weapon",
+   "fameToMax": 101729060
+  },
+  {
+   "id": 82,
+   "name": "Rotcaller Staff",
+   "category": "Combat",
+   "subcategory": "Cursedstaffs",
+   "slot": "Weapon",
+   "fameToMax": 101729060
+  },
+  {
+   "id": 83,
+   "name": "Cursed Staff",
+   "category": "Combat",
+   "subcategory": "Cursedstaffs",
+   "slot": "Weapon",
+   "fameToMax": 101729060
+  },
+  {
+   "id": 84,
+   "name": "Demonic Staff",
+   "category": "Combat",
+   "subcategory": "Cursedstaffs",
+   "slot": "Weapon",
+   "fameToMax": 101729060
+  },
+  {
+   "id": 85,
+   "name": "Great Cursed Staff",
+   "category": "Combat",
+   "subcategory": "Cursedstaffs",
+   "slot": "Weapon",
+   "fameToMax": 101729060
+  },
+  {
+   "id": 86,
+   "name": "Cursed Skull",
+   "category": "Combat",
+   "subcategory": "Cursedstaffs",
+   "slot": "Weapon",
+   "fameToMax": 101729060
+  },
+  {
+   "id": 87,
+   "name": "Damnation Staff",
+   "category": "Combat",
+   "subcategory": "Cursedstaffs",
+   "slot": "Weapon",
+   "fameToMax": 101729060
+  },
+  {
+   "id": 88,
+   "name": "Lifecurse Staff",
+   "category": "Combat",
+   "subcategory": "Cursedstaffs",
+   "slot": "Weapon",
+   "fameToMax": 101729060
+  },
+  {
+   "id": 89,
+   "name": "Daggers (Fighter)",
+   "category": "Combat",
+   "subcategory": "Daggers",
+   "slot": "Weapon",
+   "base": true,
+   "fameToMax": 14743573
+  },
+  {
+   "id": 90,
+   "name": "Bridled Fury",
+   "category": "Combat",
+   "subcategory": "Daggers",
+   "slot": "Weapon",
+   "fameToMax": 101729060
+  },
+  {
+   "id": 91,
+   "name": "Claws",
+   "category": "Combat",
+   "subcategory": "Daggers",
+   "slot": "Weapon",
+   "fameToMax": 101729060
+  },
+  {
+   "id": 92,
+   "name": "Twin Slayers",
+   "category": "Combat",
+   "subcategory": "Daggers",
+   "slot": "Weapon",
+   "fameToMax": 101729060
+  },
+  {
+   "id": 93,
+   "name": "Dagger",
+   "category": "Combat",
+   "subcategory": "Daggers",
+   "slot": "Weapon",
+   "fameToMax": 101729060
+  },
+  {
+   "id": 94,
+   "name": "Demonfang",
+   "category": "Combat",
+   "subcategory": "Daggers",
+   "slot": "Weapon",
+   "fameToMax": 101729060
+  },
+  {
+   "id": 95,
+   "name": "Bloodletter",
+   "category": "Combat",
+   "subcategory": "Daggers",
+   "slot": "Weapon",
+   "fameToMax": 101729060
+  },
+  {
+   "id": 96,
+   "name": "Dagger Pair",
+   "category": "Combat",
+   "subcategory": "Daggers",
+   "slot": "Weapon",
+   "fameToMax": 101729060
+  },
+  {
+   "id": 97,
+   "name": "Deathgivers",
+   "category": "Combat",
+   "subcategory": "Daggers",
+   "slot": "Weapon",
+   "fameToMax": 101729060
+  },
+  {
+   "id": 98,
+   "name": "Firestaffs (Fighter)",
+   "category": "Combat",
+   "subcategory": "Firestaffs",
+   "slot": "Weapon",
+   "base": true,
+   "fameToMax": 14743573
+  },
+  {
+   "id": 99,
+   "name": "Dawnsong",
+   "category": "Combat",
+   "subcategory": "Firestaffs",
+   "slot": "Weapon",
+   "fameToMax": 101729060
+  },
+  {
+   "id": 100,
+   "name": "Flamewalker Staff",
+   "category": "Combat",
+   "subcategory": "Firestaffs",
+   "slot": "Weapon",
+   "fameToMax": 101729060
+  },
+  {
+   "id": 101,
+   "name": "Fire Staff",
+   "category": "Combat",
+   "subcategory": "Firestaffs",
+   "slot": "Weapon",
+   "fameToMax": 101729060
+  },
+  {
+   "id": 102,
+   "name": "Great Fire Staff",
+   "category": "Combat",
+   "subcategory": "Firestaffs",
+   "slot": "Weapon",
+   "fameToMax": 101729060
+  },
+  {
+   "id": 103,
+   "name": "Brimstone Staff",
+   "category": "Combat",
+   "subcategory": "Firestaffs",
+   "slot": "Weapon",
+   "fameToMax": 101729060
+  },
+  {
+   "id": 104,
+   "name": "Infernal Staff",
+   "category": "Combat",
+   "subcategory": "Firestaffs",
+   "slot": "Weapon",
+   "fameToMax": 101729060
+  },
+  {
+   "id": 105,
+   "name": "Wildfire Staff",
+   "category": "Combat",
+   "subcategory": "Firestaffs",
+   "slot": "Weapon",
+   "fameToMax": 101729060
+  },
+  {
+   "id": 106,
+   "name": "Blazing Staff",
+   "category": "Combat",
+   "subcategory": "Firestaffs",
+   "slot": "Weapon",
+   "fameToMax": 101729060
+  },
+  {
+   "id": 107,
+   "name": "Froststaffs (Fighter)",
+   "category": "Combat",
+   "subcategory": "Froststaffs",
+   "slot": "Weapon",
+   "base": true,
+   "fameToMax": 14743573
+  },
+  {
+   "id": 108,
+   "name": "Chillhowl",
+   "category": "Combat",
+   "subcategory": "Froststaffs",
+   "slot": "Weapon",
+   "fameToMax": 101729060
+  },
+  {
+   "id": 109,
+   "name": "Arctic Staff",
+   "category": "Combat",
+   "subcategory": "Froststaffs",
+   "slot": "Weapon",
+   "fameToMax": 101729060
+  },
+  {
+   "id": 110,
+   "name": "Frost Staff",
+   "category": "Combat",
+   "subcategory": "Froststaffs",
+   "slot": "Weapon",
+   "fameToMax": 101729060
+  },
+  {
+   "id": 111,
+   "name": "Glacial Staff",
+   "category": "Combat",
+   "subcategory": "Froststaffs",
+   "slot": "Weapon",
+   "fameToMax": 101729060
+  },
+  {
+   "id": 112,
+   "name": "Great Frost Staff",
+   "category": "Combat",
+   "subcategory": "Froststaffs",
+   "slot": "Weapon",
+   "fameToMax": 101729060
+  },
+  {
+   "id": 113,
+   "name": "Icicle Staff",
+   "category": "Combat",
+   "subcategory": "Froststaffs",
+   "slot": "Weapon",
+   "fameToMax": 101729060
+  },
+  {
+   "id": 114,
+   "name": "Hoarfrost Staff",
+   "category": "Combat",
+   "subcategory": "Froststaffs",
+   "slot": "Weapon",
+   "fameToMax": 101729060
+  },
+  {
+   "id": 115,
+   "name": "Permafrost Prism",
+   "category": "Combat",
+   "subcategory": "Froststaffs",
+   "slot": "Weapon",
+   "fameToMax": 101729060
+  },
+  {
+   "id": 116,
+   "name": "Hammers (Fighter)",
+   "category": "Combat",
+   "subcategory": "Hammers",
+   "slot": "Weapon",
+   "base": true,
+   "fameToMax": 14743573
+  },
+  {
+   "id": 117,
+   "name": "Hand of Justice",
+   "category": "Combat",
+   "subcategory": "Hammers",
+   "slot": "Weapon",
+   "fameToMax": 101729060
+  },
+  {
+   "id": 118,
+   "name": "Truebolt Hammer",
+   "category": "Combat",
+   "subcategory": "Hammers",
+   "slot": "Weapon",
+   "fameToMax": 101729060
+  },
+  {
+   "id": 119,
+   "name": "Great Hammer",
+   "category": "Combat",
+   "subcategory": "Hammers",
+   "slot": "Weapon",
+   "fameToMax": 101729060
+  },
+  {
+   "id": 120,
+   "name": "Hammer",
+   "category": "Combat",
+   "subcategory": "Hammers",
+   "slot": "Weapon",
+   "fameToMax": 101729060
+  },
+  {
+   "id": 121,
+   "name": "Forge Hammers",
+   "category": "Combat",
+   "subcategory": "Hammers",
+   "slot": "Weapon",
+   "fameToMax": 101729060
+  },
+  {
+   "id": 122,
+   "name": "Grovekeeper",
+   "category": "Combat",
+   "subcategory": "Hammers",
+   "slot": "Weapon",
+   "fameToMax": 101729060
+  },
+  {
+   "id": 123,
+   "name": "Polehammer",
+   "category": "Combat",
+   "subcategory": "Hammers",
+   "slot": "Weapon",
+   "fameToMax": 101729060
+  },
+  {
+   "id": 124,
+   "name": "Tombhammer",
+   "category": "Combat",
+   "subcategory": "Hammers",
+   "slot": "Weapon",
+   "fameToMax": 101729060
+  },
+  {
+   "id": 125,
+   "name": "Holystaffs (Fighter)",
+   "category": "Combat",
+   "subcategory": "Holystaffs",
+   "slot": "Weapon",
+   "base": true,
+   "fameToMax": 14743573
+  },
+  {
+   "id": 126,
+   "name": "Hallowfall",
+   "category": "Combat",
+   "subcategory": "Holystaffs",
+   "slot": "Weapon",
+   "fameToMax": 101729060
+  },
+  {
+   "id": 127,
+   "name": "Exalted Staff",
+   "category": "Combat",
+   "subcategory": "Holystaffs",
+   "slot": "Weapon",
+   "fameToMax": 101729060
+  },
+  {
+   "id": 128,
+   "name": "Divine Staff",
+   "category": "Combat",
+   "subcategory": "Holystaffs",
+   "slot": "Weapon",
+   "fameToMax": 101729060
+  },
+  {
+   "id": 129,
+   "name": "Great Holy Staff",
+   "category": "Combat",
+   "subcategory": "Holystaffs",
+   "slot": "Weapon",
+   "fameToMax": 101729060
+  },
+  {
+   "id": 130,
+   "name": "Fallen Staff",
+   "category": "Combat",
+   "subcategory": "Holystaffs",
+   "slot": "Weapon",
+   "fameToMax": 101729060
+  },
+  {
+   "id": 131,
+   "name": "Holy Staff",
+   "category": "Combat",
+   "subcategory": "Holystaffs",
+   "slot": "Weapon",
+   "fameToMax": 101729060
+  },
+  {
+   "id": 132,
+   "name": "Lifetouch Staff",
+   "category": "Combat",
+   "subcategory": "Holystaffs",
+   "slot": "Weapon",
+   "fameToMax": 101729060
+  },
+  {
+   "id": 133,
+   "name": "Redemption Staff",
+   "category": "Combat",
+   "subcategory": "Holystaffs",
+   "slot": "Weapon",
+   "fameToMax": 101729060
+  },
+  {
+   "id": 134,
+   "name": "Hunter (Fighter)",
+   "category": "Combat",
+   "subcategory": "Hunter",
+   "slot": "Weapon",
+   "base": true
+  },
+  {
+   "id": 135,
+   "name": "Knuckles (Fighter)",
+   "category": "Combat",
+   "subcategory": "Knuckles",
+   "slot": "Weapon",
+   "base": true,
+   "fameToMax": 14743573
+  },
+  {
+   "id": 136,
+   "name": "Fists of Avalon",
+   "category": "Combat",
+   "subcategory": "Knuckles",
+   "slot": "Weapon",
+   "fameToMax": 101729060
+  },
+  {
+   "id": 137,
+   "name": "Forcepulse Bracers",
+   "category": "Combat",
+   "subcategory": "Knuckles",
+   "slot": "Weapon",
+   "fameToMax": 101729060
+  },
+  {
+   "id": 138,
+   "name": "Hellfire Hands",
+   "category": "Combat",
+   "subcategory": "Knuckles",
+   "slot": "Weapon",
+   "fameToMax": 101729060
+  },
+  {
+   "id": 139,
+   "name": "Ursine Maulers",
+   "category": "Combat",
+   "subcategory": "Knuckles",
+   "slot": "Weapon",
+   "fameToMax": 101729060
+  },
+  {
+   "id": 140,
+   "name": "Ravenstrike Cestus",
+   "category": "Combat",
+   "subcategory": "Knuckles",
+   "slot": "Weapon",
+   "fameToMax": 101729060
+  },
+  {
+   "id": 141,
+   "name": "Brawler Gloves",
+   "category": "Combat",
+   "subcategory": "Knuckles",
+   "slot": "Weapon",
+   "fameToMax": 101729060
+  },
+  {
+   "id": 142,
+   "name": "Battle Bracers",
+   "category": "Combat",
+   "subcategory": "Knuckles",
+   "slot": "Weapon",
+   "fameToMax": 101729060
+  },
+  {
+   "id": 143,
+   "name": "Spiked Gauntlets",
+   "category": "Combat",
+   "subcategory": "Knuckles",
+   "slot": "Weapon",
+   "fameToMax": 101729060
+  },
+  {
+   "id": 144,
+   "name": "Leather (Fighter)",
+   "category": "Combat",
+   "subcategory": "Leather",
+   "slot": "Armor",
+   "base": true
+  },
+  {
+   "id": 145,
+   "name": "Leather Armors (Fighter)",
+   "category": "Combat",
+   "subcategory": "Leather",
+   "slot": "Chest",
+   "base": true,
+   "fameToMax": 14743573
+  },
+  {
+   "id": 146,
+   "name": "Jacket of Tenacity",
+   "category": "Combat",
+   "subcategory": "Leather",
+   "slot": "Chest",
+   "fameToMax": 101729060
+  },
+  {
+   "id": 147,
+   "name": "Mistwalker Jacket",
+   "category": "Combat",
+   "subcategory": "Leather",
+   "slot": "Chest",
+   "fameToMax": 101729060
+  },
+  {
+   "id": 148,
+   "name": "Hellion Jacket",
+   "category": "Combat",
+   "subcategory": "Leather",
+   "slot": "Chest",
+   "fameToMax": 101729060
+  },
+  {
+   "id": 149,
+   "name": "Stalker Jacket",
+   "category": "Combat",
+   "subcategory": "Leather",
+   "slot": "Chest",
+   "fameToMax": 101729060
+  },
+  {
+   "id": 150,
+   "name": "Royal Jacket",
+   "category": "Combat",
+   "subcategory": "Leather",
+   "slot": "Chest",
+   "fameToMax": 101729060
+  },
+  {
+   "id": 151,
+   "name": "Mercenary Jacket",
+   "category": "Combat",
+   "subcategory": "Leather",
+   "slot": "Chest",
+   "fameToMax": 101729060
+  },
+  {
+   "id": 152,
+   "name": "Hunter Jacket",
+   "category": "Combat",
+   "subcategory": "Leather",
+   "slot": "Chest",
+   "fameToMax": 101729060
+  },
+  {
+   "id": 153,
+   "name": "Assassin Jacket",
+   "category": "Combat",
+   "subcategory": "Leather",
+   "slot": "Chest",
+   "fameToMax": 101729060
+  },
+  {
+   "id": 154,
+   "name": "Specter Jacket",
+   "category": "Combat",
+   "subcategory": "Leather",
+   "slot": "Chest",
+   "fameToMax": 101729060
+  },
+  {
+   "id": 155,
+   "name": "Leather Heads (Fighter)",
+   "category": "Combat",
+   "subcategory": "Leather",
+   "slot": "Head",
+   "base": true,
+   "fameToMax": 14743573
+  },
+  {
+   "id": 156,
+   "name": "Hood of Tenacity",
+   "category": "Combat",
+   "subcategory": "Leather",
+   "slot": "Head",
+   "fameToMax": 101729060
+  },
+  {
+   "id": 157,
+   "name": "Mistwalker Hood",
+   "category": "Combat",
+   "subcategory": "Leather",
+   "slot": "Head",
+   "fameToMax": 101729060
+  },
+  {
+   "id": 158,
+   "name": "Hellion Hood",
+   "category": "Combat",
+   "subcategory": "Leather",
+   "slot": "Head",
+   "fameToMax": 101729060
+  },
+  {
+   "id": 159,
+   "name": "Stalker Hood",
+   "category": "Combat",
+   "subcategory": "Leather",
+   "slot": "Head",
+   "fameToMax": 101729060
+  },
+  {
+   "id": 160,
+   "name": "Royal Hood",
+   "category": "Combat",
+   "subcategory": "Leather",
+   "slot": "Head",
+   "fameToMax": 101729060
+  },
+  {
+   "id": 161,
+   "name": "Mercenary Hood",
+   "category": "Combat",
+   "subcategory": "Leather",
+   "slot": "Head",
+   "fameToMax": 101729060
+  },
+  {
+   "id": 162,
+   "name": "Hunter Hood",
+   "category": "Combat",
+   "subcategory": "Leather",
+   "slot": "Head",
+   "fameToMax": 101729060
+  },
+  {
+   "id": 163,
+   "name": "Assassin Hood",
+   "category": "Combat",
+   "subcategory": "Leather",
+   "slot": "Head",
+   "fameToMax": 101729060
+  },
+  {
+   "id": 164,
+   "name": "Specter Hood",
+   "category": "Combat",
+   "subcategory": "Leather",
+   "slot": "Head",
+   "fameToMax": 101729060
+  },
+  {
+   "id": 165,
+   "name": "Leather Shoes (Fighter)",
+   "category": "Combat",
+   "subcategory": "Leather",
+   "slot": "Shoes",
+   "base": true,
+   "fameToMax": 14743573
+  },
+  {
+   "id": 166,
+   "name": "Shoes of Tenacity",
+   "category": "Combat",
+   "subcategory": "Leather",
+   "slot": "Shoes",
+   "fameToMax": 101729060
+  },
+  {
+   "id": 167,
+   "name": "Mistwalker Shoes",
+   "category": "Combat",
+   "subcategory": "Leather",
+   "slot": "Shoes",
+   "fameToMax": 101729060
+  },
+  {
+   "id": 168,
+   "name": "Hellion Shoes",
+   "category": "Combat",
+   "subcategory": "Leather",
+   "slot": "Shoes",
+   "fameToMax": 101729060
+  },
+  {
+   "id": 169,
+   "name": "Stalker Shoes",
+   "category": "Combat",
+   "subcategory": "Leather",
+   "slot": "Shoes",
+   "fameToMax": 101729060
+  },
+  {
+   "id": 170,
+   "name": "Royal Shoes",
+   "category": "Combat",
+   "subcategory": "Leather",
+   "slot": "Shoes",
+   "fameToMax": 101729060
+  },
+  {
+   "id": 171,
+   "name": "Mercenary Shoes",
+   "category": "Combat",
+   "subcategory": "Leather",
+   "slot": "Shoes",
+   "fameToMax": 101729060
+  },
+  {
+   "id": 172,
+   "name": "Hunter Shoes",
+   "category": "Combat",
+   "subcategory": "Leather",
+   "slot": "Shoes",
+   "fameToMax": 101729060
+  },
+  {
+   "id": 173,
+   "name": "Assassin Shoes",
+   "category": "Combat",
+   "subcategory": "Leather",
+   "slot": "Shoes",
+   "fameToMax": 101729060
+  },
+  {
+   "id": 174,
+   "name": "Specter Shoes",
+   "category": "Combat",
+   "subcategory": "Leather",
+   "slot": "Shoes",
+   "fameToMax": 101729060
+  },
+  {
+   "id": 175,
+   "name": "Maces (Fighter)",
+   "category": "Combat",
+   "subcategory": "Maces",
+   "slot": "Weapon",
+   "base": true,
+   "fameToMax": 14743573
+  },
+  {
+   "id": 176,
+   "name": "Oathkeepers",
+   "category": "Combat",
+   "subcategory": "Maces",
+   "slot": "Weapon",
+   "fameToMax": 101729060
+  },
+  {
+   "id": 177,
+   "name": "Dreadstorm Monarch",
+   "category": "Combat",
+   "subcategory": "Maces",
+   "slot": "Weapon",
+   "fameToMax": 101729060
+  },
+  {
+   "id": 178,
+   "name": "Morning Star",
+   "category": "Combat",
+   "subcategory": "Maces",
+   "slot": "Weapon",
+   "fameToMax": 101729060
+  },
+  {
+   "id": 179,
+   "name": "Heavy Mace",
+   "category": "Combat",
+   "subcategory": "Maces",
+   "slot": "Weapon",
+   "fameToMax": 101729060
+  },
+  {
+   "id": 180,
+   "name": "Incubus Mace",
+   "category": "Combat",
+   "subcategory": "Maces",
+   "slot": "Weapon",
+   "fameToMax": 101729060
+  },
+  {
+   "id": 181,
+   "name": "Bedrock Mace",
+   "category": "Combat",
+   "subcategory": "Maces",
+   "slot": "Weapon",
+   "fameToMax": 101729060
+  },
+  {
+   "id": 182,
+   "name": "Mace",
+   "category": "Combat",
+   "subcategory": "Maces",
+   "slot": "Weapon",
+   "fameToMax": 101729060
+  },
+  {
+   "id": 183,
+   "name": "Camlann Mace",
+   "category": "Combat",
+   "subcategory": "Maces",
+   "slot": "Weapon",
+   "fameToMax": 101729060
+  },
+  {
+   "id": 184,
+   "name": "Mage (Fighter)",
+   "category": "Combat",
+   "subcategory": "Mage",
+   "slot": "Weapon",
+   "base": true
+  },
+  {
+   "id": 185,
+   "name": "Naturestaffs (Fighter)",
+   "category": "Combat",
+   "subcategory": "Naturestaffs",
+   "slot": "Weapon",
+   "base": true,
+   "fameToMax": 14743573
+  },
+  {
+   "id": 186,
+   "name": "Ironroot Staff",
+   "category": "Combat",
+   "subcategory": "Naturestaffs",
+   "slot": "Weapon",
+   "fameToMax": 101729060
+  },
+  {
+   "id": 187,
+   "name": "Forgebark Staff",
+   "category": "Combat",
+   "subcategory": "Naturestaffs",
+   "slot": "Weapon",
+   "fameToMax": 101729060
+  },
+  {
+   "id": 188,
+   "name": "Great Nature Staff",
+   "category": "Combat",
+   "subcategory": "Naturestaffs",
+   "slot": "Weapon",
+   "fameToMax": 101729060
+  },
+  {
+   "id": 189,
+   "name": "Blight Staff",
+   "category": "Combat",
+   "subcategory": "Naturestaffs",
+   "slot": "Weapon",
+   "fameToMax": 101729060
+  },
+  {
+   "id": 190,
+   "name": "Druidic Staff",
+   "category": "Combat",
+   "subcategory": "Naturestaffs",
+   "slot": "Weapon",
+   "fameToMax": 101729060
+  },
+  {
+   "id": 191,
+   "name": "Rampant Staff",
+   "category": "Combat",
+   "subcategory": "Naturestaffs",
+   "slot": "Weapon",
+   "fameToMax": 101729060
+  },
+  {
+   "id": 192,
+   "name": "Nature Staff",
+   "category": "Combat",
+   "subcategory": "Naturestaffs",
+   "slot": "Weapon",
+   "fameToMax": 101729060
+  },
+  {
+   "id": 193,
+   "name": "Wild Staff",
+   "category": "Combat",
+   "subcategory": "Naturestaffs",
+   "slot": "Weapon",
+   "fameToMax": 101729060
+  },
+  {
+   "id": 194,
+   "name": "Plate (Fighter)",
+   "category": "Combat",
+   "subcategory": "Plate",
+   "slot": "Armor",
+   "base": true
+  },
+  {
+   "id": 195,
+   "name": "Plate Armors (Fighter)",
+   "category": "Combat",
+   "subcategory": "Plate",
+   "slot": "Chest",
+   "base": true,
+   "fameToMax": 14743573
+  },
+  {
+   "id": 196,
+   "name": "Armor of Valor",
+   "category": "Combat",
+   "subcategory": "Plate",
+   "slot": "Chest",
+   "fameToMax": 101729060
+  },
+  {
+   "id": 197,
+   "name": "Duskweaver Armor",
+   "category": "Combat",
+   "subcategory": "Plate",
+   "slot": "Chest",
+   "fameToMax": 101729060
+  },
+  {
+   "id": 198,
+   "name": "Demon Armor",
+   "category": "Combat",
+   "subcategory": "Plate",
+   "slot": "Chest",
+   "fameToMax": 101729060
+  },
+  {
+   "id": 199,
+   "name": "Judicator Armor",
+   "category": "Combat",
+   "subcategory": "Plate",
+   "slot": "Chest",
+   "fameToMax": 101729060
+  },
+  {
+   "id": 200,
+   "name": "Royal Armor",
+   "category": "Combat",
+   "subcategory": "Plate",
+   "slot": "Chest",
+   "fameToMax": 101729060
+  },
+  {
+   "id": 201,
+   "name": "Soldier Armor",
+   "category": "Combat",
+   "subcategory": "Plate",
+   "slot": "Chest",
+   "fameToMax": 101729060
+  },
+  {
+   "id": 202,
+   "name": "Knight Armor",
+   "category": "Combat",
+   "subcategory": "Plate",
+   "slot": "Chest",
+   "fameToMax": 101729060
+  },
+  {
+   "id": 203,
+   "name": "Guardian Armor",
+   "category": "Combat",
+   "subcategory": "Plate",
+   "slot": "Chest",
+   "fameToMax": 101729060
+  },
+  {
+   "id": 204,
+   "name": "Graveguard Armor",
+   "category": "Combat",
+   "subcategory": "Plate",
+   "slot": "Chest",
+   "fameToMax": 101729060
+  },
+  {
+   "id": 205,
+   "name": "Plate Heads (Fighter)",
+   "category": "Combat",
+   "subcategory": "Plate",
+   "slot": "Head",
+   "base": true,
+   "fameToMax": 14743573
+  },
+  {
+   "id": 206,
+   "name": "Helmet of Valor",
+   "category": "Combat",
+   "subcategory": "Plate",
+   "slot": "Head",
+   "fameToMax": 101729060
+  },
+  {
+   "id": 207,
+   "name": "Duskweaver Helmet",
+   "category": "Combat",
+   "subcategory": "Plate",
+   "slot": "Head",
+   "fameToMax": 101729060
+  },
+  {
+   "id": 208,
+   "name": "Demon Helmet",
+   "category": "Combat",
+   "subcategory": "Plate",
+   "slot": "Head",
+   "fameToMax": 101729060
+  },
+  {
+   "id": 209,
+   "name": "Judicator Helmet",
+   "category": "Combat",
+   "subcategory": "Plate",
+   "slot": "Head",
+   "fameToMax": 101729060
+  },
+  {
+   "id": 210,
+   "name": "Royal Helmet",
+   "category": "Combat",
+   "subcategory": "Plate",
+   "slot": "Head",
+   "fameToMax": 101729060
+  },
+  {
+   "id": 211,
+   "name": "Soldier Helmet",
+   "category": "Combat",
+   "subcategory": "Plate",
+   "slot": "Head",
+   "fameToMax": 101729060
+  },
+  {
+   "id": 212,
+   "name": "Knight Helmet",
+   "category": "Combat",
+   "subcategory": "Plate",
+   "slot": "Head",
+   "fameToMax": 101729060
+  },
+  {
+   "id": 213,
+   "name": "Guardian Helmet",
+   "category": "Combat",
+   "subcategory": "Plate",
+   "slot": "Head",
+   "fameToMax": 101729060
+  },
+  {
+   "id": 214,
+   "name": "Graveguard Helmet",
+   "category": "Combat",
+   "subcategory": "Plate",
+   "slot": "Head",
+   "fameToMax": 101729060
+  },
+  {
+   "id": 215,
+   "name": "Plate Shoes (Fighter)",
+   "category": "Combat",
+   "subcategory": "Plate",
+   "slot": "Shoes",
+   "base": true,
+   "fameToMax": 14743573
+  },
+  {
+   "id": 216,
+   "name": "Boots of Valor",
+   "category": "Combat",
+   "subcategory": "Plate",
+   "slot": "Shoes",
+   "fameToMax": 101729060
+  },
+  {
+   "id": 217,
+   "name": "Duskweaver Boots",
+   "category": "Combat",
+   "subcategory": "Plate",
+   "slot": "Shoes",
+   "fameToMax": 101729060
+  },
+  {
+   "id": 218,
+   "name": "Demon Boots",
+   "category": "Combat",
+   "subcategory": "Plate",
+   "slot": "Shoes",
+   "fameToMax": 101729060
+  },
+  {
+   "id": 219,
+   "name": "Judicator Boots",
+   "category": "Combat",
+   "subcategory": "Plate",
+   "slot": "Shoes",
+   "fameToMax": 101729060
+  },
+  {
+   "id": 220,
+   "name": "Royal Boots",
+   "category": "Combat",
+   "subcategory": "Plate",
+   "slot": "Shoes",
+   "fameToMax": 101729060
+  },
+  {
+   "id": 221,
+   "name": "Soldier Boots",
+   "category": "Combat",
+   "subcategory": "Plate",
+   "slot": "Shoes",
+   "fameToMax": 101729060
+  },
+  {
+   "id": 222,
+   "name": "Knight Boots",
+   "category": "Combat",
+   "subcategory": "Plate",
+   "slot": "Shoes",
+   "fameToMax": 101729060
+  },
+  {
+   "id": 223,
+   "name": "Guardian Boots",
+   "category": "Combat",
+   "subcategory": "Plate",
+   "slot": "Shoes",
+   "fameToMax": 101729060
+  },
+  {
+   "id": 224,
+   "name": "Graveguard Boots",
+   "category": "Combat",
+   "subcategory": "Plate",
+   "slot": "Shoes",
+   "fameToMax": 101729060
+  },
+  {
+   "id": 225,
+   "name": "Quarterstaffs (Fighter)",
+   "category": "Combat",
+   "subcategory": "Quarterstaffs",
+   "slot": "Weapon",
+   "base": true,
+   "fameToMax": 14743573
+  },
+  {
+   "id": 226,
+   "name": "Grailseeker",
+   "category": "Combat",
+   "subcategory": "Quarterstaffs",
+   "slot": "Weapon",
+   "fameToMax": 101729060
+  },
+  {
+   "id": 227,
+   "name": "Phantom Twinblade",
+   "category": "Combat",
+   "subcategory": "Quarterstaffs",
+   "slot": "Weapon",
+   "fameToMax": 101729060
+  },
+  {
+   "id": 228,
+   "name": "Double Bladed Staff",
+   "category": "Combat",
+   "subcategory": "Quarterstaffs",
+   "slot": "Weapon",
+   "fameToMax": 101729060
+  },
+  {
+   "id": 229,
+   "name": "Soulscythe",
+   "category": "Combat",
+   "subcategory": "Quarterstaffs",
+   "slot": "Weapon",
+   "fameToMax": 101729060
+  },
+  {
+   "id": 230,
+   "name": "Iron-clad Staff",
+   "category": "Combat",
+   "subcategory": "Quarterstaffs",
+   "slot": "Weapon",
+   "fameToMax": 101729060
+  },
+  {
+   "id": 231,
+   "name": "Staff of Balance",
+   "category": "Combat",
+   "subcategory": "Quarterstaffs",
+   "slot": "Weapon",
+   "fameToMax": 101729060
+  },
+  {
+   "id": 232,
+   "name": "Black Monk Staff",
+   "category": "Combat",
+   "subcategory": "Quarterstaffs",
+   "slot": "Weapon",
+   "fameToMax": 101729060
+  },
+  {
+   "id": 233,
+   "name": "Quarterstaff",
+   "category": "Combat",
+   "subcategory": "Quarterstaffs",
+   "slot": "Weapon",
+   "fameToMax": 101729060
+  },
+  {
+   "id": 234,
+   "name": "Shapeshifter (Fighter)",
+   "category": "Combat",
+   "subcategory": "Shapeshifter",
+   "slot": "Weapon",
+   "base": true,
+   "fameToMax": 14743573
+  },
+  {
+   "id": 235,
+   "name": "Lightcaller",
+   "category": "Combat",
+   "subcategory": "Shapeshifter",
+   "slot": "Weapon",
+   "fameToMax": 101729060
+  },
+  {
+   "id": 236,
+   "name": "Stillgaze Staff",
+   "category": "Combat",
+   "subcategory": "Shapeshifter",
+   "slot": "Weapon",
+   "fameToMax": 101729060
+  },
+  {
+   "id": 237,
+   "name": "Hellspawn Staff",
+   "category": "Combat",
+   "subcategory": "Shapeshifter",
+   "slot": "Weapon",
+   "fameToMax": 101729060
+  },
+  {
+   "id": 238,
+   "name": "Earthrune Staff",
+   "category": "Combat",
+   "subcategory": "Shapeshifter",
+   "slot": "Weapon",
+   "fameToMax": 101729060
+  },
+  {
+   "id": 239,
+   "name": "Bloodmoon Staff",
+   "category": "Combat",
+   "subcategory": "Shapeshifter",
+   "slot": "Weapon",
+   "fameToMax": 101729060
+  },
+  {
+   "id": 240,
+   "name": "Prowling Staff",
+   "category": "Combat",
+   "subcategory": "Shapeshifter",
+   "slot": "Weapon",
+   "fameToMax": 101729060
+  },
+  {
+   "id": 241,
+   "name": "Rootbound Staff",
+   "category": "Combat",
+   "subcategory": "Shapeshifter",
+   "slot": "Weapon",
+   "fameToMax": 101729060
+  },
+  {
+   "id": 242,
+   "name": "Primal Staff",
+   "category": "Combat",
+   "subcategory": "Shapeshifter",
+   "slot": "Weapon",
+   "fameToMax": 101729060
+  },
+  {
+   "id": 243,
+   "name": "Shields (Fighter)",
+   "category": "Combat",
+   "subcategory": "Shields",
+   "slot": "Off-Hand",
+   "base": true,
+   "fameToMax": 14743573
+  },
+  {
+   "id": 244,
+   "name": "Astral Aegis",
+   "category": "Combat",
+   "subcategory": "Shields",
+   "slot": "Off-Hand",
+   "fameToMax": 101729060
+  },
+  {
+   "id": 245,
+   "name": "Unbreakable Ward",
+   "category": "Combat",
+   "subcategory": "Shields",
+   "slot": "Off-Hand",
+   "fameToMax": 101729060
+  },
+  {
+   "id": 246,
+   "name": "Caitiff Shield",
+   "category": "Combat",
+   "subcategory": "Shields",
+   "slot": "Off-Hand",
+   "fameToMax": 101729060
+  },
+  {
+   "id": 247,
+   "name": "Facebreaker",
+   "category": "Combat",
+   "subcategory": "Shields",
+   "slot": "Off-Hand",
+   "fameToMax": 101729060
+  },
+  {
+   "id": 248,
+   "name": "Shield",
+   "category": "Combat",
+   "subcategory": "Shields",
+   "slot": "Off-Hand",
+   "fameToMax": 101729060
+  },
+  {
+   "id": 249,
+   "name": "Sarcophagus",
+   "category": "Combat",
+   "subcategory": "Shields",
+   "slot": "Off-Hand",
+   "fameToMax": 101729060
+  },
+  {
+   "id": 250,
+   "name": "Spears (Fighter)",
+   "category": "Combat",
+   "subcategory": "Spears",
+   "slot": "Weapon",
+   "base": true,
+   "fameToMax": 14743573
+  },
+  {
+   "id": 251,
+   "name": "Daybreaker",
+   "category": "Combat",
+   "subcategory": "Spears",
+   "slot": "Weapon",
+   "fameToMax": 101729060
+  },
+  {
+   "id": 252,
+   "name": "Rift Glaive",
+   "category": "Combat",
+   "subcategory": "Spears",
+   "slot": "Weapon",
+   "fameToMax": 101729060
+  },
+  {
+   "id": 253,
+   "name": "Glaive",
+   "category": "Combat",
+   "subcategory": "Spears",
+   "slot": "Weapon",
+   "fameToMax": 101729060
+  },
+  {
+   "id": 254,
+   "name": "Pike",
+   "category": "Combat",
+   "subcategory": "Spears",
+   "slot": "Weapon",
+   "fameToMax": 101729060
+  },
+  {
+   "id": 255,
+   "name": "Spirithunter",
+   "category": "Combat",
+   "subcategory": "Spears",
+   "slot": "Weapon",
+   "fameToMax": 101729060
+  },
+  {
+   "id": 256,
+   "name": "Heron Spear",
+   "category": "Combat",
+   "subcategory": "Spears",
+   "slot": "Weapon",
+   "fameToMax": 101729060
+  },
+  {
+   "id": 257,
+   "name": "Spear",
+   "category": "Combat",
+   "subcategory": "Spears",
+   "slot": "Weapon",
+   "fameToMax": 101729060
+  },
+  {
+   "id": 258,
+   "name": "Trinity Spear",
+   "category": "Combat",
+   "subcategory": "Spears",
+   "slot": "Weapon",
+   "fameToMax": 101729060
+  },
+  {
+   "id": 259,
+   "name": "Swords (Fighter)",
+   "category": "Combat",
+   "subcategory": "Swords",
+   "slot": "Weapon",
+   "base": true,
+   "fameToMax": 14743573
+  },
+  {
+   "id": 260,
+   "name": "Kingmaker",
+   "category": "Combat",
+   "subcategory": "Swords",
+   "slot": "Weapon",
+   "fameToMax": 101729060
+  },
+  {
+   "id": 261,
+   "name": "Claymore",
+   "category": "Combat",
+   "subcategory": "Swords",
+   "slot": "Weapon",
+   "fameToMax": 101729060
+  },
+  {
+   "id": 262,
+   "name": "Infinity Blade",
+   "category": "Combat",
+   "subcategory": "Swords",
+   "slot": "Weapon",
+   "fameToMax": 101729060
+  },
+  {
+   "id": 263,
+   "name": "Dual Swords",
+   "category": "Combat",
+   "subcategory": "Swords",
+   "slot": "Weapon",
+   "fameToMax": 101729060
+  },
+  {
+   "id": 264,
+   "name": "Carving Sword",
+   "category": "Combat",
+   "subcategory": "Swords",
+   "slot": "Weapon",
+   "fameToMax": 101729060
+  },
+  {
+   "id": 265,
+   "name": "Clarent Blade",
+   "category": "Combat",
+   "subcategory": "Swords",
+   "slot": "Weapon",
+   "fameToMax": 101729060
+  },
+  {
+   "id": 266,
+   "name": "Broadsword",
+   "category": "Combat",
+   "subcategory": "Swords",
+   "slot": "Weapon",
+   "fameToMax": 101729060
+  },
+  {
+   "id": 267,
+   "name": "Galatine Pair",
+   "category": "Combat",
+   "subcategory": "Swords",
+   "slot": "Weapon",
+   "fameToMax": 101729060
+  },
+  {
+   "id": 268,
+   "name": "Torches (Fighter)",
+   "category": "Combat",
+   "subcategory": "Torches",
+   "slot": "Off-Hand",
+   "base": true,
+   "fameToMax": 14743573
+  },
+  {
+   "id": 269,
+   "name": "Sacred Scepter",
+   "category": "Combat",
+   "subcategory": "Torches",
+   "slot": "Off-Hand",
+   "fameToMax": 101729060
+  },
+  {
+   "id": 270,
+   "name": "Blueflame Torch",
+   "category": "Combat",
+   "subcategory": "Torches",
+   "slot": "Off-Hand",
+   "fameToMax": 101729060
+  },
+  {
+   "id": 271,
+   "name": "Leering Cane",
+   "category": "Combat",
+   "subcategory": "Torches",
+   "slot": "Off-Hand",
+   "fameToMax": 101729060
+  },
+  {
+   "id": 272,
+   "name": "Mistcaller",
+   "category": "Combat",
+   "subcategory": "Torches",
+   "slot": "Off-Hand",
+   "fameToMax": 101729060
+  },
+  {
+   "id": 273,
+   "name": "Torch",
+   "category": "Combat",
+   "subcategory": "Torches",
+   "slot": "Off-Hand",
+   "fameToMax": 101729060
+  },
+  {
+   "id": 274,
+   "name": "Cryptcandle",
+   "category": "Combat",
+   "subcategory": "Torches",
+   "slot": "Off-Hand",
+   "fameToMax": 101729060
+  },
+  {
+   "id": 275,
+   "name": "Trainee (Fighter)",
+   "category": "Combat",
+   "subcategory": "Trainee",
+   "slot": "Weapon",
+   "base": true
+  },
+  {
+   "id": 276,
+   "name": "Warrior (Fighter)",
+   "category": "Combat",
+   "subcategory": "Warrior",
+   "slot": "Weapon",
+   "base": true
+  },
+  {
+   "id": 277,
+   "name": "Arcanestaffs",
+   "category": "Crafting",
+   "subcategory": "Arcanestaffs",
+   "slot": "Crafting",
+   "fameToMax": 12879472
+  },
+  {
+   "id": 278,
+   "name": "Arcanestaffs Arcane",
+   "category": "Crafting",
+   "subcategory": "Arcanestaffs",
+   "slot": "Crafting",
+   "fameToMax": 25758944
+  },
+  {
+   "id": 279,
+   "name": "Arcanestaffs Avalon",
+   "category": "Crafting",
+   "subcategory": "Arcanestaffs",
+   "slot": "Crafting",
+   "fameToMax": 25758944
+  },
+  {
+   "id": 280,
+   "name": "Arcanestaffs Crystal",
+   "category": "Crafting",
+   "subcategory": "Arcanestaffs",
+   "slot": "Crafting",
+   "fameToMax": 25758944
+  },
+  {
+   "id": 281,
+   "name": "Arcanestaffs Enigmatic",
+   "category": "Crafting",
+   "subcategory": "Arcanestaffs",
+   "slot": "Crafting",
+   "fameToMax": 25758944
+  },
+  {
+   "id": 282,
+   "name": "Arcanestaffs Great",
+   "category": "Crafting",
+   "subcategory": "Arcanestaffs",
+   "slot": "Crafting",
+   "fameToMax": 25758944
+  },
+  {
+   "id": 283,
+   "name": "Arcanestaffs Hell",
+   "category": "Crafting",
+   "subcategory": "Arcanestaffs",
+   "slot": "Crafting",
+   "fameToMax": 25758944
+  },
+  {
+   "id": 284,
+   "name": "Arcanestaffs Morgana",
+   "category": "Crafting",
+   "subcategory": "Arcanestaffs",
+   "slot": "Crafting",
+   "fameToMax": 25758944
+  },
+  {
+   "id": 285,
+   "name": "Arcanestaffs Undead",
+   "category": "Crafting",
+   "subcategory": "Arcanestaffs",
+   "slot": "Crafting",
+   "fameToMax": 25758944
+  },
+  {
+   "id": 286,
+   "name": "Axes",
+   "category": "Crafting",
+   "subcategory": "Axes",
+   "slot": "Crafting",
+   "fameToMax": 12879472
+  },
+  {
+   "id": 287,
+   "name": "Axes Avalon",
+   "category": "Crafting",
+   "subcategory": "Axes",
+   "slot": "Crafting",
+   "fameToMax": 25758944
+  },
+  {
+   "id": 288,
+   "name": "Axes Axe",
+   "category": "Crafting",
+   "subcategory": "Axes",
+   "slot": "Crafting",
+   "fameToMax": 25758944
+  },
+  {
+   "id": 289,
+   "name": "Axes Crystal",
+   "category": "Crafting",
+   "subcategory": "Axes",
+   "slot": "Crafting",
+   "fameToMax": 25758944
+  },
+  {
+   "id": 290,
+   "name": "Axes Great",
+   "category": "Crafting",
+   "subcategory": "Axes",
+   "slot": "Crafting",
+   "fameToMax": 25758944
+  },
+  {
+   "id": 291,
+   "name": "Axes Halberd",
+   "category": "Crafting",
+   "subcategory": "Axes",
+   "slot": "Crafting",
+   "fameToMax": 25758944
+  },
+  {
+   "id": 292,
+   "name": "Axes Hell",
+   "category": "Crafting",
+   "subcategory": "Axes",
+   "slot": "Crafting",
+   "fameToMax": 25758944
+  },
+  {
+   "id": 293,
+   "name": "Axes Keeper",
+   "category": "Crafting",
+   "subcategory": "Axes",
+   "slot": "Crafting",
+   "fameToMax": 25758944
+  },
+  {
+   "id": 294,
+   "name": "Axes Morgana",
+   "category": "Crafting",
+   "subcategory": "Axes",
+   "slot": "Crafting",
+   "fameToMax": 25758944
+  },
+  {
+   "id": 295,
+   "name": "Bag",
+   "category": "Crafting",
+   "subcategory": "Bag",
+   "slot": "Crafting",
+   "fameToMax": 6439736
+  },
+  {
+   "id": 296,
+   "name": "Bag Bag",
+   "category": "Crafting",
+   "subcategory": "Bag",
+   "slot": "Crafting",
+   "fameToMax": 19319208
+  },
+  {
+   "id": 297,
+   "name": "Bag Insight",
+   "category": "Crafting",
+   "subcategory": "Bag",
+   "slot": "Crafting",
+   "fameToMax": 19319208
+  },
+  {
+   "id": 298,
+   "name": "Books",
+   "category": "Crafting",
+   "subcategory": "Books",
+   "slot": "Crafting",
+   "fameToMax": 3219868
+  },
+  {
+   "id": 299,
+   "name": "Books Avalon",
+   "category": "Crafting",
+   "subcategory": "Books",
+   "slot": "Crafting",
+   "fameToMax": 6439736
+  },
+  {
+   "id": 300,
+   "name": "Books Book",
+   "category": "Crafting",
+   "subcategory": "Books",
+   "slot": "Crafting",
+   "fameToMax": 6439736
+  },
+  {
+   "id": 301,
+   "name": "Books Crystal",
+   "category": "Crafting",
+   "subcategory": "Books",
+   "slot": "Crafting",
+   "fameToMax": 6439736
+  },
+  {
+   "id": 302,
+   "name": "Books Hell",
+   "category": "Crafting",
+   "subcategory": "Books",
+   "slot": "Crafting",
+   "fameToMax": 6439736
+  },
+  {
+   "id": 303,
+   "name": "Books Keeper",
+   "category": "Crafting",
+   "subcategory": "Books",
+   "slot": "Crafting",
+   "fameToMax": 6439736
+  },
+  {
+   "id": 304,
+   "name": "Books Morgana",
+   "category": "Crafting",
+   "subcategory": "Books",
+   "slot": "Crafting",
+   "fameToMax": 6439736
+  },
+  {
+   "id": 305,
+   "name": "Bows",
+   "category": "Crafting",
+   "subcategory": "Bows",
+   "slot": "Crafting",
+   "fameToMax": 12879472
+  },
+  {
+   "id": 306,
+   "name": "Bows Avalon",
+   "category": "Crafting",
+   "subcategory": "Bows",
+   "slot": "Crafting",
+   "fameToMax": 25758944
+  },
+  {
+   "id": 307,
+   "name": "Bows Bow",
+   "category": "Crafting",
+   "subcategory": "Bows",
+   "slot": "Crafting",
+   "fameToMax": 25758944
+  },
+  {
+   "id": 308,
+   "name": "Bows Crystal",
+   "category": "Crafting",
+   "subcategory": "Bows",
+   "slot": "Crafting",
+   "fameToMax": 25758944
+  },
+  {
+   "id": 309,
+   "name": "Bows Hell",
+   "category": "Crafting",
+   "subcategory": "Bows",
+   "slot": "Crafting",
+   "fameToMax": 25758944
+  },
+  {
+   "id": 310,
+   "name": "Bows Keeper",
+   "category": "Crafting",
+   "subcategory": "Bows",
+   "slot": "Crafting",
+   "fameToMax": 25758944
+  },
+  {
+   "id": 311,
+   "name": "Bows Long",
+   "category": "Crafting",
+   "subcategory": "Bows",
+   "slot": "Crafting",
+   "fameToMax": 25758944
+  },
+  {
+   "id": 312,
+   "name": "Bows Undead",
+   "category": "Crafting",
+   "subcategory": "Bows",
+   "slot": "Crafting",
+   "fameToMax": 25758944
+  },
+  {
+   "id": 313,
+   "name": "Bows War",
+   "category": "Crafting",
+   "subcategory": "Bows",
+   "slot": "Crafting",
+   "fameToMax": 25758944
+  },
+  {
+   "id": 314,
+   "name": "Cape",
+   "category": "Crafting",
+   "subcategory": "Cape",
+   "slot": "Crafting",
+   "fameToMax": 3219868
+  },
+  {
+   "id": 315,
+   "name": "Cape Cape",
+   "category": "Crafting",
+   "subcategory": "Cape",
+   "slot": "Crafting",
+   "fameToMax": 19319208
+  },
+  {
+   "id": 316,
+   "name": "Cloth Armors",
+   "category": "Crafting",
+   "subcategory": "Cloth",
+   "slot": "Crafting",
+   "fameToMax": 6439736
+  },
+  {
+   "id": 317,
+   "name": "Cloth Armors Avalon",
+   "category": "Crafting",
+   "subcategory": "Cloth",
+   "slot": "Crafting",
+   "fameToMax": 12879472
+  },
+  {
+   "id": 318,
+   "name": "Cloth Armors Fey",
+   "category": "Crafting",
+   "subcategory": "Cloth",
+   "slot": "Crafting",
+   "fameToMax": 12879472
+  },
+  {
+   "id": 319,
+   "name": "Cloth Armors Hell",
+   "category": "Crafting",
+   "subcategory": "Cloth",
+   "slot": "Crafting",
+   "fameToMax": 12879472
+  },
+  {
+   "id": 320,
+   "name": "Cloth Armors Keeper",
+   "category": "Crafting",
+   "subcategory": "Cloth",
+   "slot": "Crafting",
+   "fameToMax": 12879472
+  },
+  {
+   "id": 321,
+   "name": "Cloth Armors Morgana",
+   "category": "Crafting",
+   "subcategory": "Cloth",
+   "slot": "Crafting",
+   "fameToMax": 12879472
+  },
+  {
+   "id": 322,
+   "name": "Cloth Armors Set1",
+   "category": "Crafting",
+   "subcategory": "Cloth",
+   "slot": "Crafting",
+   "fameToMax": 12879472
+  },
+  {
+   "id": 323,
+   "name": "Cloth Armors Set2",
+   "category": "Crafting",
+   "subcategory": "Cloth",
+   "slot": "Crafting",
+   "fameToMax": 12879472
+  },
+  {
+   "id": 324,
+   "name": "Cloth Armors Set3",
+   "category": "Crafting",
+   "subcategory": "Cloth",
+   "slot": "Crafting",
+   "fameToMax": 12879472
+  },
+  {
+   "id": 325,
+   "name": "Cloth Heads",
+   "category": "Crafting",
+   "subcategory": "Cloth",
+   "slot": "Crafting",
+   "fameToMax": 3219868
+  },
+  {
+   "id": 326,
+   "name": "Cloth Heads Avalon",
+   "category": "Crafting",
+   "subcategory": "Cloth",
+   "slot": "Crafting",
+   "fameToMax": 6439736
+  },
+  {
+   "id": 327,
+   "name": "Cloth Heads Fey",
+   "category": "Crafting",
+   "subcategory": "Cloth",
+   "slot": "Crafting",
+   "fameToMax": 6439736
+  },
+  {
+   "id": 328,
+   "name": "Cloth Heads Hell",
+   "category": "Crafting",
+   "subcategory": "Cloth",
+   "slot": "Crafting",
+   "fameToMax": 6439736
+  },
+  {
+   "id": 329,
+   "name": "Cloth Heads Keeper",
+   "category": "Crafting",
+   "subcategory": "Cloth",
+   "slot": "Crafting",
+   "fameToMax": 6439736
+  },
+  {
+   "id": 330,
+   "name": "Cloth Heads Morgana",
+   "category": "Crafting",
+   "subcategory": "Cloth",
+   "slot": "Crafting",
+   "fameToMax": 6439736
+  },
+  {
+   "id": 331,
+   "name": "Cloth Heads Set1",
+   "category": "Crafting",
+   "subcategory": "Cloth",
+   "slot": "Crafting",
+   "fameToMax": 6439736
+  },
+  {
+   "id": 332,
+   "name": "Cloth Heads Set2",
+   "category": "Crafting",
+   "subcategory": "Cloth",
+   "slot": "Crafting",
+   "fameToMax": 6439736
+  },
+  {
+   "id": 333,
+   "name": "Cloth Heads Set3",
+   "category": "Crafting",
+   "subcategory": "Cloth",
+   "slot": "Crafting",
+   "fameToMax": 6439736
+  },
+  {
+   "id": 334,
+   "name": "Cloth Shoes",
+   "category": "Crafting",
+   "subcategory": "Cloth",
+   "slot": "Crafting",
+   "fameToMax": 3219868
+  },
+  {
+   "id": 335,
+   "name": "Cloth Shoes Avalon",
+   "category": "Crafting",
+   "subcategory": "Cloth",
+   "slot": "Crafting",
+   "fameToMax": 6439736
+  },
+  {
+   "id": 336,
+   "name": "Cloth Shoes Fey",
+   "category": "Crafting",
+   "subcategory": "Cloth",
+   "slot": "Crafting",
+   "fameToMax": 6439736
+  },
+  {
+   "id": 337,
+   "name": "Cloth Shoes Hell",
+   "category": "Crafting",
+   "subcategory": "Cloth",
+   "slot": "Crafting",
+   "fameToMax": 6439736
+  },
+  {
+   "id": 338,
+   "name": "Cloth Shoes Keeper",
+   "category": "Crafting",
+   "subcategory": "Cloth",
+   "slot": "Crafting",
+   "fameToMax": 6439736
+  },
+  {
+   "id": 339,
+   "name": "Cloth Shoes Morgana",
+   "category": "Crafting",
+   "subcategory": "Cloth",
+   "slot": "Crafting",
+   "fameToMax": 6439736
+  },
+  {
+   "id": 340,
+   "name": "Cloth Shoes Set1",
+   "category": "Crafting",
+   "subcategory": "Cloth",
+   "slot": "Crafting",
+   "fameToMax": 6439736
+  },
+  {
+   "id": 341,
+   "name": "Cloth Shoes Set2",
+   "category": "Crafting",
+   "subcategory": "Cloth",
+   "slot": "Crafting",
+   "fameToMax": 6439736
+  },
+  {
+   "id": 342,
+   "name": "Cloth Shoes Set3",
+   "category": "Crafting",
+   "subcategory": "Cloth",
+   "slot": "Crafting",
+   "fameToMax": 6439736
+  },
+  {
+   "id": 343,
+   "name": "Crossbows",
+   "category": "Crafting",
+   "subcategory": "Crossbows",
+   "slot": "Crafting",
+   "fameToMax": 12879472
+  },
+  {
+   "id": 344,
+   "name": "Crossbows Avalon",
+   "category": "Crafting",
+   "subcategory": "Crossbows",
+   "slot": "Crafting",
+   "fameToMax": 25758944
+  },
+  {
+   "id": 345,
+   "name": "Crossbows Crossbow",
+   "category": "Crafting",
+   "subcategory": "Crossbows",
+   "slot": "Crafting",
+   "fameToMax": 25758944
+  },
+  {
+   "id": 346,
+   "name": "Crossbows Crystal",
+   "category": "Crafting",
+   "subcategory": "Crossbows",
+   "slot": "Crafting",
+   "fameToMax": 25758944
+  },
+  {
+   "id": 347,
+   "name": "Crossbows Hell",
+   "category": "Crafting",
+   "subcategory": "Crossbows",
+   "slot": "Crafting",
+   "fameToMax": 25758944
+  },
+  {
+   "id": 348,
+   "name": "Crossbows Large",
+   "category": "Crafting",
+   "subcategory": "Crossbows",
+   "slot": "Crafting",
+   "fameToMax": 25758944
+  },
+  {
+   "id": 349,
+   "name": "Crossbows Morgana",
+   "category": "Crafting",
+   "subcategory": "Crossbows",
+   "slot": "Crafting",
+   "fameToMax": 25758944
+  },
+  {
+   "id": 350,
+   "name": "Crossbows Onehand",
+   "category": "Crafting",
+   "subcategory": "Crossbows",
+   "slot": "Crafting",
+   "fameToMax": 25758944
+  },
+  {
+   "id": 351,
+   "name": "Crossbows Undead",
+   "category": "Crafting",
+   "subcategory": "Crossbows",
+   "slot": "Crafting",
+   "fameToMax": 25758944
+  },
+  {
+   "id": 352,
+   "name": "Cursedstaffs",
+   "category": "Crafting",
+   "subcategory": "Cursedstaffs",
+   "slot": "Crafting",
+   "fameToMax": 12879472
+  },
+  {
+   "id": 353,
+   "name": "Cursedstaffs Avalon",
+   "category": "Crafting",
+   "subcategory": "Cursedstaffs",
+   "slot": "Crafting",
+   "fameToMax": 25758944
+  },
+  {
+   "id": 354,
+   "name": "Cursedstaffs Crystal",
+   "category": "Crafting",
+   "subcategory": "Cursedstaffs",
+   "slot": "Crafting",
+   "fameToMax": 25758944
+  },
+  {
+   "id": 355,
+   "name": "Cursedstaffs Cursed",
+   "category": "Crafting",
+   "subcategory": "Cursedstaffs",
+   "slot": "Crafting",
+   "fameToMax": 25758944
+  },
+  {
+   "id": 356,
+   "name": "Cursedstaffs Demonic",
+   "category": "Crafting",
+   "subcategory": "Cursedstaffs",
+   "slot": "Crafting",
+   "fameToMax": 25758944
+  },
+  {
+   "id": 357,
+   "name": "Cursedstaffs Great",
+   "category": "Crafting",
+   "subcategory": "Cursedstaffs",
+   "slot": "Crafting",
+   "fameToMax": 25758944
+  },
+  {
+   "id": 358,
+   "name": "Cursedstaffs Hell",
+   "category": "Crafting",
+   "subcategory": "Cursedstaffs",
+   "slot": "Crafting",
+   "fameToMax": 25758944
+  },
+  {
+   "id": 359,
+   "name": "Cursedstaffs Morgana",
+   "category": "Crafting",
+   "subcategory": "Cursedstaffs",
+   "slot": "Crafting",
+   "fameToMax": 25758944
+  },
+  {
+   "id": 360,
+   "name": "Cursedstaffs Undead",
+   "category": "Crafting",
+   "subcategory": "Cursedstaffs",
+   "slot": "Crafting",
+   "fameToMax": 25758944
+  },
+  {
+   "id": 361,
+   "name": "Daggers",
+   "category": "Crafting",
+   "subcategory": "Daggers",
+   "slot": "Crafting",
+   "fameToMax": 12879472
+  },
+  {
+   "id": 362,
+   "name": "Daggers Avalon",
+   "category": "Crafting",
+   "subcategory": "Daggers",
+   "slot": "Crafting",
+   "fameToMax": 25758944
+  },
+  {
+   "id": 363,
+   "name": "Daggers Claws",
+   "category": "Crafting",
+   "subcategory": "Daggers",
+   "slot": "Crafting",
+   "fameToMax": 25758944
+  },
+  {
+   "id": 364,
+   "name": "Daggers Crystal",
+   "category": "Crafting",
+   "subcategory": "Daggers",
+   "slot": "Crafting",
+   "fameToMax": 25758944
+  },
+  {
+   "id": 365,
+   "name": "Daggers Dagger",
+   "category": "Crafting",
+   "subcategory": "Daggers",
+   "slot": "Crafting",
+   "fameToMax": 25758944
+  },
+  {
+   "id": 366,
+   "name": "Daggers Hell",
+   "category": "Crafting",
+   "subcategory": "Daggers",
+   "slot": "Crafting",
+   "fameToMax": 25758944
+  },
+  {
+   "id": 367,
+   "name": "Daggers Morgana",
+   "category": "Crafting",
+   "subcategory": "Daggers",
+   "slot": "Crafting",
+   "fameToMax": 25758944
+  },
+  {
+   "id": 368,
+   "name": "Daggers Pair",
+   "category": "Crafting",
+   "subcategory": "Daggers",
+   "slot": "Crafting",
+   "fameToMax": 25758944
+  },
+  {
+   "id": 369,
+   "name": "Daggers Undead",
+   "category": "Crafting",
+   "subcategory": "Daggers",
+   "slot": "Crafting",
+   "fameToMax": 25758944
+  },
+  {
+   "id": 370,
+   "name": "Firestaffs",
+   "category": "Crafting",
+   "subcategory": "Firestaffs",
+   "slot": "Crafting",
+   "fameToMax": 12879472
+  },
+  {
+   "id": 371,
+   "name": "Firestaffs Avalon",
+   "category": "Crafting",
+   "subcategory": "Firestaffs",
+   "slot": "Crafting",
+   "fameToMax": 25758944
+  },
+  {
+   "id": 372,
+   "name": "Firestaffs Crystal",
+   "category": "Crafting",
+   "subcategory": "Firestaffs",
+   "slot": "Crafting",
+   "fameToMax": 25758944
+  },
+  {
+   "id": 373,
+   "name": "Firestaffs Fire",
+   "category": "Crafting",
+   "subcategory": "Firestaffs",
+   "slot": "Crafting",
+   "fameToMax": 25758944
+  },
+  {
+   "id": 374,
+   "name": "Firestaffs Great",
+   "category": "Crafting",
+   "subcategory": "Firestaffs",
+   "slot": "Crafting",
+   "fameToMax": 25758944
+  },
+  {
+   "id": 375,
+   "name": "Firestaffs Hell",
+   "category": "Crafting",
+   "subcategory": "Firestaffs",
+   "slot": "Crafting",
+   "fameToMax": 25758944
+  },
+  {
+   "id": 376,
+   "name": "Firestaffs Inferno",
+   "category": "Crafting",
+   "subcategory": "Firestaffs",
+   "slot": "Crafting",
+   "fameToMax": 25758944
+  },
+  {
+   "id": 377,
+   "name": "Firestaffs Keeper",
+   "category": "Crafting",
+   "subcategory": "Firestaffs",
+   "slot": "Crafting",
+   "fameToMax": 25758944
+  },
+  {
+   "id": 378,
+   "name": "Firestaffs Morgana",
+   "category": "Crafting",
+   "subcategory": "Firestaffs",
+   "slot": "Crafting",
+   "fameToMax": 25758944
+  },
+  {
+   "id": 379,
+   "name": "Froststaffs",
+   "category": "Crafting",
+   "subcategory": "Froststaffs",
+   "slot": "Crafting",
+   "fameToMax": 12879472
+  },
+  {
+   "id": 380,
+   "name": "Froststaffs Avalon",
+   "category": "Crafting",
+   "subcategory": "Froststaffs",
+   "slot": "Crafting",
+   "fameToMax": 25758944
+  },
+  {
+   "id": 381,
+   "name": "Froststaffs Crystal",
+   "category": "Crafting",
+   "subcategory": "Froststaffs",
+   "slot": "Crafting",
+   "fameToMax": 25758944
+  },
+  {
+   "id": 382,
+   "name": "Froststaffs Frost",
+   "category": "Crafting",
+   "subcategory": "Froststaffs",
+   "slot": "Crafting",
+   "fameToMax": 25758944
+  },
+  {
+   "id": 383,
+   "name": "Froststaffs Glacial",
+   "category": "Crafting",
+   "subcategory": "Froststaffs",
+   "slot": "Crafting",
+   "fameToMax": 25758944
+  },
+  {
+   "id": 384,
+   "name": "Froststaffs Great",
+   "category": "Crafting",
+   "subcategory": "Froststaffs",
+   "slot": "Crafting",
+   "fameToMax": 25758944
+  },
+  {
+   "id": 385,
+   "name": "Froststaffs Hell",
+   "category": "Crafting",
+   "subcategory": "Froststaffs",
+   "slot": "Crafting",
+   "fameToMax": 25758944
+  },
+  {
+   "id": 386,
+   "name": "Froststaffs Keeper",
+   "category": "Crafting",
+   "subcategory": "Froststaffs",
+   "slot": "Crafting",
+   "fameToMax": 25758944
+  },
+  {
+   "id": 387,
+   "name": "Froststaffs Undead",
+   "category": "Crafting",
+   "subcategory": "Froststaffs",
+   "slot": "Crafting",
+   "fameToMax": 25758944
+  },
+  {
+   "id": 388,
+   "name": "Hammers",
+   "category": "Crafting",
+   "subcategory": "Hammers",
+   "slot": "Crafting",
+   "fameToMax": 12879472
+  },
+  {
+   "id": 389,
+   "name": "Hammers Avalon",
+   "category": "Crafting",
+   "subcategory": "Hammers",
+   "slot": "Crafting",
+   "fameToMax": 25758944
+  },
+  {
+   "id": 390,
+   "name": "Hammers Crystal",
+   "category": "Crafting",
+   "subcategory": "Hammers",
+   "slot": "Crafting",
+   "fameToMax": 25758944
+  },
+  {
+   "id": 391,
+   "name": "Hammers Great",
+   "category": "Crafting",
+   "subcategory": "Hammers",
+   "slot": "Crafting",
+   "fameToMax": 25758944
+  },
+  {
+   "id": 392,
+   "name": "Hammers Hammer",
+   "category": "Crafting",
+   "subcategory": "Hammers",
+   "slot": "Crafting",
+   "fameToMax": 25758944
+  },
+  {
+   "id": 393,
+   "name": "Hammers Hell",
+   "category": "Crafting",
+   "subcategory": "Hammers",
+   "slot": "Crafting",
+   "fameToMax": 25758944
+  },
+  {
+   "id": 394,
+   "name": "Hammers Keeper",
+   "category": "Crafting",
+   "subcategory": "Hammers",
+   "slot": "Crafting",
+   "fameToMax": 25758944
+  },
+  {
+   "id": 395,
+   "name": "Hammers Pole",
+   "category": "Crafting",
+   "subcategory": "Hammers",
+   "slot": "Crafting",
+   "fameToMax": 25758944
+  },
+  {
+   "id": 396,
+   "name": "Hammers Undead",
+   "category": "Crafting",
+   "subcategory": "Hammers",
+   "slot": "Crafting",
+   "fameToMax": 25758944
+  },
+  {
+   "id": 397,
+   "name": "Holystaffs",
+   "category": "Crafting",
+   "subcategory": "Holystaffs",
+   "slot": "Crafting",
+   "fameToMax": 12879472
+  },
+  {
+   "id": 398,
+   "name": "Holystaffs Avalon",
+   "category": "Crafting",
+   "subcategory": "Holystaffs",
+   "slot": "Crafting",
+   "fameToMax": 25758944
+  },
+  {
+   "id": 399,
+   "name": "Holystaffs Crystal",
+   "category": "Crafting",
+   "subcategory": "Holystaffs",
+   "slot": "Crafting",
+   "fameToMax": 25758944
+  },
+  {
+   "id": 400,
+   "name": "Holystaffs Divine",
+   "category": "Crafting",
+   "subcategory": "Holystaffs",
+   "slot": "Crafting",
+   "fameToMax": 25758944
+  },
+  {
+   "id": 401,
+   "name": "Holystaffs Great",
+   "category": "Crafting",
+   "subcategory": "Holystaffs",
+   "slot": "Crafting",
+   "fameToMax": 25758944
+  },
+  {
+   "id": 402,
+   "name": "Holystaffs Hell",
+   "category": "Crafting",
+   "subcategory": "Holystaffs",
+   "slot": "Crafting",
+   "fameToMax": 25758944
+  },
+  {
+   "id": 403,
+   "name": "Holystaffs Holy",
+   "category": "Crafting",
+   "subcategory": "Holystaffs",
+   "slot": "Crafting",
+   "fameToMax": 25758944
+  },
+  {
+   "id": 404,
+   "name": "Holystaffs Morgana",
+   "category": "Crafting",
+   "subcategory": "Holystaffs",
+   "slot": "Crafting",
+   "fameToMax": 25758944
+  },
+  {
+   "id": 405,
+   "name": "Holystaffs Undead",
+   "category": "Crafting",
+   "subcategory": "Holystaffs",
+   "slot": "Crafting",
+   "fameToMax": 25758944
+  },
+  {
+   "id": 406,
+   "name": "Hunter",
+   "category": "Crafting",
+   "subcategory": "Hunter",
+   "slot": "Crafting"
+  },
+  {
+   "id": 407,
+   "name": "Knuckles",
+   "category": "Crafting",
+   "subcategory": "Knuckles",
+   "slot": "Crafting",
+   "fameToMax": 12879472
+  },
+  {
+   "id": 408,
+   "name": "Knuckles Avalon",
+   "category": "Crafting",
+   "subcategory": "Knuckles",
+   "slot": "Crafting",
+   "fameToMax": 25758944
+  },
+  {
+   "id": 409,
+   "name": "Knuckles Crystal",
+   "category": "Crafting",
+   "subcategory": "Knuckles",
+   "slot": "Crafting",
+   "fameToMax": 25758944
+  },
+  {
+   "id": 410,
+   "name": "Knuckles Hell",
+   "category": "Crafting",
+   "subcategory": "Knuckles",
+   "slot": "Crafting",
+   "fameToMax": 25758944
+  },
+  {
+   "id": 411,
+   "name": "Knuckles Keeper",
+   "category": "Crafting",
+   "subcategory": "Knuckles",
+   "slot": "Crafting",
+   "fameToMax": 25758944
+  },
+  {
+   "id": 412,
+   "name": "Knuckles Morgana",
+   "category": "Crafting",
+   "subcategory": "Knuckles",
+   "slot": "Crafting",
+   "fameToMax": 25758944
+  },
+  {
+   "id": 413,
+   "name": "Knuckles Set1",
+   "category": "Crafting",
+   "subcategory": "Knuckles",
+   "slot": "Crafting",
+   "fameToMax": 25758944
+  },
+  {
+   "id": 414,
+   "name": "Knuckles Set2",
+   "category": "Crafting",
+   "subcategory": "Knuckles",
+   "slot": "Crafting",
+   "fameToMax": 25758944
+  },
+  {
+   "id": 415,
+   "name": "Knuckles Set3",
+   "category": "Crafting",
+   "subcategory": "Knuckles",
+   "slot": "Crafting",
+   "fameToMax": 25758944
+  },
+  {
+   "id": 416,
+   "name": "Leather Armors",
+   "category": "Crafting",
+   "subcategory": "Leather",
+   "slot": "Crafting",
+   "fameToMax": 6439736
+  },
+  {
+   "id": 417,
+   "name": "Leather Armors Avalon",
+   "category": "Crafting",
+   "subcategory": "Leather",
+   "slot": "Crafting",
+   "fameToMax": 12879472
+  },
+  {
+   "id": 418,
+   "name": "Leather Armors Fey",
+   "category": "Crafting",
+   "subcategory": "Leather",
+   "slot": "Crafting",
+   "fameToMax": 12879472
+  },
+  {
+   "id": 419,
+   "name": "Leather Armors Hell",
+   "category": "Crafting",
+   "subcategory": "Leather",
+   "slot": "Crafting",
+   "fameToMax": 12879472
+  },
+  {
+   "id": 420,
+   "name": "Leather Armors Morgana",
+   "category": "Crafting",
+   "subcategory": "Leather",
+   "slot": "Crafting",
+   "fameToMax": 12879472
+  },
+  {
+   "id": 421,
+   "name": "Leather Armors Set1",
+   "category": "Crafting",
+   "subcategory": "Leather",
+   "slot": "Crafting",
+   "fameToMax": 12879472
+  },
+  {
+   "id": 422,
+   "name": "Leather Armors Set2",
+   "category": "Crafting",
+   "subcategory": "Leather",
+   "slot": "Crafting",
+   "fameToMax": 12879472
+  },
+  {
+   "id": 423,
+   "name": "Leather Armors Set3",
+   "category": "Crafting",
+   "subcategory": "Leather",
+   "slot": "Crafting",
+   "fameToMax": 12879472
+  },
+  {
+   "id": 424,
+   "name": "Leather Armors Undead",
+   "category": "Crafting",
+   "subcategory": "Leather",
+   "slot": "Crafting",
+   "fameToMax": 12879472
+  },
+  {
+   "id": 425,
+   "name": "Leather Heads",
+   "category": "Crafting",
+   "subcategory": "Leather",
+   "slot": "Crafting",
+   "fameToMax": 3219868
+  },
+  {
+   "id": 426,
+   "name": "Leather Heads Avalon",
+   "category": "Crafting",
+   "subcategory": "Leather",
+   "slot": "Crafting",
+   "fameToMax": 6439736
+  },
+  {
+   "id": 427,
+   "name": "Leather Heads Fey",
+   "category": "Crafting",
+   "subcategory": "Leather",
+   "slot": "Crafting",
+   "fameToMax": 6439736
+  },
+  {
+   "id": 428,
+   "name": "Leather Heads Hell",
+   "category": "Crafting",
+   "subcategory": "Leather",
+   "slot": "Crafting",
+   "fameToMax": 6439736
+  },
+  {
+   "id": 429,
+   "name": "Leather Heads Morgana",
+   "category": "Crafting",
+   "subcategory": "Leather",
+   "slot": "Crafting",
+   "fameToMax": 6439736
+  },
+  {
+   "id": 430,
+   "name": "Leather Heads Set1",
+   "category": "Crafting",
+   "subcategory": "Leather",
+   "slot": "Crafting",
+   "fameToMax": 6439736
+  },
+  {
+   "id": 431,
+   "name": "Leather Heads Set2",
+   "category": "Crafting",
+   "subcategory": "Leather",
+   "slot": "Crafting",
+   "fameToMax": 6439736
+  },
+  {
+   "id": 432,
+   "name": "Leather Heads Set3",
+   "category": "Crafting",
+   "subcategory": "Leather",
+   "slot": "Crafting",
+   "fameToMax": 6439736
+  },
+  {
+   "id": 433,
+   "name": "Leather Heads Undead",
+   "category": "Crafting",
+   "subcategory": "Leather",
+   "slot": "Crafting",
+   "fameToMax": 6439736
+  },
+  {
+   "id": 434,
+   "name": "Leather Shoes",
+   "category": "Crafting",
+   "subcategory": "Leather",
+   "slot": "Crafting",
+   "fameToMax": 3219868
+  },
+  {
+   "id": 435,
+   "name": "Leather Shoes Avalon",
+   "category": "Crafting",
+   "subcategory": "Leather",
+   "slot": "Crafting",
+   "fameToMax": 6439736
+  },
+  {
+   "id": 436,
+   "name": "Leather Shoes Fey",
+   "category": "Crafting",
+   "subcategory": "Leather",
+   "slot": "Crafting",
+   "fameToMax": 6439736
+  },
+  {
+   "id": 437,
+   "name": "Leather Shoes Hell",
+   "category": "Crafting",
+   "subcategory": "Leather",
+   "slot": "Crafting",
+   "fameToMax": 6439736
+  },
+  {
+   "id": 438,
+   "name": "Leather Shoes Morgana",
+   "category": "Crafting",
+   "subcategory": "Leather",
+   "slot": "Crafting",
+   "fameToMax": 6439736
+  },
+  {
+   "id": 439,
+   "name": "Leather Shoes Set1",
+   "category": "Crafting",
+   "subcategory": "Leather",
+   "slot": "Crafting",
+   "fameToMax": 6439736
+  },
+  {
+   "id": 440,
+   "name": "Leather Shoes Set2",
+   "category": "Crafting",
+   "subcategory": "Leather",
+   "slot": "Crafting",
+   "fameToMax": 6439736
+  },
+  {
+   "id": 441,
+   "name": "Leather Shoes Set3",
+   "category": "Crafting",
+   "subcategory": "Leather",
+   "slot": "Crafting",
+   "fameToMax": 6439736
+  },
+  {
+   "id": 442,
+   "name": "Leather Shoes Undead",
+   "category": "Crafting",
+   "subcategory": "Leather",
+   "slot": "Crafting",
+   "fameToMax": 6439736
+  },
+  {
+   "id": 443,
+   "name": "Maces",
+   "category": "Crafting",
+   "subcategory": "Maces",
+   "slot": "Crafting",
+   "fameToMax": 12879472
+  },
+  {
+   "id": 444,
+   "name": "Maces Avalon",
+   "category": "Crafting",
+   "subcategory": "Maces",
+   "slot": "Crafting",
+   "fameToMax": 25758944
+  },
+  {
+   "id": 445,
+   "name": "Maces Crystal",
+   "category": "Crafting",
+   "subcategory": "Maces",
+   "slot": "Crafting",
+   "fameToMax": 25758944
+  },
+  {
+   "id": 446,
+   "name": "Maces Flail",
+   "category": "Crafting",
+   "subcategory": "Maces",
+   "slot": "Crafting",
+   "fameToMax": 25758944
+  },
+  {
+   "id": 447,
+   "name": "Maces Heavy",
+   "category": "Crafting",
+   "subcategory": "Maces",
+   "slot": "Crafting",
+   "fameToMax": 25758944
+  },
+  {
+   "id": 448,
+   "name": "Maces Hell",
+   "category": "Crafting",
+   "subcategory": "Maces",
+   "slot": "Crafting",
+   "fameToMax": 25758944
+  },
+  {
+   "id": 449,
+   "name": "Maces Keeper",
+   "category": "Crafting",
+   "subcategory": "Maces",
+   "slot": "Crafting",
+   "fameToMax": 25758944
+  },
+  {
+   "id": 450,
+   "name": "Maces Mace",
+   "category": "Crafting",
+   "subcategory": "Maces",
+   "slot": "Crafting",
+   "fameToMax": 25758944
+  },
+  {
+   "id": 451,
+   "name": "Maces Morgana",
+   "category": "Crafting",
+   "subcategory": "Maces",
+   "slot": "Crafting",
+   "fameToMax": 25758944
+  },
+  {
+   "id": 452,
+   "name": "Mage",
+   "category": "Crafting",
+   "subcategory": "Mage",
+   "slot": "Crafting"
+  },
+  {
+   "id": 453,
+   "name": "Naturestaffs",
+   "category": "Crafting",
+   "subcategory": "Naturestaffs",
+   "slot": "Crafting",
+   "fameToMax": 12879472
+  },
+  {
+   "id": 454,
+   "name": "Naturestaffs Avalon",
+   "category": "Crafting",
+   "subcategory": "Naturestaffs",
+   "slot": "Crafting",
+   "fameToMax": 25758944
+  },
+  {
+   "id": 455,
+   "name": "Naturestaffs Crystal",
+   "category": "Crafting",
+   "subcategory": "Naturestaffs",
+   "slot": "Crafting",
+   "fameToMax": 25758944
+  },
+  {
+   "id": 456,
+   "name": "Naturestaffs Great",
+   "category": "Crafting",
+   "subcategory": "Naturestaffs",
+   "slot": "Crafting",
+   "fameToMax": 25758944
+  },
+  {
+   "id": 457,
+   "name": "Naturestaffs Hell",
+   "category": "Crafting",
+   "subcategory": "Naturestaffs",
+   "slot": "Crafting",
+   "fameToMax": 25758944
+  },
+  {
+   "id": 458,
+   "name": "Naturestaffs Keeper",
+   "category": "Crafting",
+   "subcategory": "Naturestaffs",
+   "slot": "Crafting",
+   "fameToMax": 25758944
+  },
+  {
+   "id": 459,
+   "name": "Naturestaffs Keeper2",
+   "category": "Crafting",
+   "subcategory": "Naturestaffs",
+   "slot": "Crafting",
+   "fameToMax": 25758944
+  },
+  {
+   "id": 460,
+   "name": "Naturestaffs Nature",
+   "category": "Crafting",
+   "subcategory": "Naturestaffs",
+   "slot": "Crafting",
+   "fameToMax": 25758944
+  },
+  {
+   "id": 461,
+   "name": "Naturestaffs Wild",
+   "category": "Crafting",
+   "subcategory": "Naturestaffs",
+   "slot": "Crafting",
+   "fameToMax": 25758944
+  },
+  {
+   "id": 462,
+   "name": "Plate Armors",
+   "category": "Crafting",
+   "subcategory": "Plate",
+   "slot": "Crafting",
+   "fameToMax": 6439736
+  },
+  {
+   "id": 463,
+   "name": "Plate Armors Avalon",
+   "category": "Crafting",
+   "subcategory": "Plate",
+   "slot": "Crafting",
+   "fameToMax": 12879472
+  },
+  {
+   "id": 464,
+   "name": "Plate Armors Fey",
+   "category": "Crafting",
+   "subcategory": "Plate",
+   "slot": "Crafting",
+   "fameToMax": 12879472
+  },
+  {
+   "id": 465,
+   "name": "Plate Armors Hell",
+   "category": "Crafting",
+   "subcategory": "Plate",
+   "slot": "Crafting",
+   "fameToMax": 12879472
+  },
+  {
+   "id": 466,
+   "name": "Plate Armors Keeper",
+   "category": "Crafting",
+   "subcategory": "Plate",
+   "slot": "Crafting",
+   "fameToMax": 12879472
+  },
+  {
+   "id": 467,
+   "name": "Plate Armors Set1",
+   "category": "Crafting",
+   "subcategory": "Plate",
+   "slot": "Crafting",
+   "fameToMax": 12879472
+  },
+  {
+   "id": 468,
+   "name": "Plate Armors Set2",
+   "category": "Crafting",
+   "subcategory": "Plate",
+   "slot": "Crafting",
+   "fameToMax": 12879472
+  },
+  {
+   "id": 469,
+   "name": "Plate Armors Set3",
+   "category": "Crafting",
+   "subcategory": "Plate",
+   "slot": "Crafting",
+   "fameToMax": 12879472
+  },
+  {
+   "id": 470,
+   "name": "Plate Armors Undead",
+   "category": "Crafting",
+   "subcategory": "Plate",
+   "slot": "Crafting",
+   "fameToMax": 12879472
+  },
+  {
+   "id": 471,
+   "name": "Plate Heads",
+   "category": "Crafting",
+   "subcategory": "Plate",
+   "slot": "Crafting",
+   "fameToMax": 3219868
+  },
+  {
+   "id": 472,
+   "name": "Plate Heads Avalon",
+   "category": "Crafting",
+   "subcategory": "Plate",
+   "slot": "Crafting",
+   "fameToMax": 6439736
+  },
+  {
+   "id": 473,
+   "name": "Plate Heads Fey",
+   "category": "Crafting",
+   "subcategory": "Plate",
+   "slot": "Crafting",
+   "fameToMax": 6439736
+  },
+  {
+   "id": 474,
+   "name": "Plate Heads Hell",
+   "category": "Crafting",
+   "subcategory": "Plate",
+   "slot": "Crafting",
+   "fameToMax": 6439736
+  },
+  {
+   "id": 475,
+   "name": "Plate Heads Keeper",
+   "category": "Crafting",
+   "subcategory": "Plate",
+   "slot": "Crafting",
+   "fameToMax": 6439736
+  },
+  {
+   "id": 476,
+   "name": "Plate Heads Set1",
+   "category": "Crafting",
+   "subcategory": "Plate",
+   "slot": "Crafting",
+   "fameToMax": 6439736
+  },
+  {
+   "id": 477,
+   "name": "Plate Heads Set2",
+   "category": "Crafting",
+   "subcategory": "Plate",
+   "slot": "Crafting",
+   "fameToMax": 6439736
+  },
+  {
+   "id": 478,
+   "name": "Plate Heads Set3",
+   "category": "Crafting",
+   "subcategory": "Plate",
+   "slot": "Crafting",
+   "fameToMax": 6439736
+  },
+  {
+   "id": 479,
+   "name": "Plate Heads Undead",
+   "category": "Crafting",
+   "subcategory": "Plate",
+   "slot": "Crafting",
+   "fameToMax": 6439736
+  },
+  {
+   "id": 480,
+   "name": "Plate Shoes",
+   "category": "Crafting",
+   "subcategory": "Plate",
+   "slot": "Crafting",
+   "fameToMax": 3219868
+  },
+  {
+   "id": 481,
+   "name": "Plate Shoes Avalon",
+   "category": "Crafting",
+   "subcategory": "Plate",
+   "slot": "Crafting",
+   "fameToMax": 6439736
+  },
+  {
+   "id": 482,
+   "name": "Plate Shoes Fey",
+   "category": "Crafting",
+   "subcategory": "Plate",
+   "slot": "Crafting",
+   "fameToMax": 6439736
+  },
+  {
+   "id": 483,
+   "name": "Plate Shoes Hell",
+   "category": "Crafting",
+   "subcategory": "Plate",
+   "slot": "Crafting",
+   "fameToMax": 6439736
+  },
+  {
+   "id": 484,
+   "name": "Plate Shoes Keeper",
+   "category": "Crafting",
+   "subcategory": "Plate",
+   "slot": "Crafting",
+   "fameToMax": 6439736
+  },
+  {
+   "id": 485,
+   "name": "Plate Shoes Set1",
+   "category": "Crafting",
+   "subcategory": "Plate",
+   "slot": "Crafting",
+   "fameToMax": 6439736
+  },
+  {
+   "id": 486,
+   "name": "Plate Shoes Set2",
+   "category": "Crafting",
+   "subcategory": "Plate",
+   "slot": "Crafting",
+   "fameToMax": 6439736
+  },
+  {
+   "id": 487,
+   "name": "Plate Shoes Set3",
+   "category": "Crafting",
+   "subcategory": "Plate",
+   "slot": "Crafting",
+   "fameToMax": 6439736
+  },
+  {
+   "id": 488,
+   "name": "Plate Shoes Undead",
+   "category": "Crafting",
+   "subcategory": "Plate",
+   "slot": "Crafting",
+   "fameToMax": 6439736
+  },
+  {
+   "id": 489,
+   "name": "Quarterstaffs",
+   "category": "Crafting",
+   "subcategory": "Quarterstaffs",
+   "slot": "Crafting",
+   "fameToMax": 12879472
+  },
+  {
+   "id": 490,
+   "name": "Quarterstaffs Avalon",
+   "category": "Crafting",
+   "subcategory": "Quarterstaffs",
+   "slot": "Crafting",
+   "fameToMax": 25758944
+  },
+  {
+   "id": 491,
+   "name": "Quarterstaffs Crystal",
+   "category": "Crafting",
+   "subcategory": "Quarterstaffs",
+   "slot": "Crafting",
+   "fameToMax": 25758944
+  },
+  {
+   "id": 492,
+   "name": "Quarterstaffs Doublebladed",
+   "category": "Crafting",
+   "subcategory": "Quarterstaffs",
+   "slot": "Crafting",
+   "fameToMax": 25758944
+  },
+  {
+   "id": 493,
+   "name": "Quarterstaffs Hell",
+   "category": "Crafting",
+   "subcategory": "Quarterstaffs",
+   "slot": "Crafting",
+   "fameToMax": 25758944
+  },
+  {
+   "id": 494,
+   "name": "Quarterstaffs Ironclad",
+   "category": "Crafting",
+   "subcategory": "Quarterstaffs",
+   "slot": "Crafting",
+   "fameToMax": 25758944
+  },
+  {
+   "id": 495,
+   "name": "Quarterstaffs Keeper",
+   "category": "Crafting",
+   "subcategory": "Quarterstaffs",
+   "slot": "Crafting",
+   "fameToMax": 25758944
+  },
+  {
+   "id": 496,
+   "name": "Quarterstaffs Morgana",
+   "category": "Crafting",
+   "subcategory": "Quarterstaffs",
+   "slot": "Crafting",
+   "fameToMax": 25758944
+  },
+  {
+   "id": 497,
+   "name": "Quarterstaffs Quarterstaff",
+   "category": "Crafting",
+   "subcategory": "Quarterstaffs",
+   "slot": "Crafting",
+   "fameToMax": 25758944
+  },
+  {
+   "id": 498,
+   "name": "Refine",
+   "category": "Crafting",
+   "subcategory": "Refine",
+   "slot": "Crafting"
+  },
+  {
+   "id": 499,
+   "name": "Refine Fiber T4",
+   "category": "Crafting",
+   "subcategory": "Refine",
+   "slot": "Crafting",
+   "fameToMax": 2900810
+  },
+  {
+   "id": 500,
+   "name": "Refine Fiber T5",
+   "category": "Crafting",
+   "subcategory": "Refine",
+   "slot": "Crafting",
+   "fameToMax": 3976767
+  },
+  {
+   "id": 501,
+   "name": "Refine Fiber T6",
+   "category": "Crafting",
+   "subcategory": "Refine",
+   "slot": "Crafting",
+   "fameToMax": 7328579
+  },
+  {
+   "id": 502,
+   "name": "Refine Fiber T7",
+   "category": "Crafting",
+   "subcategory": "Refine",
+   "slot": "Crafting",
+   "fameToMax": 19980828
+  },
+  {
+   "id": 503,
+   "name": "Refine Fiber T8",
+   "category": "Crafting",
+   "subcategory": "Refine",
+   "slot": "Crafting",
+   "fameToMax": 21915828
+  },
+  {
+   "id": 504,
+   "name": "Refine Hide T4",
+   "category": "Crafting",
+   "subcategory": "Refine",
+   "slot": "Crafting",
+   "fameToMax": 2900810
+  },
+  {
+   "id": 505,
+   "name": "Refine Hide T5",
+   "category": "Crafting",
+   "subcategory": "Refine",
+   "slot": "Crafting",
+   "fameToMax": 3976767
+  },
+  {
+   "id": 506,
+   "name": "Refine Hide T6",
+   "category": "Crafting",
+   "subcategory": "Refine",
+   "slot": "Crafting",
+   "fameToMax": 7328579
+  },
+  {
+   "id": 507,
+   "name": "Refine Hide T7",
+   "category": "Crafting",
+   "subcategory": "Refine",
+   "slot": "Crafting",
+   "fameToMax": 19980828
+  },
+  {
+   "id": 508,
+   "name": "Refine Hide T8",
+   "category": "Crafting",
+   "subcategory": "Refine",
+   "slot": "Crafting",
+   "fameToMax": 21915828
+  },
+  {
+   "id": 509,
+   "name": "Refine Ore T4",
+   "category": "Crafting",
+   "subcategory": "Refine",
+   "slot": "Crafting",
+   "fameToMax": 2900810
+  },
+  {
+   "id": 510,
+   "name": "Refine Ore T5",
+   "category": "Crafting",
+   "subcategory": "Refine",
+   "slot": "Crafting",
+   "fameToMax": 3976767
+  },
+  {
+   "id": 511,
+   "name": "Refine Ore T6",
+   "category": "Crafting",
+   "subcategory": "Refine",
+   "slot": "Crafting",
+   "fameToMax": 7328579
+  },
+  {
+   "id": 512,
+   "name": "Refine Ore T7",
+   "category": "Crafting",
+   "subcategory": "Refine",
+   "slot": "Crafting",
+   "fameToMax": 19980828
+  },
+  {
+   "id": 513,
+   "name": "Refine Ore T8",
+   "category": "Crafting",
+   "subcategory": "Refine",
+   "slot": "Crafting",
+   "fameToMax": 21915828
+  },
+  {
+   "id": 514,
+   "name": "Refine Rock T4",
+   "category": "Crafting",
+   "subcategory": "Refine",
+   "slot": "Crafting",
+   "fameToMax": 2900810
+  },
+  {
+   "id": 515,
+   "name": "Refine Rock T5",
+   "category": "Crafting",
+   "subcategory": "Refine",
+   "slot": "Crafting",
+   "fameToMax": 3976767
+  },
+  {
+   "id": 516,
+   "name": "Refine Rock T6",
+   "category": "Crafting",
+   "subcategory": "Refine",
+   "slot": "Crafting",
+   "fameToMax": 7328579
+  },
+  {
+   "id": 517,
+   "name": "Refine Rock T7",
+   "category": "Crafting",
+   "subcategory": "Refine",
+   "slot": "Crafting",
+   "fameToMax": 19980828
+  },
+  {
+   "id": 518,
+   "name": "Refine Rock T8",
+   "category": "Crafting",
+   "subcategory": "Refine",
+   "slot": "Crafting",
+   "fameToMax": 21915828
+  },
+  {
+   "id": 519,
+   "name": "Refine Wood T4",
+   "category": "Crafting",
+   "subcategory": "Refine",
+   "slot": "Crafting",
+   "fameToMax": 2900810
+  },
+  {
+   "id": 520,
+   "name": "Refine Wood T5",
+   "category": "Crafting",
+   "subcategory": "Refine",
+   "slot": "Crafting",
+   "fameToMax": 3976767
+  },
+  {
+   "id": 521,
+   "name": "Refine Wood T6",
+   "category": "Crafting",
+   "subcategory": "Refine",
+   "slot": "Crafting",
+   "fameToMax": 7328579
+  },
+  {
+   "id": 522,
+   "name": "Refine Wood T7",
+   "category": "Crafting",
+   "subcategory": "Refine",
+   "slot": "Crafting",
+   "fameToMax": 19980828
+  },
+  {
+   "id": 523,
+   "name": "Refine Wood T8",
+   "category": "Crafting",
+   "subcategory": "Refine",
+   "slot": "Crafting",
+   "fameToMax": 21915828
+  },
+  {
+   "id": 524,
+   "name": "Shapeshifter",
+   "category": "Crafting",
+   "subcategory": "Shapeshifter",
+   "slot": "Crafting",
+   "fameToMax": 12879472
+  },
+  {
+   "id": 525,
+   "name": "Shapeshifter Avalon",
+   "category": "Crafting",
+   "subcategory": "Shapeshifter",
+   "slot": "Crafting",
+   "fameToMax": 25758944
+  },
+  {
+   "id": 526,
+   "name": "Shapeshifter Crystal",
+   "category": "Crafting",
+   "subcategory": "Shapeshifter",
+   "slot": "Crafting",
+   "fameToMax": 25758944
+  },
+  {
+   "id": 527,
+   "name": "Shapeshifter Hell",
+   "category": "Crafting",
+   "subcategory": "Shapeshifter",
+   "slot": "Crafting",
+   "fameToMax": 25758944
+  },
+  {
+   "id": 528,
+   "name": "Shapeshifter Keeper",
+   "category": "Crafting",
+   "subcategory": "Shapeshifter",
+   "slot": "Crafting",
+   "fameToMax": 25758944
+  },
+  {
+   "id": 529,
+   "name": "Shapeshifter Morgana",
+   "category": "Crafting",
+   "subcategory": "Shapeshifter",
+   "slot": "Crafting",
+   "fameToMax": 25758944
+  },
+  {
+   "id": 530,
+   "name": "Shapeshifter Set1",
+   "category": "Crafting",
+   "subcategory": "Shapeshifter",
+   "slot": "Crafting",
+   "fameToMax": 25758944
+  },
+  {
+   "id": 531,
+   "name": "Shapeshifter Set2",
+   "category": "Crafting",
+   "subcategory": "Shapeshifter",
+   "slot": "Crafting",
+   "fameToMax": 25758944
+  },
+  {
+   "id": 532,
+   "name": "Shapeshifter Set3",
+   "category": "Crafting",
+   "subcategory": "Shapeshifter",
+   "slot": "Crafting",
+   "fameToMax": 25758944
+  },
+  {
+   "id": 533,
+   "name": "Shields",
+   "category": "Crafting",
+   "subcategory": "Shields",
+   "slot": "Crafting",
+   "fameToMax": 3219868
+  },
+  {
+   "id": 534,
+   "name": "Shields Avalon",
+   "category": "Crafting",
+   "subcategory": "Shields",
+   "slot": "Crafting",
+   "fameToMax": 6439736
+  },
+  {
+   "id": 535,
+   "name": "Shields Crystal",
+   "category": "Crafting",
+   "subcategory": "Shields",
+   "slot": "Crafting",
+   "fameToMax": 6439736
+  },
+  {
+   "id": 536,
+   "name": "Shields Hell",
+   "category": "Crafting",
+   "subcategory": "Shields",
+   "slot": "Crafting",
+   "fameToMax": 6439736
+  },
+  {
+   "id": 537,
+   "name": "Shields Morgana",
+   "category": "Crafting",
+   "subcategory": "Shields",
+   "slot": "Crafting",
+   "fameToMax": 6439736
+  },
+  {
+   "id": 538,
+   "name": "Shields Shield",
+   "category": "Crafting",
+   "subcategory": "Shields",
+   "slot": "Crafting",
+   "fameToMax": 6439736
+  },
+  {
+   "id": 539,
+   "name": "Shields Undead",
+   "category": "Crafting",
+   "subcategory": "Shields",
+   "slot": "Crafting",
+   "fameToMax": 6439736
+  },
+  {
+   "id": 540,
+   "name": "Spears",
+   "category": "Crafting",
+   "subcategory": "Spears",
+   "slot": "Crafting",
+   "fameToMax": 12879472
+  },
+  {
+   "id": 541,
+   "name": "Spears Avalon",
+   "category": "Crafting",
+   "subcategory": "Spears",
+   "slot": "Crafting",
+   "fameToMax": 25758944
+  },
+  {
+   "id": 542,
+   "name": "Spears Crystal",
+   "category": "Crafting",
+   "subcategory": "Spears",
+   "slot": "Crafting",
+   "fameToMax": 25758944
+  },
+  {
+   "id": 543,
+   "name": "Spears Glaive",
+   "category": "Crafting",
+   "subcategory": "Spears",
+   "slot": "Crafting",
+   "fameToMax": 25758944
+  },
+  {
+   "id": 544,
+   "name": "Spears Great",
+   "category": "Crafting",
+   "subcategory": "Spears",
+   "slot": "Crafting",
+   "fameToMax": 25758944
+  },
+  {
+   "id": 545,
+   "name": "Spears Hell",
+   "category": "Crafting",
+   "subcategory": "Spears",
+   "slot": "Crafting",
+   "fameToMax": 25758944
+  },
+  {
+   "id": 546,
+   "name": "Spears Keeper",
+   "category": "Crafting",
+   "subcategory": "Spears",
+   "slot": "Crafting",
+   "fameToMax": 25758944
+  },
+  {
+   "id": 547,
+   "name": "Spears Spear",
+   "category": "Crafting",
+   "subcategory": "Spears",
+   "slot": "Crafting",
+   "fameToMax": 25758944
+  },
+  {
+   "id": 548,
+   "name": "Spears Undead",
+   "category": "Crafting",
+   "subcategory": "Spears",
+   "slot": "Crafting",
+   "fameToMax": 25758944
+  },
+  {
+   "id": 549,
+   "name": "Swords",
+   "category": "Crafting",
+   "subcategory": "Swords",
+   "slot": "Crafting",
+   "fameToMax": 12879472
+  },
+  {
+   "id": 550,
+   "name": "Swords Avalon",
+   "category": "Crafting",
+   "subcategory": "Swords",
+   "slot": "Crafting",
+   "fameToMax": 25758944
+  },
+  {
+   "id": 551,
+   "name": "Swords Claymore",
+   "category": "Crafting",
+   "subcategory": "Swords",
+   "slot": "Crafting",
+   "fameToMax": 25758944
+  },
+  {
+   "id": 552,
+   "name": "Swords Crystal",
+   "category": "Crafting",
+   "subcategory": "Swords",
+   "slot": "Crafting",
+   "fameToMax": 25758944
+  },
+  {
+   "id": 553,
+   "name": "Swords Dual",
+   "category": "Crafting",
+   "subcategory": "Swords",
+   "slot": "Crafting",
+   "fameToMax": 25758944
+  },
+  {
+   "id": 554,
+   "name": "Swords Hell",
+   "category": "Crafting",
+   "subcategory": "Swords",
+   "slot": "Crafting",
+   "fameToMax": 25758944
+  },
+  {
+   "id": 555,
+   "name": "Swords Morgana",
+   "category": "Crafting",
+   "subcategory": "Swords",
+   "slot": "Crafting",
+   "fameToMax": 25758944
+  },
+  {
+   "id": 556,
+   "name": "Swords Sword",
+   "category": "Crafting",
+   "subcategory": "Swords",
+   "slot": "Crafting",
+   "fameToMax": 25758944
+  },
+  {
+   "id": 557,
+   "name": "Swords Undead",
+   "category": "Crafting",
+   "subcategory": "Swords",
+   "slot": "Crafting",
+   "fameToMax": 25758944
+  },
+  {
+   "id": 558,
+   "name": "Tool",
+   "category": "Crafting",
+   "subcategory": "Tool",
+   "slot": "Crafting"
+  },
+  {
+   "id": 559,
+   "name": "Tool Axe",
+   "category": "Crafting",
+   "subcategory": "Tool",
+   "slot": "Crafting",
+   "fameToMax": 6439736
+  },
+  {
+   "id": 560,
+   "name": "Tool Axe Armor",
+   "category": "Crafting",
+   "subcategory": "Tool",
+   "slot": "Crafting",
+   "fameToMax": 12879472
+  },
+  {
+   "id": 561,
+   "name": "Tool Axe Head",
+   "category": "Crafting",
+   "subcategory": "Tool",
+   "slot": "Crafting",
+   "fameToMax": 6439736
+  },
+  {
+   "id": 562,
+   "name": "Tool Axe Shoes",
+   "category": "Crafting",
+   "subcategory": "Tool",
+   "slot": "Crafting",
+   "fameToMax": 6439736
+  },
+  {
+   "id": 563,
+   "name": "Tool Fishingrod",
+   "category": "Crafting",
+   "subcategory": "Tool",
+   "slot": "Crafting",
+   "fameToMax": 6439736
+  },
+  {
+   "id": 564,
+   "name": "Tool Fishingrod Armor",
+   "category": "Crafting",
+   "subcategory": "Tool",
+   "slot": "Crafting",
+   "fameToMax": 12879472
+  },
+  {
+   "id": 565,
+   "name": "Tool Fishingrod Head",
+   "category": "Crafting",
+   "subcategory": "Tool",
+   "slot": "Crafting",
+   "fameToMax": 6439736
+  },
+  {
+   "id": 566,
+   "name": "Tool Fishingrod Shoes",
+   "category": "Crafting",
+   "subcategory": "Tool",
+   "slot": "Crafting",
+   "fameToMax": 6439736
+  },
+  {
+   "id": 567,
+   "name": "Tool Hammer",
+   "category": "Crafting",
+   "subcategory": "Tool",
+   "slot": "Crafting",
+   "fameToMax": 6439736
+  },
+  {
+   "id": 568,
+   "name": "Tool Hammer Armor",
+   "category": "Crafting",
+   "subcategory": "Tool",
+   "slot": "Crafting",
+   "fameToMax": 12879472
+  },
+  {
+   "id": 569,
+   "name": "Tool Hammer Head",
+   "category": "Crafting",
+   "subcategory": "Tool",
+   "slot": "Crafting",
+   "fameToMax": 6439736
+  },
+  {
+   "id": 570,
+   "name": "Tool Hammer Shoes",
+   "category": "Crafting",
+   "subcategory": "Tool",
+   "slot": "Crafting",
+   "fameToMax": 6439736
+  },
+  {
+   "id": 571,
+   "name": "Tool Knife",
+   "category": "Crafting",
+   "subcategory": "Tool",
+   "slot": "Crafting",
+   "fameToMax": 6439736
+  },
+  {
+   "id": 572,
+   "name": "Tool Knife Armor",
+   "category": "Crafting",
+   "subcategory": "Tool",
+   "slot": "Crafting",
+   "fameToMax": 12879472
+  },
+  {
+   "id": 573,
+   "name": "Tool Knife Head",
+   "category": "Crafting",
+   "subcategory": "Tool",
+   "slot": "Crafting",
+   "fameToMax": 6439736
+  },
+  {
+   "id": 574,
+   "name": "Tool Knife Shoes",
+   "category": "Crafting",
+   "subcategory": "Tool",
+   "slot": "Crafting",
+   "fameToMax": 6439736
+  },
+  {
+   "id": 575,
+   "name": "Tool Pick",
+   "category": "Crafting",
+   "subcategory": "Tool",
+   "slot": "Crafting",
+   "fameToMax": 6439736
+  },
+  {
+   "id": 576,
+   "name": "Tool Pick Armor",
+   "category": "Crafting",
+   "subcategory": "Tool",
+   "slot": "Crafting",
+   "fameToMax": 12879472
+  },
+  {
+   "id": 577,
+   "name": "Tool Pick Head",
+   "category": "Crafting",
+   "subcategory": "Tool",
+   "slot": "Crafting",
+   "fameToMax": 6439736
+  },
+  {
+   "id": 578,
+   "name": "Tool Pick Shoes",
+   "category": "Crafting",
+   "subcategory": "Tool",
+   "slot": "Crafting",
+   "fameToMax": 6439736
+  },
+  {
+   "id": 579,
+   "name": "Tool Sickle",
+   "category": "Crafting",
+   "subcategory": "Tool",
+   "slot": "Crafting",
+   "fameToMax": 6439736
+  },
+  {
+   "id": 580,
+   "name": "Tool Sickle Armor",
+   "category": "Crafting",
+   "subcategory": "Tool",
+   "slot": "Crafting",
+   "fameToMax": 12879472
+  },
+  {
+   "id": 581,
+   "name": "Tool Sickle Head",
+   "category": "Crafting",
+   "subcategory": "Tool",
+   "slot": "Crafting",
+   "fameToMax": 6439736
+  },
+  {
+   "id": 582,
+   "name": "Tool Sickle Shoes",
+   "category": "Crafting",
+   "subcategory": "Tool",
+   "slot": "Crafting",
+   "fameToMax": 6439736
+  },
+  {
+   "id": 583,
+   "name": "Tool Siegehammer",
+   "category": "Crafting",
+   "subcategory": "Tool",
+   "slot": "Crafting",
+   "fameToMax": 6439736
+  },
+  {
+   "id": 584,
+   "name": "Tool Siegehammer Siegebanner",
+   "category": "Crafting",
+   "subcategory": "Tool",
+   "slot": "Crafting",
+   "fameToMax": 38638416
+  },
+  {
+   "id": 585,
+   "name": "Tool Siegehammer Siegehammer",
+   "category": "Crafting",
+   "subcategory": "Tool",
+   "slot": "Crafting",
+   "fameToMax": 38638416
+  },
+  {
+   "id": 586,
+   "name": "Tool Tracking",
+   "category": "Crafting",
+   "subcategory": "Tool",
+   "slot": "Crafting",
+   "fameToMax": 3219868
+  },
+  {
+   "id": 587,
+   "name": "Tool Tracking Tracking",
+   "category": "Crafting",
+   "subcategory": "Tool",
+   "slot": "Crafting",
+   "fameToMax": 19319208
+  },
+  {
+   "id": 588,
+   "name": "Torches",
+   "category": "Crafting",
+   "subcategory": "Torches",
+   "slot": "Crafting",
+   "fameToMax": 3219868
+  },
+  {
+   "id": 589,
+   "name": "Torches Avalon",
+   "category": "Crafting",
+   "subcategory": "Torches",
+   "slot": "Crafting",
+   "fameToMax": 6439736
+  },
+  {
+   "id": 590,
+   "name": "Torches Crystal",
+   "category": "Crafting",
+   "subcategory": "Torches",
+   "slot": "Crafting",
+   "fameToMax": 6439736
+  },
+  {
+   "id": 591,
+   "name": "Torches Hell",
+   "category": "Crafting",
+   "subcategory": "Torches",
+   "slot": "Crafting",
+   "fameToMax": 6439736
+  },
+  {
+   "id": 592,
+   "name": "Torches Keeper",
+   "category": "Crafting",
+   "subcategory": "Torches",
+   "slot": "Crafting",
+   "fameToMax": 6439736
+  },
+  {
+   "id": 593,
+   "name": "Torches Torch",
+   "category": "Crafting",
+   "subcategory": "Torches",
+   "slot": "Crafting",
+   "fameToMax": 6439736
+  },
+  {
+   "id": 594,
+   "name": "Torches Undead",
+   "category": "Crafting",
+   "subcategory": "Torches",
+   "slot": "Crafting",
+   "fameToMax": 6439736
+  },
+  {
+   "id": 595,
+   "name": "Trainee",
+   "category": "Crafting",
+   "subcategory": "Trainee",
+   "slot": "Crafting"
+  },
+  {
+   "id": 596,
+   "name": "Warrior",
+   "category": "Crafting",
+   "subcategory": "Warrior",
+   "slot": "Crafting"
+  },
+  {
+   "id": 597,
+   "name": "Alchemist",
+   "category": "Farming",
+   "subcategory": "Alchemist",
+   "slot": "Farming",
+   "fameToMax": 458628
+  },
+  {
+   "id": 598,
+   "name": "Alchemist Acid",
+   "category": "Farming",
+   "subcategory": "Alchemist",
+   "slot": "Farming",
+   "fameToMax": 4035884
+  },
+  {
+   "id": 599,
+   "name": "Alchemist Alcohol",
+   "category": "Farming",
+   "subcategory": "Alchemist",
+   "slot": "Farming",
+   "fameToMax": 4035884
+  },
+  {
+   "id": 600,
+   "name": "Alchemist Berserk",
+   "category": "Farming",
+   "subcategory": "Alchemist",
+   "slot": "Farming",
+   "fameToMax": 4035884
+  },
+  {
+   "id": 601,
+   "name": "Alchemist Cleanse",
+   "category": "Farming",
+   "subcategory": "Alchemist",
+   "slot": "Farming",
+   "fameToMax": 4035884
+  },
+  {
+   "id": 602,
+   "name": "Alchemist Cleanse2",
+   "category": "Farming",
+   "subcategory": "Alchemist",
+   "slot": "Farming",
+   "fameToMax": 4035884
+  },
+  {
+   "id": 603,
+   "name": "Alchemist Cooldown",
+   "category": "Farming",
+   "subcategory": "Alchemist",
+   "slot": "Farming",
+   "fameToMax": 4035884
+  },
+  {
+   "id": 604,
+   "name": "Alchemist Energy",
+   "category": "Farming",
+   "subcategory": "Alchemist",
+   "slot": "Farming",
+   "fameToMax": 4035884
+  },
+  {
+   "id": 605,
+   "name": "Alchemist Gather",
+   "category": "Farming",
+   "subcategory": "Alchemist",
+   "slot": "Farming",
+   "fameToMax": 4035884
+  },
+  {
+   "id": 606,
+   "name": "Alchemist Heal",
+   "category": "Farming",
+   "subcategory": "Alchemist",
+   "slot": "Farming",
+   "fameToMax": 4035884
+  },
+  {
+   "id": 607,
+   "name": "Alchemist Lava",
+   "category": "Farming",
+   "subcategory": "Alchemist",
+   "slot": "Farming",
+   "fameToMax": 4035884
+  },
+  {
+   "id": 608,
+   "name": "Alchemist Mobreset",
+   "category": "Farming",
+   "subcategory": "Alchemist",
+   "slot": "Farming",
+   "fameToMax": 4035884
+  },
+  {
+   "id": 609,
+   "name": "Alchemist Revive",
+   "category": "Farming",
+   "subcategory": "Alchemist",
+   "slot": "Farming",
+   "fameToMax": 4035884
+  },
+  {
+   "id": 610,
+   "name": "Alchemist Slowfield",
+   "category": "Farming",
+   "subcategory": "Alchemist",
+   "slot": "Farming",
+   "fameToMax": 4035884
+  },
+  {
+   "id": 611,
+   "name": "Alchemist Stoneskin",
+   "category": "Farming",
+   "subcategory": "Alchemist",
+   "slot": "Farming",
+   "fameToMax": 4035884
+  },
+  {
+   "id": 612,
+   "name": "Alchemist Tornado",
+   "category": "Farming",
+   "subcategory": "Alchemist",
+   "slot": "Farming",
+   "fameToMax": 4035884
+  },
+  {
+   "id": 613,
+   "name": "Animals",
+   "category": "Farming",
+   "subcategory": "Animals",
+   "slot": "Farming",
+   "fameToMax": 229314
+  },
+  {
+   "id": 614,
+   "name": "Animals Chicken",
+   "category": "Farming",
+   "subcategory": "Animals",
+   "slot": "Farming",
+   "fameToMax": 2017942
+  },
+  {
+   "id": 615,
+   "name": "Animals Cow",
+   "category": "Farming",
+   "subcategory": "Animals",
+   "slot": "Farming",
+   "fameToMax": 2017942
+  },
+  {
+   "id": 616,
+   "name": "Animals Goat",
+   "category": "Farming",
+   "subcategory": "Animals",
+   "slot": "Farming",
+   "fameToMax": 2017942
+  },
+  {
+   "id": 617,
+   "name": "Animals Goose",
+   "category": "Farming",
+   "subcategory": "Animals",
+   "slot": "Farming",
+   "fameToMax": 2017942
+  },
+  {
+   "id": 618,
+   "name": "Animals Horse",
+   "category": "Farming",
+   "subcategory": "Animals",
+   "slot": "Farming",
+   "fameToMax": 2017942
+  },
+  {
+   "id": 619,
+   "name": "Animals Ox",
+   "category": "Farming",
+   "subcategory": "Animals",
+   "slot": "Farming",
+   "fameToMax": 2017942
+  },
+  {
+   "id": 620,
+   "name": "Animals Pig",
+   "category": "Farming",
+   "subcategory": "Animals",
+   "slot": "Farming",
+   "fameToMax": 2017942
+  },
+  {
+   "id": 621,
+   "name": "Animals Rare",
+   "category": "Farming",
+   "subcategory": "Animals",
+   "slot": "Farming",
+   "fameToMax": 2017942
+  },
+  {
+   "id": 622,
+   "name": "Animals Sheep",
+   "category": "Farming",
+   "subcategory": "Animals",
+   "slot": "Farming",
+   "fameToMax": 2017942
+  },
+  {
+   "id": 623,
+   "name": "Cook",
+   "category": "Farming",
+   "subcategory": "Cook",
+   "slot": "Farming",
+   "fameToMax": 458628
+  },
+  {
+   "id": 624,
+   "name": "Cook Meat",
+   "category": "Farming",
+   "subcategory": "Cook",
+   "slot": "Farming",
+   "fameToMax": 4035884
+  },
+  {
+   "id": 625,
+   "name": "Cook Omelette",
+   "category": "Farming",
+   "subcategory": "Cook",
+   "slot": "Farming",
+   "fameToMax": 4035884
+  },
+  {
+   "id": 626,
+   "name": "Cook Pie",
+   "category": "Farming",
+   "subcategory": "Cook",
+   "slot": "Farming",
+   "fameToMax": 4035884
+  },
+  {
+   "id": 627,
+   "name": "Cook Products",
+   "category": "Farming",
+   "subcategory": "Cook",
+   "slot": "Farming",
+   "fameToMax": 4035884
+  },
+  {
+   "id": 628,
+   "name": "Cook Roast",
+   "category": "Farming",
+   "subcategory": "Cook",
+   "slot": "Farming",
+   "fameToMax": 4035884
+  },
+  {
+   "id": 629,
+   "name": "Cook Salad",
+   "category": "Farming",
+   "subcategory": "Cook",
+   "slot": "Farming",
+   "fameToMax": 4035884
+  },
+  {
+   "id": 630,
+   "name": "Cook Sandwich",
+   "category": "Farming",
+   "subcategory": "Cook",
+   "slot": "Farming",
+   "fameToMax": 4035884
+  },
+  {
+   "id": 631,
+   "name": "Cook Soup",
+   "category": "Farming",
+   "subcategory": "Cook",
+   "slot": "Farming",
+   "fameToMax": 4035884
+  },
+  {
+   "id": 632,
+   "name": "Cook Stew",
+   "category": "Farming",
+   "subcategory": "Cook",
+   "slot": "Farming",
+   "fameToMax": 4035884
+  },
+  {
+   "id": 633,
+   "name": "Crafter",
+   "category": "Farming",
+   "subcategory": "Crafter",
+   "slot": "Farming"
+  },
+  {
+   "id": 634,
+   "name": "Crops",
+   "category": "Farming",
+   "subcategory": "Crops",
+   "slot": "Farming",
+   "fameToMax": 229314
+  },
+  {
+   "id": 635,
+   "name": "Crops Bean",
+   "category": "Farming",
+   "subcategory": "Crops",
+   "slot": "Farming",
+   "fameToMax": 2017942
+  },
+  {
+   "id": 636,
+   "name": "Crops Cabbage",
+   "category": "Farming",
+   "subcategory": "Crops",
+   "slot": "Farming",
+   "fameToMax": 2017942
+  },
+  {
+   "id": 637,
+   "name": "Crops Carrot",
+   "category": "Farming",
+   "subcategory": "Crops",
+   "slot": "Farming",
+   "fameToMax": 2017942
+  },
+  {
+   "id": 638,
+   "name": "Crops Corn",
+   "category": "Farming",
+   "subcategory": "Crops",
+   "slot": "Farming",
+   "fameToMax": 2017942
+  },
+  {
+   "id": 639,
+   "name": "Crops Potato",
+   "category": "Farming",
+   "subcategory": "Crops",
+   "slot": "Farming",
+   "fameToMax": 2017942
+  },
+  {
+   "id": 640,
+   "name": "Crops Pumpkin",
+   "category": "Farming",
+   "subcategory": "Crops",
+   "slot": "Farming",
+   "fameToMax": 2017942
+  },
+  {
+   "id": 641,
+   "name": "Crops Turnip",
+   "category": "Farming",
+   "subcategory": "Crops",
+   "slot": "Farming",
+   "fameToMax": 2017942
+  },
+  {
+   "id": 642,
+   "name": "Crops Wheat",
+   "category": "Farming",
+   "subcategory": "Crops",
+   "slot": "Farming",
+   "fameToMax": 2017942
+  },
+  {
+   "id": 643,
+   "name": "Farmer",
+   "category": "Farming",
+   "subcategory": "Farmer",
+   "slot": "Farming"
+  },
+  {
+   "id": 644,
+   "name": "Herbs",
+   "category": "Farming",
+   "subcategory": "Herbs",
+   "slot": "Farming",
+   "fameToMax": 229314
+  },
+  {
+   "id": 645,
+   "name": "Herbs Agaric",
+   "category": "Farming",
+   "subcategory": "Herbs",
+   "slot": "Farming",
+   "fameToMax": 2017942
+  },
+  {
+   "id": 646,
+   "name": "Herbs Burdock",
+   "category": "Farming",
+   "subcategory": "Herbs",
+   "slot": "Farming",
+   "fameToMax": 2017942
+  },
+  {
+   "id": 647,
+   "name": "Herbs Comfrey",
+   "category": "Farming",
+   "subcategory": "Herbs",
+   "slot": "Farming",
+   "fameToMax": 2017942
+  },
+  {
+   "id": 648,
+   "name": "Herbs Foxglove",
+   "category": "Farming",
+   "subcategory": "Herbs",
+   "slot": "Farming",
+   "fameToMax": 2017942
+  },
+  {
+   "id": 649,
+   "name": "Herbs Mullein",
+   "category": "Farming",
+   "subcategory": "Herbs",
+   "slot": "Farming",
+   "fameToMax": 2017942
+  },
+  {
+   "id": 650,
+   "name": "Herbs Teasel",
+   "category": "Farming",
+   "subcategory": "Herbs",
+   "slot": "Farming",
+   "fameToMax": 2017942
+  },
+  {
+   "id": 651,
+   "name": "Herbs Yarrow",
+   "category": "Farming",
+   "subcategory": "Herbs",
+   "slot": "Farming",
+   "fameToMax": 2017942
+  },
+  {
+   "id": 652,
+   "name": "Trainee",
+   "category": "Farming",
+   "subcategory": "Trainee",
+   "slot": "Farming"
+  },
+  {
+   "id": 653,
+   "name": "Fiber T3",
+   "category": "Gathering",
+   "subcategory": "Fiber",
+   "slot": "Gathering"
+  },
+  {
+   "id": 654,
+   "name": "Fiber T4",
+   "category": "Gathering",
+   "subcategory": "Fiber",
+   "slot": "Gathering",
+   "fameToMax": 2927130
+  },
+  {
+   "id": 655,
+   "name": "Fiber T5",
+   "category": "Gathering",
+   "subcategory": "Fiber",
+   "slot": "Gathering",
+   "fameToMax": 4071787
+  },
+  {
+   "id": 656,
+   "name": "Fiber T6",
+   "category": "Gathering",
+   "subcategory": "Fiber",
+   "slot": "Gathering",
+   "fameToMax": 7631947
+  },
+  {
+   "id": 657,
+   "name": "Fiber T7",
+   "category": "Gathering",
+   "subcategory": "Fiber",
+   "slot": "Gathering",
+   "fameToMax": 20120846
+  },
+  {
+   "id": 658,
+   "name": "Fiber T8",
+   "category": "Gathering",
+   "subcategory": "Fiber",
+   "slot": "Gathering",
+   "fameToMax": 33732943
+  },
+  {
+   "id": 659,
+   "name": "Fish",
+   "category": "Gathering",
+   "subcategory": "Fish",
+   "slot": "Gathering",
+   "fameToMax": 4015146
+  },
+  {
+   "id": 660,
+   "name": "Fish Fish",
+   "category": "Gathering",
+   "subcategory": "Fish",
+   "slot": "Gathering",
+   "fameToMax": 8024452
+  },
+  {
+   "id": 661,
+   "name": "Hide T3",
+   "category": "Gathering",
+   "subcategory": "Hide",
+   "slot": "Gathering"
+  },
+  {
+   "id": 662,
+   "name": "Hide T4",
+   "category": "Gathering",
+   "subcategory": "Hide",
+   "slot": "Gathering",
+   "fameToMax": 2927130
+  },
+  {
+   "id": 663,
+   "name": "Hide T5",
+   "category": "Gathering",
+   "subcategory": "Hide",
+   "slot": "Gathering",
+   "fameToMax": 4071787
+  },
+  {
+   "id": 664,
+   "name": "Hide T6",
+   "category": "Gathering",
+   "subcategory": "Hide",
+   "slot": "Gathering",
+   "fameToMax": 7631947
+  },
+  {
+   "id": 665,
+   "name": "Hide T7",
+   "category": "Gathering",
+   "subcategory": "Hide",
+   "slot": "Gathering",
+   "fameToMax": 20120846
+  },
+  {
+   "id": 666,
+   "name": "Hide T8",
+   "category": "Gathering",
+   "subcategory": "Hide",
+   "slot": "Gathering",
+   "fameToMax": 33732943
+  },
+  {
+   "id": 667,
+   "name": "Ore T3",
+   "category": "Gathering",
+   "subcategory": "Ore",
+   "slot": "Gathering"
+  },
+  {
+   "id": 668,
+   "name": "Ore T4",
+   "category": "Gathering",
+   "subcategory": "Ore",
+   "slot": "Gathering",
+   "fameToMax": 2927130
+  },
+  {
+   "id": 669,
+   "name": "Ore T5",
+   "category": "Gathering",
+   "subcategory": "Ore",
+   "slot": "Gathering",
+   "fameToMax": 4071787
+  },
+  {
+   "id": 670,
+   "name": "Ore T6",
+   "category": "Gathering",
+   "subcategory": "Ore",
+   "slot": "Gathering",
+   "fameToMax": 7631947
+  },
+  {
+   "id": 671,
+   "name": "Ore T7",
+   "category": "Gathering",
+   "subcategory": "Ore",
+   "slot": "Gathering",
+   "fameToMax": 20120846
+  },
+  {
+   "id": 672,
+   "name": "Ore T8",
+   "category": "Gathering",
+   "subcategory": "Ore",
+   "slot": "Gathering",
+   "fameToMax": 33732943
+  },
+  {
+   "id": 673,
+   "name": "Rock T3",
+   "category": "Gathering",
+   "subcategory": "Rock",
+   "slot": "Gathering"
+  },
+  {
+   "id": 674,
+   "name": "Rock T4",
+   "category": "Gathering",
+   "subcategory": "Rock",
+   "slot": "Gathering",
+   "fameToMax": 2927130
+  },
+  {
+   "id": 675,
+   "name": "Rock T5",
+   "category": "Gathering",
+   "subcategory": "Rock",
+   "slot": "Gathering",
+   "fameToMax": 4071787
+  },
+  {
+   "id": 676,
+   "name": "Rock T6",
+   "category": "Gathering",
+   "subcategory": "Rock",
+   "slot": "Gathering",
+   "fameToMax": 7631947
+  },
+  {
+   "id": 677,
+   "name": "Rock T7",
+   "category": "Gathering",
+   "subcategory": "Rock",
+   "slot": "Gathering",
+   "fameToMax": 20120846
+  },
+  {
+   "id": 678,
+   "name": "Rock T8",
+   "category": "Gathering",
+   "subcategory": "Rock",
+   "slot": "Gathering",
+   "fameToMax": 33732943
+  },
+  {
+   "id": 679,
+   "name": "Trainee",
+   "category": "Gathering",
+   "subcategory": "Trainee",
+   "slot": "Gathering"
+  },
+  {
+   "id": 680,
+   "name": "Wood T3",
+   "category": "Gathering",
+   "subcategory": "Wood",
+   "slot": "Gathering"
+  },
+  {
+   "id": 681,
+   "name": "Wood T4",
+   "category": "Gathering",
+   "subcategory": "Wood",
+   "slot": "Gathering",
+   "fameToMax": 2927130
+  },
+  {
+   "id": 682,
+   "name": "Wood T5",
+   "category": "Gathering",
+   "subcategory": "Wood",
+   "slot": "Gathering",
+   "fameToMax": 4071787
+  },
+  {
+   "id": 683,
+   "name": "Wood T6",
+   "category": "Gathering",
+   "subcategory": "Wood",
+   "slot": "Gathering",
+   "fameToMax": 7631947
+  },
+  {
+   "id": 684,
+   "name": "Wood T7",
+   "category": "Gathering",
+   "subcategory": "Wood",
+   "slot": "Gathering",
+   "fameToMax": 20120846
+  },
+  {
+   "id": 685,
+   "name": "Wood T8",
+   "category": "Gathering",
+   "subcategory": "Wood",
+   "slot": "Gathering",
+   "fameToMax": 33732943
+  },
+  {
+   "id": 686,
+   "name": "Start",
+   "category": "Start",
+   "slot": "Start"
+  },
+  {
+   "id": 687,
+   "name": "Direbear",
+   "category": "Tracking",
+   "subcategory": "Direbear",
+   "slot": "Tracking",
+   "fameToMax": 2557648
+  },
+  {
+   "id": 688,
+   "name": "Eagle",
+   "category": "Tracking",
+   "subcategory": "Eagle",
+   "slot": "Tracking",
+   "fameToMax": 2557648
+  },
+  {
+   "id": 689,
+   "name": "Elemental Rock",
+   "category": "Tracking",
+   "subcategory": "Elemental",
+   "slot": "Tracking",
+   "fameToMax": 2557648
+  },
+  {
+   "id": 690,
+   "name": "Ent",
+   "category": "Tracking",
+   "subcategory": "Ent",
+   "slot": "Tracking",
+   "fameToMax": 2557648
+  },
+  {
+   "id": 691,
+   "name": "Faction Mob",
+   "category": "Tracking",
+   "subcategory": "Faction",
+   "slot": "Tracking",
+   "fameToMax": 2557648
+  },
+  {
+   "id": 692,
+   "name": "General",
+   "category": "Tracking",
+   "subcategory": "General",
+   "slot": "Tracking",
+   "fameToMax": 2557648
+  },
+  {
+   "id": 693,
+   "name": "Imp",
+   "category": "Tracking",
+   "subcategory": "Imp",
+   "slot": "Tracking",
+   "fameToMax": 2557648
+  },
+  {
+   "id": 694,
+   "name": "Panther",
+   "category": "Tracking",
+   "subcategory": "Panther",
+   "slot": "Tracking",
+   "fameToMax": 2557648
+  },
+  {
+   "id": 695,
+   "name": "Trainee",
+   "category": "Tracking",
+   "subcategory": "Trainee",
+   "slot": "Tracking"
+  },
+  {
+   "id": 696,
+   "name": "Werewolf",
+   "category": "Tracking",
+   "subcategory": "Werewolf",
+   "slot": "Tracking",
+   "fameToMax": 2557648
+  }
+ ]
+}

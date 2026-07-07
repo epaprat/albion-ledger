@@ -21,6 +21,8 @@ const (
 	TypeString  = typeString
 	TypeIntZero = typeIntZero
 	TypeArray   = typeArray
+	TypeFloat   = typeFloat
+	TypeInt64   = typeCompressedLong
 )
 
 // Protocol18 type codes (match the C# Protocol18Type enum).

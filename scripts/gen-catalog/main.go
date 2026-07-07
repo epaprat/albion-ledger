@@ -16,6 +16,7 @@ import (
 	"os"
 	"regexp"
 	"strconv"
+	"strings"
 )
 
 type entry struct {
@@ -24,7 +25,34 @@ type entry struct {
 	Name       string `json:"name"`
 }
 
-var line = regexp.MustCompile(`^\s*(\d+):\s*(\S+)\s*:\s*(.+?)\s*$`)
+var tierPrefix = regexp.MustCompile(`^[Tt]\d+_`)
+
+// prettyName turns a bare unique id into a readable display name when the dump has
+// no localized name: drop the "@<n>" enchant suffix and the "T<n>_" tier prefix
+// (tier/enchant are shown separately), swap underscores for spaces, Title Case.
+// e.g. "T6_RANDOM_DUNGEON_SOLO_TOKEN_D1@1" → "Random Dungeon Solo Token D1".
+func prettyName(unique string) string {
+	s := unique
+	if i := strings.LastIndexByte(s, '@'); i >= 0 {
+		s = s[:i]
+	}
+	s = tierPrefix.ReplaceAllString(s, "")
+	s = strings.TrimSpace(strings.ReplaceAll(s, "_", " "))
+	if s == "" {
+		return unique // nothing left to show → keep the raw id
+	}
+	words := strings.Fields(s)
+	for i, w := range words {
+		words[i] = strings.ToUpper(w[:1]) + strings.ToLower(w[1:])
+	}
+	return strings.Join(words, " ")
+}
+
+// Two line shapes in items.txt: "<idx>: <UNIQUENAME> : <Localized Name>" and
+// "<idx>: <UNIQUENAME>" (no localized name — e.g. dungeon tokens). The localized
+// part is optional; when absent the uniquename becomes the display name (below),
+// so those items still resolve instead of dropping to "Unknown item #N".
+var line = regexp.MustCompile(`^\s*(\d+):\s*(\S+)(?:\s*:\s*(.+?))?\s*$`)
 
 func main() {
 	if len(os.Args) != 3 {
@@ -49,7 +77,7 @@ func main() {
 		idx, _ := strconv.Atoi(m[1])
 		name := m[3]
 		if name == "" {
-			name = m[2]
+			name = prettyName(m[2]) // no localized name → readable name from the unique id
 		}
 		items = append(items, entry{Index: idx, UniqueName: m[2], Name: name})
 	}
