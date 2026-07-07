@@ -36,6 +36,16 @@ memory reading, injection, or automation, and nothing that grants a real-time
 competitive advantage. It surfaces **market data and your own account data** only, and
 your own data stays local unless you explicitly opt in to sharing.
 
+## Screenshots
+
+| Destiny Board | Holdings | Export |
+| --- | --- | --- |
+| ![Destiny Board](docs/screenshots/spec.png) | ![Holdings](docs/screenshots/holdings.png) | ![Export](docs/screenshots/export.png) |
+
+The **Destiny Board** shows your full skill tree by gear slot (maxed skills read
+`100/120`); **Holdings** values your inventory and every city bank; **Export** saves any
+dataset as Excel-compatible CSV.
+
 ## Install
 
 > **Status.** Live capture is verified on **macOS** today. Windows and Linux binaries
