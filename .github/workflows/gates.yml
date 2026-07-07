@@ -1,6 +1,6 @@
 name: gates (manual)
 
-# Real enforcement runs LOCALLY: pre-push hook -> scripts/ci-local.sh (no GitHub minutes burned).
+# Real enforcement runs LOCALLY: the pre-push hook runs scripts/ci-local.sh (no CI minutes burned).
 # This workflow is MANUAL only (workflow_dispatch) — no automatic push/PR trigger.
 on:
   workflow_dispatch:
@@ -12,11 +12,11 @@ jobs:
       - uses: actions/checkout@v4
         with:
           fetch-depth: 0
-      - name: Repo hygiene (Principle IX)
+      - name: Repo hygiene
         run: bash scripts/gates/repo-hygiene.sh --all
-      - name: No AI co-author (Principle IX)
+      - name: No AI co-author
         run: |
           git log -1 --pretty=%B > /tmp/lastmsg.txt
           bash scripts/gates/no-ai-coauthor.sh /tmp/lastmsg.txt
-      - name: Docs freshness (Principle X)
+      - name: Docs freshness
         run: bash scripts/gates/docs-freshness.sh
