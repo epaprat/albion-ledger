@@ -4,6 +4,10 @@ import HoldingsPanel from './components/HoldingsPanel.vue'
 import FlowPanel from './components/FlowPanel.vue'
 import SessionSummaryBar from './components/SessionSummaryBar.vue'
 import { fmt, compact, tierLabel, qLabel, srcText } from './format.js'
+import { useTable } from './composables/useTable.js'
+import StateBlock from './components/StateBlock.vue'
+import SortTh from './components/SortTh.vue'
+import FilterBar from './components/FilterBar.vue'
 
 const tab = ref('flow')
 const market = ref(new Map())        // index -> LiveViewItem
@@ -80,9 +84,16 @@ const specTree = computed(() => {
   catList = catList.filter(c => c.subList.length > 0)
   return catList
 })
-const marketRows = computed(() =>
-  [...market.value.values()].sort((a, b) => (b.lastSeen || 0) - (a.lastSeen || 0))
-)
+const marketList = computed(() => [...market.value.values()])
+const marketAccessor = (r, k) => ({
+  item: r.item.displayName, tier: (r.item.tier || 0) * 10 + (r.item.enchant || 0),
+  quality: r.item.quality || 0, value: r.valuation.amount || 0, lastSeen: r.lastSeen || 0,
+}[k])
+const marketTable = useTable(marketList, {
+  fields: [(r) => r.item.displayName, (r) => r.item.uniqueName],
+  accessor: marketAccessor,
+  defaultSort: { key: 'lastSeen', dir: 'desc' },
+})
 const encrypted = computed(() => (status.value.encryptedRate || 0) > 0.5)
 
 const svc = () => (window.go && window.go.wailsadapter && window.go.wailsadapter.Service) || null
@@ -219,22 +230,34 @@ onMounted(async () => {
 
       <!-- MARKET -->
       <section v-else-if="tab === 'market'">
-        <div v-if="marketRows.length === 0" class="state">
-          <p class="big">No market items yet</p>
-          <p class="muted">Open the marketplace and click items.</p>
-        </div>
-        <table v-else>
-          <thead><tr><th>Item</th><th>Tier</th><th>Quality</th><th class="num">Value</th><th>Source</th></tr></thead>
-          <tbody>
-            <tr v-for="r in marketRows" :key="r.item.index">
-              <td :class="{ unknown: !r.item.known }">{{ r.item.displayName }}</td>
-              <td class="dim">{{ tierLabel(r.item) }}</td>
-              <td class="dim">{{ qLabel(r.item.quality) }}</td>
-              <td class="num">{{ fmt(r.valuation.amount) }}</td>
-              <td><span class="badge" :class="r.valuation.source">{{ srcText[r.valuation.source] }}</span></td>
-            </tr>
-          </tbody>
-        </table>
+        <StateBlock v-if="marketList.length === 0" variant="empty" title="No market prices yet">
+          Open the in-game marketplace and hover items — their prices land here.
+        </StateBlock>
+        <template v-else>
+          <FilterBar v-model="marketTable.query.value" :shown="marketTable.shown.value" :total="marketTable.total.value" placeholder="Filter items…" />
+          <StateBlock v-if="marketTable.shown.value === 0" variant="empty" title="No matches"
+            :action="{ label: 'Clear filter', onClick: marketTable.clearFilter }">
+            Nothing matches the current filter.
+          </StateBlock>
+          <table v-else>
+            <thead><tr>
+              <SortTh label="Item" col-key="item" :sort-key="marketTable.sortKey.value" :sort-dir="marketTable.sortDir.value" @toggle="k => marketTable.toggleSort(k, 'asc')" />
+              <SortTh label="Tier" col-key="tier" :sort-key="marketTable.sortKey.value" :sort-dir="marketTable.sortDir.value" @toggle="marketTable.toggleSort" />
+              <SortTh label="Quality" col-key="quality" :sort-key="marketTable.sortKey.value" :sort-dir="marketTable.sortDir.value" @toggle="marketTable.toggleSort" />
+              <SortTh label="Value" col-key="value" align="num" :sort-key="marketTable.sortKey.value" :sort-dir="marketTable.sortDir.value" @toggle="marketTable.toggleSort" />
+              <th>Source</th>
+            </tr></thead>
+            <tbody>
+              <tr v-for="r in marketTable.visibleRows.value" :key="r.item.index">
+                <td :class="{ unknown: !r.item.known }">{{ r.item.displayName }}</td>
+                <td class="dim">{{ tierLabel(r.item) }}</td>
+                <td class="dim">{{ qLabel(r.item.quality) }}</td>
+                <td class="num">{{ fmt(r.valuation.amount) }}</td>
+                <td><span class="badge" :class="r.valuation.source">{{ srcText[r.valuation.source] }}</span></td>
+              </tr>
+            </tbody>
+          </table>
+        </template>
       </section>
 
       <!-- EXPORT (CSV, 013) -->
