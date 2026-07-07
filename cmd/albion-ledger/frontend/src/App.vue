@@ -367,21 +367,26 @@ onMounted(async () => {
 
 <style scoped>
 .wrap { height: 100vh; display: flex; flex-direction: column; }
-.status { display: flex; align-items: center; gap: 8px; padding: 10px 16px; background: var(--panel); border-bottom: 1px solid var(--border); font-size: 14px; }
+.status { display: flex; align-items: center; gap: 8px; padding: 10px 16px; font-size: 14px;
+  background: linear-gradient(180deg, var(--panel-2), var(--panel));
+  border-bottom: 1px solid var(--frame);
+  box-shadow: inset 0 -1px 0 rgba(0,0,0,.4); }
 .dot { width: 9px; height: 9px; border-radius: 50%; }
 .dot.on { background: var(--good); box-shadow: 0 0 6px var(--good); } .dot.off { background: var(--muted); }
 .muted { color: var(--muted); }
 .tabs { margin-left: auto; display: flex; gap: 4px; }
-.tabs button { background: transparent; border: 1px solid transparent; color: var(--muted); padding: 4px 12px; border-radius: 6px; cursor: pointer; font-size: 13px; }
-.tabs button.active { background: var(--bg); color: var(--text); border-color: var(--border); }
+.tabs button { background: transparent; border: 1px solid transparent; color: var(--muted); padding: 5px 14px; border-radius: 5px 5px 0 0; cursor: pointer; font-size: 13px;
+  font-family: var(--font-display); letter-spacing: .04em; box-shadow: none; }
+.tabs button.active { background: linear-gradient(180deg, var(--panel-2), var(--panel)); color: var(--accent-bright);
+  border-color: var(--frame); border-bottom-color: transparent; box-shadow: inset 0 2px 0 var(--accent); }
 .drift { padding: 8px 16px; background: #3a2d00; color: var(--warn); font-size: 13px; }
 main { flex: 1; overflow: auto; }
 .state { padding: 56px 24px; text-align: center; color: var(--muted); }
 .state .big { font-size: 18px; color: var(--text); margin: 0 0 8px; }
 table { width: 100%; border-collapse: collapse; font-size: 14px; }
-thead th { position: sticky; top: 0; background: var(--panel); text-align: left; padding: 8px 16px; color: var(--muted); font-weight: 600; border-bottom: 1px solid var(--border); }
+thead th { position: sticky; top: 0; background: linear-gradient(180deg, var(--panel-2), var(--panel)); text-align: left; padding: 8px 16px; color: var(--accent); font-weight: 600; border-bottom: 1px solid var(--frame); font-family: var(--font-display); font-size: 12px; letter-spacing: .06em; text-transform: uppercase; }
 tbody td { padding: 7px 16px; border-bottom: 1px solid var(--border); }
-tbody tr:hover { background: var(--panel); }
+tbody tr:hover { background: rgba(201,162,74,.06); }
 .num { text-align: right; font-variant-numeric: tabular-nums; }
 .dim { color: var(--muted); }
 .unknown { color: var(--muted); font-style: italic; }
@@ -390,11 +395,11 @@ tbody tr:hover { background: var(--panel); }
 .badge.server_estimate { background: rgba(210,153,34,.18); color: var(--warn); }
 .badge.unknown { color: var(--muted); }
 .badge.stale { background: rgba(248,81,73,.18); color: var(--bad); margin-left: 8px; }
-.spec-note { margin: 8px 0; padding: 8px 12px; background: var(--panel); border-left: 3px solid var(--warn, #c90); border-radius: 4px; font-size: 13px; color: var(--muted); line-height: 1.4; }
+.spec-note { margin: 8px 12px; padding: 10px 14px; background: rgba(201,162,74,.06); border-left: 3px solid var(--accent); border-radius: 4px; font-size: 13px; color: var(--muted); line-height: 1.5; }
 .spec-tree { display: flex; flex-direction: column; gap: 2px; }
 .spec-head { display: flex; align-items: baseline; gap: 8px; width: 100%; text-align: left; background: none; border: none; color: var(--text); cursor: pointer; padding: 7px 10px; border-radius: 6px; font: inherit; }
 .spec-head:hover { background: var(--panel); }
-.spec-head.cat { font-weight: 600; font-size: 15px; }
+.spec-head.cat { font-weight: 700; font-size: 15px; font-family: var(--font-display); color: var(--accent-bright); letter-spacing: .03em; }
 .spec-head.sub { font-size: 13px; padding-left: 26px; color: var(--text); }
 .spec-name { flex: 0 0 auto; }
 .chev { display: inline-block; transition: transform .12s; font-size: 11px; color: var(--muted); }
