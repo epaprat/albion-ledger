@@ -8,8 +8,7 @@
 the local game network stream — no memory reading, no injection, no automation — and
 turns it into a clear answer to *"what do I own, and how much am I earning right now?"*
 
-<!-- Screenshot: add docs/screenshots/hero.png (the Flow / silver-per-hour screen) and uncomment:
-![Albion Ledger — earnings and flow](docs/screenshots/hero.png) -->
+![Albion Ledger — the Flow view with the silver-per-hour headline](docs/screenshots/hero.png)
 
 ## What it does
 
