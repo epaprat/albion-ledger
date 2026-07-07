@@ -92,7 +92,7 @@ const marketAccessor = (r, k) => ({
 const marketTable = useTable(marketList, {
   fields: [(r) => r.item.displayName, (r) => r.item.uniqueName],
   accessor: marketAccessor,
-  defaultSort: { key: 'lastSeen', dir: 'desc' },
+  defaultSort: { key: 'value', dir: 'desc' },
 })
 const encrypted = computed(() => (status.value.encryptedRate || 0) > 0.5)
 

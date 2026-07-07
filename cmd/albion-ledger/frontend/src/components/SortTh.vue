@@ -6,7 +6,7 @@
 defineProps({
   label: { type: String, required: true },
   colKey: { type: String, required: true },
-  sortKey: { type: [String, null], default: null },
+  sortKey: { type: String, default: null },
   sortDir: { type: String, default: 'desc' },
   align: { type: String, default: 'left' }, // 'left' | 'num'
 })

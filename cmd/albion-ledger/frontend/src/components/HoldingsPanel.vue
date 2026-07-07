@@ -72,6 +72,11 @@ const staleLabel = (st) => {
   if (!st || !st.seen) return ''
   return st.stale ? 'stale' : ''
 }
+
+// True when the item filter leaves at least one city/tab visible — drives the empty
+// state so a filter that only matches a filtered-out city never blanks the panel.
+const anyVisible = computed(() =>
+  visibleCities.value.some((c) => tabsOf(c).some((t) => rowsFor(c.name, t.name).length)))
 </script>
 
 <template>
@@ -114,7 +119,7 @@ const staleLabel = (st) => {
     <StateBlock v-else-if="cities.length === 0" variant="empty" title="No holdings seen yet">
       Open your inventory or a bank in game — held items appear here, valued.
     </StateBlock>
-    <StateBlock v-else-if="itemQuery && shownCount === 0" variant="empty" title="No matching items"
+    <StateBlock v-else-if="itemQuery && !anyVisible" variant="empty" title="No matching items"
       :action="{ label: 'Clear filter', onClick: () => { itemQuery = '' } }">
       Nothing across your banks matches the current filter.
     </StateBlock>

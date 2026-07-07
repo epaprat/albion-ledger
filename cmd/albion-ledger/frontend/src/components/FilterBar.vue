@@ -1,6 +1,8 @@
 <script setup>
 // FilterBar (014): a labelled search input with a live shown/total count and a
 // one-action clear (button or Escape). Shared by every data table (contract §4).
+import { useId } from 'vue'
+const fid = useId()
 defineProps({
   modelValue: { type: String, default: '' },
   shown: { type: Number, default: 0 },
@@ -12,9 +14,9 @@ const emit = defineEmits(['update:modelValue'])
 
 <template>
   <div class="filter-bar">
-    <label class="sr-only" :for="'flt-' + placeholder">Filter</label>
+    <label class="sr-only" :for="fid">Filter</label>
     <input
-      :id="'flt-' + placeholder"
+      :id="fid"
       type="search"
       class="filter-input"
       :value="modelValue"

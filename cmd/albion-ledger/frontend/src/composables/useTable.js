@@ -1,4 +1,4 @@
-import { ref, computed, unref } from 'vue'
+import { ref, computed, unref, isRef } from 'vue'
 
 // useTable (014): one sort + filter contract shared by every data table. The core
 // is two pure functions (sortRows/filterRows) that the composable wires to reactive
@@ -48,7 +48,7 @@ export function useTable(rowsRef, opts = {}) {
   const sortDir = ref(defaultSort?.dir ?? 'desc')
   const query = ref('')
 
-  const source = () => unref(rowsRef) || []
+  const source = () => (typeof rowsRef === 'function' && !isRef(rowsRef) ? rowsRef() : unref(rowsRef)) || []
   const total = computed(() => source().length)
   const visibleRows = computed(() =>
     sortRows(filterRows(source(), query.value, fields), sortKey.value, sortDir.value, accessor)

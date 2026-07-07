@@ -81,11 +81,11 @@ const amount = (e) => (e.kind === 'fame' ? compact(e.fame) + ' fame' : e.valued 
 
     <!-- PER-ZONE ANALYTICS (006 — "where should I farm?") -->
     <template v-if="view === 'zones'">
-      <div class="filters" role="tablist" aria-label="Time window">
+      <div class="filters" role="group" aria-label="Time window">
         <button
           v-for="w in WINDOWS" :key="w.key"
           :class="{ active: zoneWindow === w.key }"
-          role="tab" :aria-selected="zoneWindow === w.key"
+          :aria-pressed="zoneWindow === w.key"
           @click="emit('update:zoneWindow', w.key)"
         >{{ w.label }}</button>
         <span class="muted winlabel">rates over active time in: {{ WINDOWS.find(w => w.key === zoneWindow)?.label }}</span>
@@ -147,12 +147,6 @@ const amount = (e) => (e.kind === 'fame' ? compact(e.fame) + ' fame' : e.valued 
         :title="encrypted ? 'Stream is encrypted' : 'No loot or gather yet'">
         Kill mobs or gather resources — a per-item breakdown builds here.
       </StateBlock>
-      <div v-if="false" class="state legacy-hidden" style="display:none">
-        <p class="big">Nothing gathered or looted yet</p>
-        <p class="muted" v-if="encrypted">The stream is currently encrypted — can't read earnings right now.</p>
-        <p class="muted" v-else>Gather a resource or loot a mob and the per-item breakdown builds here.</p>
-      </div>
-
       <div v-else class="breakdowns">
         <div class="group" v-if="gather.length">
           <h3>Gather <span class="gtotal">{{ compact(gatherTotal) }}</span></h3>
@@ -188,11 +182,11 @@ const amount = (e) => (e.kind === 'fame' ? compact(e.fame) + ' fame' : e.valued 
 
     <!-- LIVE EVENT STREAM -->
     <template v-else>
-      <div class="filters" role="tablist" aria-label="Flow type filter">
+      <div class="filters" role="group" aria-label="Flow type filter">
         <button
           v-for="k in KINDS" :key="k"
           :class="{ active: filter === k }"
-          role="tab" :aria-selected="filter === k"
+          :aria-pressed="filter === k"
           @click="filter = k"
         >{{ k }}</button>
       </div>

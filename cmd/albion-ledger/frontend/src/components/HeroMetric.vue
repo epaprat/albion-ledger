@@ -17,11 +17,11 @@ const netSign = computed(() => (props.summary.netSilver || 0) < 0 ? 'neg' : 'pos
 </script>
 
 <template>
-  <section class="hero" aria-label="Current earning rate" aria-live="polite">
+  <section class="hero" aria-label="Current earning rate">
     <p class="hero-eyebrow">Silver per hour</p>
 
-    <p v-if="measuring" class="hero-rate measuring">measuring<span class="dots" aria-hidden="true">…</span></p>
-    <p v-else class="hero-rate num">
+    <p v-if="measuring" class="hero-rate measuring" aria-live="polite">measuring<span class="dots" aria-hidden="true">…</span></p>
+    <p v-else class="hero-rate num" aria-live="polite">
       <span class="coin" aria-hidden="true">◈</span><span class="hero-sign" v-if="(summary.silverPerHour || 0) >= 0">+</span>{{ rate }}<span class="hero-unit">/h</span>
     </p>
 
