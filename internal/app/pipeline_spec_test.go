@@ -170,6 +170,29 @@ func TestSpecUnlockedMarksMaxed(t *testing.T) {
 	}
 }
 
+// Regression (live 2026-07-07: Realmbreaker showed 100/120 at level 0): when E:1 has
+// given the COMPLETE authoritative board, a node that is UNLOCKED but level 0 (unlocks
+// on prerequisite, before any fame) must render level 0 — NOT be guessed as maxed by the
+// unlocked−in-progress heuristic. E:1 already carries every real level incl 0, so it wins.
+func TestE1SuppressesUnlockedMaxedGuess(t *testing.T) {
+	svc, p := newGlue(t)
+	p.setSelfForTest(specSelf)
+	// Persisted unlocked set carries 999 (unlocked at level 0 — the Realmbreaker case).
+	p.SeedSpecUnlocked([]int{999})
+	// E:1 authoritative board: node 22 in-progress (lvl 30); 999 is filler → level 0.
+	p.dispatch(probe.KindEvent, 1, e1Board(specSelf, true, []int16{22}, []uint8{30}))
+	byIdx := map[int]model.MasteryLevel{}
+	for _, m := range specOf(svc).Masteries {
+		byIdx[m.Index] = m
+	}
+	if byIdx[999].Level != 0 || byIdx[999].Touched {
+		t.Fatalf("unlocked-but-level-0 node must stay level 0 under E:1 authority, got %+v", byIdx[999])
+	}
+	if byIdx[22].Level != 30 {
+		t.Fatalf("in-progress node must keep its level: %+v", byIdx[22])
+	}
+}
+
 // Startup seed order: the persisted unlocked set arrives BEFORE any E:154. Nothing
 // may be classified maxed until a snapshot separates in-progress from finished —
 // live regression: everything with fame showed level 100.
@@ -353,5 +376,29 @@ func TestE1AbsentFallbackTo011(t *testing.T) {
 	}
 	if sp.Complete {
 		t.Fatal("without E:1 or E:155, Complete must stay false (011 banner)")
+	}
+}
+
+// FR-004 regression: a stale unlocked-set id (unlocked-but-level-0, e.g. Realmbreaker)
+// must NOT show as maxed once E:1 gives the authoritative board. E:1 supersedes the
+// 011 unlocked heuristic AND rebuilds the persisted maxed set from certain data.
+func TestE1SupersedesUnlockedHeuristic(t *testing.T) {
+	svc, p := newGlue(t)
+	p.setSelfForTest(specSelf)
+	// A persisted/seen unlocked set claims id 16 maxed (stale junk).
+	p.dispatch(probe.KindEvent, 155, map[byte]interface{}{
+		0: int32(specSelf), 1: []int16{16}, 252: int16(155),
+	})
+	// Cold login E:1: id 16 is level 0 (unlocked, untouched); id 22 is genuinely maxed.
+	p.dispatch(probe.KindEvent, 1, e1Board(specSelf, true, []int16{16, 22}, []uint8{0, 100}))
+	byIdx := map[int]model.MasteryLevel{}
+	for _, m := range specOf(svc).Masteries {
+		byIdx[m.Index] = m
+	}
+	if byIdx[16].Level != 0 {
+		t.Fatalf("unlocked-but-level-0 node must show 0 with E:1 in charge, got %d", byIdx[16].Level)
+	}
+	if byIdx[22].Level != 100 {
+		t.Fatalf("genuinely maxed node must still show 100, got %d", byIdx[22].Level)
 	}
 }
