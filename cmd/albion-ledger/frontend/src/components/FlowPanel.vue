@@ -1,6 +1,8 @@
 <script setup>
 import { ref, computed } from 'vue'
 import { compact, fmt, tierLabel } from '../format.js'
+import StateBlock from './StateBlock.vue'
+import FilterBar from './FilterBar.vue'
 
 const props = defineProps({
   events: { type: Array, default: () => [] },   // FlowEventView[]
@@ -43,6 +45,7 @@ const toggleZone = (name) => { expandedZone.value = expandedZone.value === name 
 
 const KINDS = ['all', 'silver', 'loot', 'gather', 'fame']
 const filter = ref('all')
+const streamQuery = ref('') // free-text item/zone filter on the live stream (014)
 
 // Bounded render: the ledger keeps up to ~10k events; cap the DOM rows so the
 // webview stays responsive (Principle XI — bounded UI).
@@ -50,7 +53,12 @@ const RENDER_CAP = 500
 
 const filtered = computed(() => {
   const f = filter.value
-  return f === 'all' ? props.events : props.events.filter(e => e.kind === f)
+  const q = streamQuery.value.trim().toLowerCase()
+  return props.events.filter((e) => {
+    if (f !== 'all' && e.kind !== f) return false
+    if (!q) return true
+    return (e.itemDisplayName || '').toLowerCase().includes(q) || (e.zone || '').toLowerCase().includes(q)
+  })
 })
 const rows = computed(() => filtered.value.slice(0, RENDER_CAP))
 const hiddenCount = computed(() => Math.max(0, filtered.value.length - RENDER_CAP))
@@ -73,21 +81,21 @@ const amount = (e) => (e.kind === 'fame' ? compact(e.fame) + ' fame' : e.valued 
 
     <!-- PER-ZONE ANALYTICS (006 — "where should I farm?") -->
     <template v-if="view === 'zones'">
-      <div class="filters" role="tablist" aria-label="Time window">
+      <div class="filters" role="group" aria-label="Time window">
         <button
           v-for="w in WINDOWS" :key="w.key"
           :class="{ active: zoneWindow === w.key }"
-          role="tab" :aria-selected="zoneWindow === w.key"
+          :aria-pressed="zoneWindow === w.key"
           @click="emit('update:zoneWindow', w.key)"
         >{{ w.label }}</button>
         <span class="muted winlabel">rates over active time in: {{ WINDOWS.find(w => w.key === zoneWindow)?.label }}</span>
       </div>
 
-      <div v-if="zones.length === 0" class="state">
-        <p class="big">No zone data yet</p>
-        <p class="muted" v-if="encrypted">The stream is currently encrypted — earnings can't be read right now.</p>
-        <p class="muted" v-else>Play — every earning is stamped with its zone, and this table builds itself.</p>
-      </div>
+      <StateBlock v-if="zones.length === 0" :variant="encrypted ? 'encrypted' : 'empty'"
+        :title="encrypted ? 'Stream is encrypted' : 'No zone data yet'">
+        <template v-if="encrypted">The game traffic is encrypted right now, so earnings can’t be read.</template>
+        <template v-else>Play — every earning is stamped with its zone, and this table builds itself.</template>
+      </StateBlock>
 
       <table v-else>
         <thead>
@@ -135,12 +143,10 @@ const amount = (e) => (e.kind === 'fame' ? compact(e.fame) + ' fame' : e.valued 
 
     <!-- PER-ITEM BREAKDOWN (AFM-style) -->
     <template v-else-if="view === 'items'">
-      <div v-if="gather.length === 0 && loot.length === 0" class="state">
-        <p class="big">Nothing gathered or looted yet</p>
-        <p class="muted" v-if="encrypted">The stream is currently encrypted — can't read earnings right now.</p>
-        <p class="muted" v-else>Gather a resource or loot a mob and the per-item breakdown builds here.</p>
-      </div>
-
+      <StateBlock v-if="gather.length === 0 && loot.length === 0" :variant="encrypted ? 'encrypted' : 'empty'"
+        :title="encrypted ? 'Stream is encrypted' : 'No loot or gather yet'">
+        Kill mobs or gather resources — a per-item breakdown builds here.
+      </StateBlock>
       <div v-else class="breakdowns">
         <div class="group" v-if="gather.length">
           <h3>Gather <span class="gtotal">{{ compact(gatherTotal) }}</span></h3>
@@ -176,20 +182,26 @@ const amount = (e) => (e.kind === 'fame' ? compact(e.fame) + ' fame' : e.valued 
 
     <!-- LIVE EVENT STREAM -->
     <template v-else>
-      <div class="filters" role="tablist" aria-label="Flow type filter">
+      <div class="filters" role="group" aria-label="Flow type filter">
         <button
           v-for="k in KINDS" :key="k"
           :class="{ active: filter === k }"
-          role="tab" :aria-selected="filter === k"
+          :aria-pressed="filter === k"
           @click="filter = k"
         >{{ k }}</button>
       </div>
 
-      <div v-if="events.length === 0" class="state">
-        <p class="big">No earnings yet</p>
-        <p class="muted" v-if="encrypted">The stream is currently encrypted — earnings can't be read right now.</p>
-        <p class="muted" v-else>Kill a mob, gather a resource, or earn fame and it shows up here live.</p>
-      </div>
+      <FilterBar v-if="events.length" v-model="streamQuery" :shown="filtered.length" :total="events.length" placeholder="Filter by item or zone…" />
+
+      <StateBlock v-if="events.length === 0" :variant="encrypted ? 'encrypted' : 'empty'"
+        :title="encrypted ? 'Stream is encrypted' : 'No earnings yet'">
+        <template v-if="encrypted">The game traffic is encrypted right now, so earnings can’t be read.</template>
+        <template v-else>Kill a mob, gather a resource, or earn fame — it shows up here live.</template>
+      </StateBlock>
+      <StateBlock v-else-if="filtered.length === 0" variant="empty" title="No matching events"
+        :action="{ label: 'Clear filter', onClick: () => { streamQuery = ''; filter = 'all' } }">
+        Nothing matches the current filter.
+      </StateBlock>
 
       <table v-else>
         <thead>

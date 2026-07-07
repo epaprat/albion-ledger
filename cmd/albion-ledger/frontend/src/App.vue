@@ -4,6 +4,10 @@ import HoldingsPanel from './components/HoldingsPanel.vue'
 import FlowPanel from './components/FlowPanel.vue'
 import SessionSummaryBar from './components/SessionSummaryBar.vue'
 import { fmt, compact, tierLabel, qLabel, srcText } from './format.js'
+import { useTable } from './composables/useTable.js'
+import StateBlock from './components/StateBlock.vue'
+import SortTh from './components/SortTh.vue'
+import FilterBar from './components/FilterBar.vue'
 
 const tab = ref('flow')
 const market = ref(new Map())        // index -> LiveViewItem
@@ -80,9 +84,16 @@ const specTree = computed(() => {
   catList = catList.filter(c => c.subList.length > 0)
   return catList
 })
-const marketRows = computed(() =>
-  [...market.value.values()].sort((a, b) => (b.lastSeen || 0) - (a.lastSeen || 0))
-)
+const marketList = computed(() => [...market.value.values()])
+const marketAccessor = (r, k) => ({
+  item: r.item.displayName, tier: (r.item.tier || 0) * 10 + (r.item.enchant || 0),
+  quality: r.item.quality || 0, value: r.valuation.amount || 0, lastSeen: r.lastSeen || 0,
+}[k])
+const marketTable = useTable(marketList, {
+  fields: [(r) => r.item.displayName, (r) => r.item.uniqueName],
+  accessor: marketAccessor,
+  defaultSort: { key: 'value', dir: 'desc' },
+})
 const encrypted = computed(() => (status.value.encryptedRate || 0) > 0.5)
 
 const svc = () => (window.go && window.go.wailsadapter && window.go.wailsadapter.Service) || null
@@ -219,22 +230,34 @@ onMounted(async () => {
 
       <!-- MARKET -->
       <section v-else-if="tab === 'market'">
-        <div v-if="marketRows.length === 0" class="state">
-          <p class="big">No market items yet</p>
-          <p class="muted">Open the marketplace and click items.</p>
-        </div>
-        <table v-else>
-          <thead><tr><th>Item</th><th>Tier</th><th>Quality</th><th class="num">Value</th><th>Source</th></tr></thead>
-          <tbody>
-            <tr v-for="r in marketRows" :key="r.item.index">
-              <td :class="{ unknown: !r.item.known }">{{ r.item.displayName }}</td>
-              <td class="dim">{{ tierLabel(r.item) }}</td>
-              <td class="dim">{{ qLabel(r.item.quality) }}</td>
-              <td class="num">{{ fmt(r.valuation.amount) }}</td>
-              <td><span class="badge" :class="r.valuation.source">{{ srcText[r.valuation.source] }}</span></td>
-            </tr>
-          </tbody>
-        </table>
+        <StateBlock v-if="marketList.length === 0" variant="empty" title="No market prices yet">
+          Open the in-game marketplace and hover items — their prices land here.
+        </StateBlock>
+        <template v-else>
+          <FilterBar v-model="marketTable.query.value" :shown="marketTable.shown.value" :total="marketTable.total.value" placeholder="Filter items…" />
+          <StateBlock v-if="marketTable.shown.value === 0" variant="empty" title="No matches"
+            :action="{ label: 'Clear filter', onClick: marketTable.clearFilter }">
+            Nothing matches the current filter.
+          </StateBlock>
+          <table v-else>
+            <thead><tr>
+              <SortTh label="Item" col-key="item" :sort-key="marketTable.sortKey.value" :sort-dir="marketTable.sortDir.value" @toggle="k => marketTable.toggleSort(k, 'asc')" />
+              <SortTh label="Tier" col-key="tier" :sort-key="marketTable.sortKey.value" :sort-dir="marketTable.sortDir.value" @toggle="marketTable.toggleSort" />
+              <SortTh label="Quality" col-key="quality" :sort-key="marketTable.sortKey.value" :sort-dir="marketTable.sortDir.value" @toggle="marketTable.toggleSort" />
+              <SortTh label="Value" col-key="value" align="num" :sort-key="marketTable.sortKey.value" :sort-dir="marketTable.sortDir.value" @toggle="marketTable.toggleSort" />
+              <th>Source</th>
+            </tr></thead>
+            <tbody>
+              <tr v-for="r in marketTable.visibleRows.value" :key="r.item.index">
+                <td :class="{ unknown: !r.item.known }">{{ r.item.displayName }}</td>
+                <td class="dim">{{ tierLabel(r.item) }}</td>
+                <td class="dim">{{ qLabel(r.item.quality) }}</td>
+                <td class="num">{{ fmt(r.valuation.amount) }}</td>
+                <td><span class="badge" :class="r.valuation.source">{{ srcText[r.valuation.source] }}</span></td>
+              </tr>
+            </tbody>
+          </table>
+        </template>
       </section>
 
       <!-- EXPORT (CSV, 013) -->
@@ -268,10 +291,9 @@ onMounted(async () => {
 
       <!-- SPEC (Destiny Board, 011) -->
       <section v-else>
-        <div v-if="!spec.masteries || spec.masteries.length === 0" class="state">
-          <p class="big">Destiny Board not captured yet</p>
-          <p class="muted">Change zones (or relog) so your skill tree streams in.</p>
-        </div>
+        <StateBlock v-if="!spec.masteries || spec.masteries.length === 0" variant="empty" title="Destiny Board not captured yet">
+          Log out to character select and back in — your full skill tree streams in at login.
+        </StateBlock>
         <template v-else>
           <div class="total" role="status" aria-live="polite">
             <span>Destiny Board</span>
@@ -292,7 +314,11 @@ onMounted(async () => {
             skills (no elite progress yet) may show as level 0 until their next progress
             tick; everything else is exact.
           </div>
-          <div class="spec-tree">
+          <StateBlock v-if="specTree.length === 0" variant="empty" title="No matching nodes"
+            :action="{ label: 'Clear filter', onClick: () => { specFilter = '' } }">
+            No skill nodes match the current filter.
+          </StateBlock>
+          <div v-else class="spec-tree">
             <div v-for="c in specTree" :key="c.name" class="spec-cat">
               <button class="spec-head cat" @click="toggleSpec(c.name)" :aria-expanded="!specCollapsed(c.name)">
                 <span class="chev" :class="{ open: !specCollapsed(c.name) }">▸</span>
@@ -341,19 +367,19 @@ onMounted(async () => {
 
 <style scoped>
 .wrap { height: 100vh; display: flex; flex-direction: column; }
-.status { display: flex; align-items: center; gap: 8px; padding: 10px 16px; background: var(--panel); border-bottom: 1px solid var(--border); font-size: 14px; }
+.status { display: flex; align-items: center; gap: 8px; padding: 10px 16px; font-size: 14px; background: var(--panel); border-bottom: 1px solid var(--border); }
 .dot { width: 9px; height: 9px; border-radius: 50%; }
 .dot.on { background: var(--good); box-shadow: 0 0 6px var(--good); } .dot.off { background: var(--muted); }
 .muted { color: var(--muted); }
 .tabs { margin-left: auto; display: flex; gap: 4px; }
-.tabs button { background: transparent; border: 1px solid transparent; color: var(--muted); padding: 4px 12px; border-radius: 6px; cursor: pointer; font-size: 13px; }
-.tabs button.active { background: var(--bg); color: var(--text); border-color: var(--border); }
+.tabs button { background: transparent; border: 1px solid transparent; color: var(--muted); padding: 5px 14px; border-radius: 6px; cursor: pointer; font-size: 13px; box-shadow: none; }
+.tabs button.active { background: var(--panel-2); color: var(--text); border-color: var(--border); }
 .drift { padding: 8px 16px; background: #3a2d00; color: var(--warn); font-size: 13px; }
 main { flex: 1; overflow: auto; }
 .state { padding: 56px 24px; text-align: center; color: var(--muted); }
 .state .big { font-size: 18px; color: var(--text); margin: 0 0 8px; }
 table { width: 100%; border-collapse: collapse; font-size: 14px; }
-thead th { position: sticky; top: 0; background: var(--panel); text-align: left; padding: 8px 16px; color: var(--muted); font-weight: 600; border-bottom: 1px solid var(--border); }
+thead th { position: sticky; top: 0; background: var(--panel); text-align: left; padding: 8px 16px; color: var(--muted); font-weight: 600; border-bottom: 1px solid var(--border); font-size: 12px; letter-spacing: .04em; text-transform: uppercase; }
 tbody td { padding: 7px 16px; border-bottom: 1px solid var(--border); }
 tbody tr:hover { background: var(--panel); }
 .num { text-align: right; font-variant-numeric: tabular-nums; }
@@ -364,7 +390,7 @@ tbody tr:hover { background: var(--panel); }
 .badge.server_estimate { background: rgba(210,153,34,.18); color: var(--warn); }
 .badge.unknown { color: var(--muted); }
 .badge.stale { background: rgba(248,81,73,.18); color: var(--bad); margin-left: 8px; }
-.spec-note { margin: 8px 0; padding: 8px 12px; background: var(--panel); border-left: 3px solid var(--warn, #c90); border-radius: 4px; font-size: 13px; color: var(--muted); line-height: 1.4; }
+.spec-note { margin: 8px 12px; padding: 10px 14px; background: var(--panel); border-left: 3px solid var(--warn); border-radius: 4px; font-size: 13px; color: var(--muted); line-height: 1.5; }
 .spec-tree { display: flex; flex-direction: column; gap: 2px; }
 .spec-head { display: flex; align-items: baseline; gap: 8px; width: 100%; text-align: left; background: none; border: none; color: var(--text); cursor: pointer; padding: 7px 10px; border-radius: 6px; font: inherit; }
 .spec-head:hover { background: var(--panel); }

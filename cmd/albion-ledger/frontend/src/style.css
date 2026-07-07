@@ -1,20 +1,44 @@
 :root {
-  --bg: #0e1116;
-  --panel: #161b22;
-  --border: #232a33;
-  --text: #e6edf3;
-  --muted: #8b949e;
-  --accent: #d4a017;
-  --good: #3fb950;
+  /* Neutral dark base — gold is an ACCENT, not a wash (014 rework). */
+  --bg: #0d0f12;
+  --bg-2: #111419;
+  --panel: #15181d;
+  --panel-2: #1a1e24;
+  --border: #262b33;
+  --frame: #363d47;
+  --text: #e8eaed;
+  --muted: #98a1ab;
+  --accent: #d4a934;      /* Albion gold — spent sparingly */
+  --accent-bright: #f0c75e;
+  --good: #4cc161;
   --warn: #d29922;
-  --bad: #f85149;
+  --bad: #ef5b4d;
+
+  --space-1: 4px;
+  --space-2: 8px;
+  --space-3: 12px;
+  --space-4: 16px;
+  --space-5: 24px;
+  --space-6: 32px;
+
+  --text-sm: 12px;
+  --text-md: 14px;
+  --text-lg: 18px;
+  --text-xl: 24px;
+  --text-hero: 48px;
+
+  --focus: #58a6ff;
+
   color-scheme: dark;
 }
 
 @media (prefers-color-scheme: light) {
   :root {
-    --bg: #f6f8fa; --panel: #fff; --border: #d0d7de;
-    --text: #1f2328; --muted: #656d76;
+    --bg: #f5f6f8; --bg-2: #eceef1; --panel: #ffffff; --panel-2: #f2f3f5;
+    --border: #d4d9df; --frame: #b9c0c9;
+    --text: #1e2227; --muted: #5c6672;
+    --accent: #8a6a1e; --accent-bright: #a9812f;
+    --focus: #0969da;
   }
 }
 
@@ -25,6 +49,24 @@ body {
   font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", system-ui, sans-serif;
   background: var(--bg);
   color: var(--text);
+}
+
+.num, .tnum { font-variant-numeric: tabular-nums; }
+
+button {
+  font-family: inherit;
+  color: var(--text);
+  background: var(--panel-2);
+  border: 1px solid var(--border);
+  border-radius: 5px;
+  cursor: pointer;
+}
+button:hover { border-color: var(--frame); }
+
+:focus-visible {
+  outline: 2px solid var(--focus);
+  outline-offset: 2px;
+  border-radius: 3px;
 }
 
 @media (prefers-reduced-motion: reduce) {

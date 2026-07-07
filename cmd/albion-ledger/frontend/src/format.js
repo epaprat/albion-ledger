@@ -24,3 +24,13 @@ export function compact(n) {
 export const tierLabel = (it) => (it && it.tier ? `T${it.tier}${it.enchant ? '.' + it.enchant : ''}` : '—')
 export const qLabel = (q) => (q ? ['', 'Normal', 'Good', 'Outstanding', 'Excellent', 'Masterpiece'][q] : '—')
 export const srcText = { live_market: 'live', server_estimate: 'est', unknown: '—' }
+
+// dur: compact human duration from ms (e.g. "1h 12m", "3m", "45s") for session length.
+export function dur(ms) {
+  const s = Math.floor((ms || 0) / 1000)
+  if (s < 60) return s + 's'
+  const m = Math.floor(s / 60)
+  if (m < 60) return m + 'm'
+  const h = Math.floor(m / 60)
+  return h + 'h ' + (m % 60) + 'm'
+}
