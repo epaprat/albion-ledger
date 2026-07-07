@@ -3,6 +3,3 @@ contact_links:
   - name: Security vulnerability
     url: https://github.com/epaprat/albion-ledger/security/advisories/new
     about: Report security issues privately, not as a public issue.
-  - name: Question / discussion
-    url: https://github.com/epaprat/albion-ledger/discussions
-    about: Ask questions or discuss ideas here.

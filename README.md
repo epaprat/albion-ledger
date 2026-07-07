@@ -2,7 +2,7 @@
 
 [![Release](https://img.shields.io/github/v/release/epaprat/albion-ledger?sort=semver)](https://github.com/epaprat/albion-ledger/releases)
 [![License: MIT](https://img.shields.io/badge/license-MIT-blue.svg)](LICENSE)
-[![Platform](https://img.shields.io/badge/platform-macOS%20%C2%B7%20Windows%20%C2%B7%20Linux-lightgrey.svg)](#install)
+[![Platform](https://img.shields.io/badge/platform-macOS%20%C2%B7%20Windows%2FLinux%20(experimental)-lightgrey.svg)](#install)
 
 **Albion Ledger** is a passive, **ToS-safe** desktop tool for Albion Online. It reads
 the local game network stream — no memory reading, no injection, no automation — and

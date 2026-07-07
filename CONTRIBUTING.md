@@ -17,7 +17,7 @@ change.
 
 - **Go** 1.26+
 - **Node.js** 18+ (frontend build)
-- **Wails** v2 CLI — `go install github.com/wailsapp/wails/v2/cmd/wails@latest`
+- **Wails** v2 CLI — `go install github.com/wailsapp/wails/v2/cmd/wails@v2.12.0  # match go.mod`
 - Packet capture privileges for live capture: BPF on macOS, Npcap on Windows,
   `cap_net_raw` on Linux.
 

@@ -1,8 +1,8 @@
 name: release
 
 # Builds per-OS binaries and attaches them to the GitHub Release for a version tag.
-# Triggered ONLY on tag push (rare, deliberate) — normal pushes/PRs run local gates,
-# not CI, so no minutes are burned on day-to-day work (constitution XIII/XIV).
+# Triggered only on tag push (rare, deliberate) — normal pushes/PRs rely on the local
+# git gates instead, so day-to-day work spends no CI minutes.
 on:
   push:
     tags:
@@ -13,7 +13,7 @@ permissions:
 
 jobs:
   build:
-    name: build (${{ matrix.os }})
+    name: build (${{ matrix.label }})
     runs-on: ${{ matrix.os }}
     strategy:
       fail-fast: false   # a failure on one OS must not block the others
@@ -21,10 +21,16 @@ jobs:
         include:
           - os: macos-latest
             label: macos
-          - os: windows-latest
-            label: windows
+            tags: "pcap"
+            primary: true
           - os: ubuntu-latest
             label: linux
+            tags: "pcap webkit2_41"
+            primary: false
+          - os: windows-latest
+            label: windows
+            tags: ""
+            primary: false
     steps:
       - uses: actions/checkout@v4
 
@@ -36,26 +42,29 @@ jobs:
         with:
           node-version: "20"
 
-      # Linux needs the WebKitGTK stack for the Wails webview.
-      - name: Install Linux webview deps
+      - name: Install Linux build deps
         if: matrix.os == 'ubuntu-latest'
         run: |
           sudo apt-get update
-          sudo apt-get install -y libgtk-3-dev libwebkit2gtk-4.1-dev
+          sudo apt-get install -y libgtk-3-dev libwebkit2gtk-4.1-dev libpcap-dev
 
       - name: Install Wails CLI
         run: go install github.com/wailsapp/wails/v2/cmd/wails@v2.12.0
 
       - name: Build
         working-directory: cmd/albion-ledger
-        run: wails build -tags pcap
+        shell: bash
+        run: |
+          if [ -n "${{ matrix.tags }}" ]; then
+            wails build -tags "${{ matrix.tags }}"
+          else
+            wails build
+          fi
 
-      # Package the built artifact under a per-OS name for the release.
       - name: Package (macOS)
         if: matrix.os == 'macos-latest'
         working-directory: cmd/albion-ledger/build/bin
-        run: |
-          zip -r -y "albion-ledger-macos.zip" "albion-ledger.app"
+        run: zip -r -y "albion-ledger-macos.zip" "albion-ledger.app"
 
       - name: Package (Windows)
         if: matrix.os == 'windows-latest'
@@ -67,20 +76,25 @@ jobs:
         working-directory: cmd/albion-ledger/build/bin
         run: zip "albion-ledger-linux.zip" "albion-ledger"
 
-      - name: Upload to release
+      # Only the primary (macOS) job writes the release notes, so parallel matrix jobs
+      # don't race to append the same body. Other jobs upload their asset only.
+      - name: Upload with release notes
+        if: matrix.primary
         uses: softprops/action-gh-release@v2
         with:
           files: cmd/albion-ledger/build/bin/albion-ledger-${{ matrix.label }}.zip
-          # Honest platform-support note attached to the release.
           body: |
-            ## Albion Ledger ${{ github.ref_name }}
-
             See [CHANGELOG.md](CHANGELOG.md) for what changed.
 
             **Platform support**
             - **macOS** — live-verified.
-            - **Windows / Linux** — builds; capture path (Npcap / `cap_net_raw`) not yet
-              verified. Treat as **experimental**.
+            - **Linux** — experimental; capture path (`cap_net_raw` / libpcap) not yet verified.
+            - **Windows** — build-only preview; capture support pending.
 
             Live capture needs elevated network-capture privileges. See the README.
-          append_body: true
+
+      - name: Upload asset only
+        if: ${{ !matrix.primary }}
+        uses: softprops/action-gh-release@v2
+        with:
+          files: cmd/albion-ledger/build/bin/albion-ledger-${{ matrix.label }}.zip
