@@ -1,20 +1,18 @@
 :root {
-  /* Albion game-UI palette (014): warm dark slate + brass/gold, evoking the
-     in-game menu chrome without losing data legibility. */
-  --bg: #14110c;
-  --bg-2: #1b1712;
-  --panel: #201a13;
-  --panel-2: #262019;
-  --border: #3a2f20;
-  --frame: #6b5423;      /* brass frame line */
-  --text: #ece3d0;
-  --muted: #9a8f79;
-  --accent: #c9a24a;     /* brass gold */
-  --accent-bright: #e8c766;
-  --good: #6fb85c;
+  /* Neutral dark base — gold is an ACCENT, not a wash (014 rework). */
+  --bg: #0d0f12;
+  --bg-2: #111419;
+  --panel: #15181d;
+  --panel-2: #1a1e24;
+  --border: #262b33;
+  --frame: #363d47;
+  --text: #e8eaed;
+  --muted: #98a1ab;
+  --accent: #d4a934;      /* Albion gold — spent sparingly */
+  --accent-bright: #f0c75e;
+  --good: #4cc161;
   --warn: #d29922;
-  --bad: #e5604c;
-  --parchment: #e6d8b8;  /* Destiny Board scroll tint */
+  --bad: #ef5b4d;
 
   --space-1: 4px;
   --space-2: 8px;
@@ -27,24 +25,20 @@
   --text-md: 14px;
   --text-lg: 18px;
   --text-xl: 24px;
-  --text-hero: 46px;
+  --text-hero: 48px;
 
-  --focus: var(--accent-bright);
-
-  /* Serif display for headings — a medieval register, system-served (offline). */
-  --font-display: "Iowan Old Style", "Palatino Linotype", Palatino, "Book Antiqua", Georgia, serif;
-  --font-body: -apple-system, BlinkMacSystemFont, "Segoe UI", system-ui, sans-serif;
+  --focus: #58a6ff;
 
   color-scheme: dark;
 }
 
 @media (prefers-color-scheme: light) {
   :root {
-    --bg: #efe7d4; --bg-2: #e7ddc6; --panel: #f4ecd9; --panel-2: #ede2c9;
-    --border: #cbb98f; --frame: #a9812f;
-    --text: #2a2318; --muted: #6b5f47;
+    --bg: #f5f6f8; --bg-2: #eceef1; --panel: #ffffff; --panel-2: #f2f3f5;
+    --border: #d4d9df; --frame: #b9c0c9;
+    --text: #1e2227; --muted: #5c6672;
     --accent: #8a6a1e; --accent-bright: #a9812f;
-    --focus: #8a6a1e;
+    --focus: #0969da;
   }
 }
 
@@ -52,35 +46,19 @@
 
 body {
   margin: 0;
-  font-family: var(--font-body);
+  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", system-ui, sans-serif;
+  background: var(--bg);
   color: var(--text);
-  /* Layered dark stone: a soft vignette + faint diagonal weave, pure CSS (offline). */
-  background:
-    radial-gradient(120% 90% at 50% -10%, var(--bg-2), var(--bg) 60%),
-    repeating-linear-gradient(135deg, rgba(0,0,0,0) 0 6px, rgba(0,0,0,.03) 6px 7px);
-  background-attachment: fixed;
 }
-
-/* Headings carry the game register: display serif, small-caps, brass. */
-h1, h2, h3 { font-family: var(--font-display); letter-spacing: .01em; }
 
 .num, .tnum { font-variant-numeric: tabular-nums; }
 
-/* Brass frame: a reusable game-panel edge (inset hairline + subtle bevel). */
-.frame {
-  border: 1px solid var(--border);
-  box-shadow: inset 0 0 0 1px rgba(201,162,74,.14), 0 1px 0 rgba(0,0,0,.4);
-  background: linear-gradient(180deg, var(--panel-2), var(--panel));
-}
-
-/* Game buttons: beveled brass-edged, not flat web chips. */
 button {
   font-family: inherit;
   color: var(--text);
-  background: linear-gradient(180deg, var(--panel-2), var(--panel));
+  background: var(--panel-2);
   border: 1px solid var(--border);
   border-radius: 5px;
-  box-shadow: inset 0 1px 0 rgba(255,255,255,.04);
   cursor: pointer;
 }
 button:hover { border-color: var(--frame); }

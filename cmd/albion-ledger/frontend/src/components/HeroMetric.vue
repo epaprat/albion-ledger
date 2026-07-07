@@ -48,32 +48,23 @@ const netSign = computed(() => (props.summary.netSilver || 0) < 0 ? 'neg' : 'pos
   flex-direction: column;
   gap: var(--space-1);
   padding: var(--space-4) var(--space-5);
-  margin: var(--space-3);
-  border-radius: 8px;
-  background:
-    radial-gradient(120% 140% at 0% 0%, rgba(201,162,74,.10), transparent 60%),
-    linear-gradient(180deg, var(--panel-2), var(--panel));
-  border: 1px solid var(--frame);
-  box-shadow: inset 0 0 0 1px rgba(201,162,74,.18), inset 0 1px 0 rgba(255,255,255,.05), 0 2px 6px rgba(0,0,0,.4);
 }
 .hero-eyebrow {
   margin: 0;
-  font-family: var(--font-display);
-  font-size: var(--text-sm);
-  color: var(--accent);
+  font-size: 11px;
+  color: var(--muted);
   text-transform: uppercase;
-  letter-spacing: .14em;
+  letter-spacing: .08em;
 }
 .hero-rate {
   margin: 0;
   font-size: var(--text-hero);
-  font-weight: 800;
+  font-weight: 750;
   line-height: 1.05;
-  letter-spacing: -.01em;
+  letter-spacing: -.02em;
   color: var(--accent-bright);
-  text-shadow: 0 0 18px rgba(232,199,102,.18), 0 1px 0 rgba(0,0,0,.5);
 }
-.coin { font-size: .62em; margin-right: .18em; opacity: .85; vertical-align: .06em; }
+.coin { font-size: .58em; margin-right: .16em; opacity: .8; vertical-align: .08em; }
 .hero-rate.measuring { color: var(--muted); font-weight: 600; font-size: var(--text-xl); }
 .hero-sign { opacity: .55; }
 .hero-unit { font-size: var(--text-lg); color: var(--muted); font-weight: 600; margin-left: 2px; }

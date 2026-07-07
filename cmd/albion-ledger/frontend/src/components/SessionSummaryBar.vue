@@ -45,8 +45,8 @@ const fameRate = computed(() => props.summary.rateReady ? compact(props.summary.
 <style scoped>
 .hint {
   padding: var(--space-2) var(--space-4);
-  background: color-mix(in srgb, var(--focus) 12%, transparent);
-  color: var(--focus);
+  background: var(--panel-2);
+  color: var(--muted);
   font-size: var(--text-md);
   border-bottom: 1px solid var(--border);
 }
