@@ -30,6 +30,7 @@
     { "kind": "response", "code": 517, "category": "bank_tabs" },
     { "kind": "response", "code": 1,   "category": "bank_tab_content" },
     { "kind": "response", "code": 518, "category": "bank_tab_content" },
+    { "kind": "request", "code": 518, "category": "bank_tab_request" },
     { "kind": "event", "code": 154, "category": "spec_snapshot" },
     { "kind": "event", "code": 153, "category": "spec_delta" },
     { "kind": "event", "code": 152, "category": "spec_done" },

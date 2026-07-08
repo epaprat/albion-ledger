@@ -18,6 +18,16 @@ func init() {
 	register(model.CatBankLocations, handleBankLocations)
 	register(model.CatBankTabs, handleBankTabs)
 	register(model.CatBankTabContent, handleBankTabContent)
+	register(model.CatBankTabRequest, handleBankTabRequest)
+}
+
+// handleBankTabRequest — Q:518: the client asks for a tab's content. Remember which tab
+// so the default/open tab's GUID-LESS content response (which omits k0) can be attributed
+// to it (its response always immediately follows this request).
+func handleBankTabRequest(p *Pipeline, _ probe.Kind, _ int, params map[byte]interface{}) {
+	if guid, ok := capture.BankTabRequest(params); ok {
+		p.lastBankTabGUID = guid
+	}
 }
 
 // Bridge caps (XI): a game account has a bounded set of vault locations and tabs;
@@ -135,6 +145,11 @@ func handleBankTabContent(p *Pipeline, _ probe.Kind, _ int, params map[byte]inte
 	tabGUID, rows, ok := capture.BankTabContent(params)
 	if !ok {
 		return // shape lock: unrelated op-1 responses die here (contract rule 4)
+	}
+	// The default/open tab's content arrives GUID-LESS — attribute it to the tab the
+	// client just requested (op 518), else it (often 100+ items) is lost (010 fix).
+	if tabGUID == "" {
+		tabGUID = p.lastBankTabGUID
 	}
 	meta, known := p.tabMeta[tabGUID]
 	if !known || meta.city == "" {
