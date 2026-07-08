@@ -147,6 +147,7 @@ const exportSets = computed(() => ([
   { key: 'zones', name: 'Zone Analytics', rows: flowZones.value.length },
   { key: 'market', name: 'Market Prices', rows: market.value.size },
   { key: 'spec', name: 'Destiny Board', rows: (spec.value.masteries || []).length },
+  { key: 'trades', name: 'Trade Ledger', rows: trades.value.length },
 ]))
 async function exportOne(key) {
   const s = svc(); if (!s || exportBusy.value) return

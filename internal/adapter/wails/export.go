@@ -90,7 +90,7 @@ func chownToRealUser(path string) {
 
 // DatasetKeys is the fixed export order (contract §4.4) — no dataset is ever
 // silently skipped.
-var DatasetKeys = []string{"holdings", "flow", "zones", "market", "spec"}
+var DatasetKeys = []string{"holdings", "flow", "zones", "market", "spec", "trades"}
 
 func validDataset(key string) bool {
 	for _, k := range DatasetKeys {
@@ -143,6 +143,9 @@ func (s *Service) buildDataset(key, window string) ([]string, [][]string, error)
 		return h, r, nil
 	case "spec":
 		h, r := export.SpecRows(s.Spec().Masteries)
+		return h, r, nil
+	case "trades":
+		h, r := export.TradeRows(s.Trades())
 		return h, r, nil
 	}
 	return nil, nil, fmt.Errorf("unknown dataset %q", key)

@@ -105,6 +105,23 @@ func MarketRows(items []model.LiveViewItem) ([]string, [][]string) {
 	return header, rows
 }
 
+// TradeRows renders the marketplace trade-ledger dataset (017): one row per captured
+// trade with the full fee/tax/net breakdown.
+func TradeRows(trades []model.Trade) ([]string, [][]string) {
+	header := []string{"time", "type", "source", "item", "uniqueName", "amount", "totalAmount",
+		"gross", "setupFee", "salesTax", "net", "taxEstimated", "unitSilver", "location"}
+	rows := make([][]string, 0, len(trades))
+	for _, t := range trades {
+		rows = append(rows, []string{
+			fmtTime(t.Received), t.Direction, t.Source, t.ItemName, t.ItemID,
+			fmtInt(t.PartialAmount), fmtInt(t.TotalAmount),
+			fmtInt64(t.Gross), fmtInt64(t.SetupFee), fmtInt64(t.SalesTax), fmtInt64(t.Net),
+			fmtBool(t.TaxEstimated), strconv.FormatFloat(t.UnitSilver, 'f', 2, 64), t.LocationID,
+		})
+	}
+	return header, rows
+}
+
 // SpecRows renders the Destiny Board dataset (contract §2 spec).
 func SpecRows(masteries []model.MasteryLevel) ([]string, [][]string) {
 	header := []string{"id", "name", "category", "line", "slot", "base", "level",
