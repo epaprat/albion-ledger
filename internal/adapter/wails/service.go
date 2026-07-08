@@ -61,6 +61,9 @@ type Service struct {
 	specUnlockedIDs []int // latest E:155 unlocked-node set, for persistence (011)
 	specEnumIDs     []int // latest E:1 board enumeration (position→id), for persistence (012)
 	uiCtx           context.Context // wails runtime ctx for native dialogs (013); set at OnStartup
+	walletSilver    int64 // liquid silver balance (016); valid only when walletKnown
+	walletKnown     bool
+	walletLastSeen  int64
 
 	mu     sync.Mutex
 	items  map[int]*model.LiveViewItem // by item index
@@ -642,8 +645,34 @@ func (s *Service) Status() model.CaptureStatusView {
 // ListHoldings returns the player's held items (inventory/bank/equipped).
 func (s *Service) ListHoldings() []model.HoldingItem { return s.agg.List() }
 
-// HoldingsSummary returns the total value + per-location seen/stale state.
-func (s *Service) HoldingsSummary() model.HoldingsSummary { return s.agg.Summary(s.nowMS()) }
+// SetWallet records the liquid silver balance (016). Newest-wins: an older source
+// (e.g. the R:2 login seed arriving after a live E:81) never overwrites a fresher value.
+func (s *Service) SetWallet(silver int64, ts int64) {
+	s.mu.Lock()
+	if ts >= s.walletLastSeen {
+		s.walletSilver, s.walletKnown, s.walletLastSeen = silver, true, ts
+	}
+	s.mu.Unlock()
+	s.emitHoldings()
+}
+
+// HoldingsSummary returns the total value + per-location seen/stale state, with the
+// wallet and net worth (016) overlaid. Net worth = wallet + holdings value; when the
+// wallet is unknown it equals the holdings value (the caller labels it "wallet excluded"
+// — no fabricated zero, FR-003).
+func (s *Service) HoldingsSummary() model.HoldingsSummary {
+	sum := s.agg.Summary(s.nowMS())
+	s.mu.Lock()
+	silver, known, seen := s.walletSilver, s.walletKnown, s.walletLastSeen
+	s.mu.Unlock()
+	if known {
+		sum.WalletSilver, sum.WalletKnown, sum.WalletLastSeen = silver, true, seen
+		sum.NetWorth = silver + sum.TotalValue
+	} else {
+		sum.NetWorth = sum.TotalValue
+	}
+	return sum
+}
 
 // Spec returns the player's character specialization levels.
 func (s *Service) Spec() model.CharacterSpec {

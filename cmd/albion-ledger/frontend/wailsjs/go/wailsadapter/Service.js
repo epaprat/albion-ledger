@@ -142,6 +142,10 @@ export function SetUIContext(arg1) {
   return window['go']['wailsadapter']['Service']['SetUIContext'](arg1);
 }
 
+export function SetWallet(arg1, arg2) {
+  return window['go']['wailsadapter']['Service']['SetWallet'](arg1, arg2);
+}
+
 export function SetZone(arg1) {
   return window['go']['wailsadapter']['Service']['SetZone'](arg1);
 }

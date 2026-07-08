@@ -82,6 +82,14 @@ const anyVisible = computed(() =>
 <template>
   <section aria-label="Holdings">
     <div class="total" role="status" aria-live="polite">
+      <span class="net-worth" :title="summary.walletKnown ? 'Wallet + holdings value' : 'Holdings value only — wallet not seen yet'">
+        <span class="nw-label">Net worth</span>
+        <strong>{{ compact(summary.netWorth) }}</strong>
+        <span class="muted nw-excl" v-if="!summary.walletKnown">· wallet excluded</span>
+      </span>
+      <span class="nw-sep">·</span>
+      <span>Wallet <strong class="wallet">{{ summary.walletKnown ? compact(summary.walletSilver) : '—' }}</strong></span>
+      <span class="nw-sep">·</span>
       <span>Holdings total</span>
       <strong>{{ compact(summary.totalValue) }}</strong>
       <span class="muted" v-if="summary.gameEstTotal" :title="'Sum of the game-reported vault estimates (K overview)'">· in-game est {{ compact(summary.gameEstTotal) }}</span>
@@ -165,6 +173,12 @@ const anyVisible = computed(() =>
 <style scoped>
 .total { display: flex; align-items: baseline; gap: 10px; padding: 12px 16px; border-bottom: 1px solid var(--border); }
 .total strong { font-size: 18px; color: var(--accent); font-variant-numeric: tabular-nums; }
+.net-worth { display: inline-flex; align-items: baseline; gap: 6px; }
+.nw-label { font-size: 11px; color: var(--muted); text-transform: uppercase; letter-spacing: .06em; }
+.net-worth strong { font-size: 20px; color: var(--accent-bright); }
+.nw-excl { font-size: 12px; }
+.nw-sep { color: var(--border); }
+.wallet { font-size: 15px !important; }
 .muted { color: var(--muted); }
 .filters { margin-left: auto; display: flex; gap: 12px; }
 .filters select { background: var(--bg); color: var(--text); border: 1px solid var(--border); border-radius: 6px; padding: 3px 6px; font-size: 13px; }

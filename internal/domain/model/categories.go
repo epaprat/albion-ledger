@@ -14,6 +14,9 @@ const (
 	CatEquipment        Category = "equipment"
 	CatBank             Category = "bank"
 	CatCharacterSpec    Category = "character_spec"
+	// CatWallet = E:81 (EVENT) liquid silver balance ×10000 (016). NOT R:81 (RESPONSE,
+	// market buy orders) — the classifier keys by (kind, code) so they never collide.
+	CatWallet           Category = "wallet"
 	CatLoot             Category = "loot"
 	CatGatherFishing    Category = "gather_fishing"
 	CatSilver           Category = "silver"

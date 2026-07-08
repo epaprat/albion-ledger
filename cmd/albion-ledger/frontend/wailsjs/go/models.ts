@@ -397,6 +397,10 @@ export namespace model {
 	}
 	export class HoldingsSummary {
 	    totalValue: number;
+	    walletSilver: number;
+	    walletKnown: boolean;
+	    walletLastSeen: number;
+	    netWorth: number;
 	    gameEstTotal: number;
 	    unvaluedCount: number;
 	    cities: CitySummary[];
@@ -408,6 +412,10 @@ export namespace model {
 	    constructor(source: any = {}) {
 	        if ('string' === typeof source) source = JSON.parse(source);
 	        this.totalValue = source["totalValue"];
+	        this.walletSilver = source["walletSilver"];
+	        this.walletKnown = source["walletKnown"];
+	        this.walletLastSeen = source["walletLastSeen"];
+	        this.netWorth = source["netWorth"];
 	        this.gameEstTotal = source["gameEstTotal"];
 	        this.unvaluedCount = source["unvaluedCount"];
 	        this.cities = this.convertValues(source["cities"], CitySummary);
