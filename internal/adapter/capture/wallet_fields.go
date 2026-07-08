@@ -39,7 +39,7 @@ func WalletBalance(params map[byte]interface{}) (int64, bool) {
 	if !ok || raw < 0 {
 		return 0, false
 	}
-	return raw / walletScale, true
+	return raw / walletScale, true // integer division truncates sub-silver (display value)
 }
 
 // JoinWallet parses the login wallet seed from the R:2 Join response: k33 = wallet
