@@ -15,6 +15,10 @@ const props = defineProps({
   error: { type: String, default: '' },
 })
 
+// How much higher the game's own estimate is than our valuation — drives the
+// explanatory note so the difference is never a mystery.
+const valueGap = computed(() => (props.summary.gameEstTotal || 0) - (props.summary.totalValue || 0))
+
 const cityFilter = ref('all')
 const tabFilter = ref('all')
 const itemQuery = ref('') // free-text item filter across every bank/tab (014)
@@ -90,10 +94,9 @@ const anyVisible = computed(() =>
       <span class="nw-sep">·</span>
       <span>Wallet <strong class="wallet">{{ summary.walletKnown ? compact(summary.walletSilver) : '—' }}</strong></span>
       <span class="nw-sep">·</span>
-      <span>Holdings total</span>
-      <strong>{{ compact(summary.totalValue) }}</strong>
-      <span class="muted" v-if="summary.gameEstTotal" :title="'Sum of the game-reported vault estimates (K overview)'">· in-game est {{ compact(summary.gameEstTotal) }}</span>
-      <span class="muted" v-if="summary.unvaluedCount">· {{ summary.unvaluedCount }} unvalued</span>
+      <span :title="'Our valuation: live market prices where seen, server/community estimates otherwise. Items we could not price yet are NOT counted.'">Holdings <strong>{{ compact(summary.totalValue) }}</strong> <span class="muted src-note">our prices</span></span>
+      <span class="muted" v-if="summary.gameEstTotal" :title="'The game\'s own Estimated Market Value from the bank overview — a rough flat estimate that prices every item.'">· game est {{ compact(summary.gameEstTotal) }}</span>
+      <span class="muted" v-if="summary.unvaluedCount">· {{ summary.unvaluedCount }} unpriced</span>
       <span class="filters" v-if="cities.length">
         <label class="sr-pair">City
           <select v-model="cityFilter" aria-label="Filter by city">
@@ -113,6 +116,13 @@ const anyVisible = computed(() =>
         </span>
       </span>
     </div>
+
+    <!-- Explain why our valuation differs from the game's own estimate, so the number
+         is never a mystery (Principle XII). -->
+    <p class="value-note" v-if="valueGap > 0">
+      <strong>Holdings {{ compact(summary.totalValue) }}</strong> is our live-market valuation.
+      The game's own estimate is <strong>{{ compact(summary.gameEstTotal) }}</strong> ({{ compact(valueGap) }} higher)<template v-if="summary.unvaluedCount"> — mainly because {{ summary.unvaluedCount }} item{{ summary.unvaluedCount === 1 ? '' : 's' }} aren't priced in ours yet</template>. The game's figure prices everything but is a rough estimate; ours uses real market prices where we've seen them.
+    </p>
 
     <!-- Item filter (across every bank/tab) -->
     <div v-if="cities.length" class="item-filter">
@@ -180,6 +190,9 @@ const anyVisible = computed(() =>
 .nw-sep { color: var(--border); }
 .wallet { font-size: 15px !important; }
 .muted { color: var(--muted); }
+.src-note { font-size: 11px; }
+.value-note { margin: 0; padding: 8px 16px; font-size: 12px; line-height: 1.5; color: var(--muted); border-bottom: 1px solid var(--border); background: color-mix(in srgb, var(--muted) 5%, transparent); }
+.value-note strong { color: var(--text); font-variant-numeric: tabular-nums; }
 .filters { margin-left: auto; display: flex; gap: 12px; }
 .filters select { background: var(--bg); color: var(--text); border: 1px solid var(--border); border-radius: 6px; padding: 3px 6px; font-size: 13px; }
 .sr-pair { font-size: 12px; color: var(--muted); display: inline-flex; gap: 6px; align-items: center; }
