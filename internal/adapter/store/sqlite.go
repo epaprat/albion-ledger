@@ -63,6 +63,18 @@ CREATE TABLE IF NOT EXISTS spec_unlocked (
 CREATE TABLE IF NOT EXISTS spec_enum (
   pos INTEGER PRIMARY KEY, node_id INTEGER
 );
+CREATE TABLE IF NOT EXISTS mail_infos (
+  mail_id INTEGER PRIMARY KEY,
+  type TEXT, location_id TEXT, received INTEGER
+);
+CREATE TABLE IF NOT EXISTS trades (
+  trade_id TEXT PRIMARY KEY,
+  direction TEXT, source TEXT, item_id TEXT, item_index INTEGER,
+  partial_amount INTEGER, total_amount INTEGER,
+  gross INTEGER, setup_fee INTEGER, sales_tax INTEGER, net INTEGER,
+  tax_estimated INTEGER, unit_silver REAL,
+  received INTEGER, location_id TEXT
+);
 `
 
 // SQLite is a Store backed by a local SQLite database.
@@ -123,7 +135,27 @@ func migrate(db *sql.DB) error {
 		_, err = db.Exec(fmt.Sprintf(`ALTER TABLE %s ADD COLUMN %s %s`, table, column, decl))
 		return err
 	}
-	return addColumnIfMissing("flow_events", "zone", `TEXT DEFAULT ''`)
+	if err := addColumnIfMissing("flow_events", "zone", `TEXT DEFAULT ''`); err != nil {
+		return err
+	}
+	// The trades table gained a full fee/tax/net breakdown (017 expansion): the original
+	// mail-only shape (mail_id PK, total_silver) is incompatible. The feature is
+	// unreleased, so a pre-expansion table is dropped and recreated by the schema on the
+	// next Open — no user data is at stake.
+	var hasMailID int
+	if err := db.QueryRow(`SELECT COUNT(*) FROM pragma_table_info('trades') WHERE name='mail_id'`).Scan(&hasMailID); err != nil {
+		return err
+	}
+	if hasMailID > 0 {
+		log.Printf("store migration: dropping pre-expansion trades table")
+		if _, err := db.Exec(`DROP TABLE trades`); err != nil {
+			return err
+		}
+		if _, err := db.Exec(schema); err != nil { // recreate all IF-NOT-EXISTS tables incl. new trades
+			return err
+		}
+	}
+	return nil
 }
 
 // Close closes the database.
@@ -496,6 +528,97 @@ func (s *SQLite) LoadSpecEnum(ctx context.Context) ([]int, error) {
 			return nil, err
 		}
 		out = append(out, id)
+	}
+	return out, rows.Err()
+}
+
+// tradesCap bounds the persisted trade ledger (feature 017): the newest tradesCap mails
+// are kept, the rest pruned oldest-first so a long-lived mailbox can't grow the store
+// without bound (Principle XI). Ordered by received then mail_id (mail ids increase over
+// time, so they order stably even when received is unknown/0).
+const tradesCap = 5000
+
+// SaveTrade upserts one captured trade by its id (idempotent — the same mail/instant
+// trade must not double-count, FR-010), then prunes beyond tradesCap.
+func (s *SQLite) SaveTrade(ctx context.Context, t model.Trade) error {
+	est := 0
+	if t.TaxEstimated {
+		est = 1
+	}
+	if _, err := s.db.ExecContext(ctx, `
+		INSERT OR REPLACE INTO trades
+		  (trade_id, direction, source, item_id, item_index, partial_amount, total_amount,
+		   gross, setup_fee, sales_tax, net, tax_estimated, unit_silver, received, location_id)
+		VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+		t.TradeID, t.Direction, t.Source, t.ItemID, t.ItemIndex, t.PartialAmount, t.TotalAmount,
+		t.Gross, t.SetupFee, t.SalesTax, t.Net, est, t.UnitSilver, t.Received, t.LocationID,
+	); err != nil {
+		return err
+	}
+	_, err := s.db.ExecContext(ctx, `
+		DELETE FROM trades WHERE trade_id NOT IN (
+		  SELECT trade_id FROM trades ORDER BY received DESC, trade_id DESC LIMIT ?)`, tradesCap)
+	return err
+}
+
+// mailInfosCap bounds the persisted mail-type map (Principle XI); a mailbox has at most
+// a few hundred mails, so this is generous.
+const mailInfosCap = 8192
+
+// SaveMailInfo persists one mail's type/location so a mail read in a later session (whose
+// GetMailInfos list the game client-cached and never re-sent) can still be decoded — the
+// type is what a ReadMail body needs to parse (017). Prunes beyond the cap.
+func (s *SQLite) SaveMailInfo(ctx context.Context, id int64, typ, location string, received int64) error {
+	if _, err := s.db.ExecContext(ctx,
+		`INSERT OR REPLACE INTO mail_infos (mail_id, type, location_id, received) VALUES (?, ?, ?, ?)`,
+		id, typ, location, received); err != nil {
+		return err
+	}
+	_, err := s.db.ExecContext(ctx, `
+		DELETE FROM mail_infos WHERE mail_id NOT IN (
+		  SELECT mail_id FROM mail_infos ORDER BY received DESC, mail_id DESC LIMIT ?)`, mailInfosCap)
+	return err
+}
+
+// LoadMailInfos returns the persisted mail-type map (for the startup seed).
+func (s *SQLite) LoadMailInfos(ctx context.Context) ([]model.MailInfo, error) {
+	rows, err := s.db.QueryContext(ctx, `SELECT mail_id, type, location_id, received FROM mail_infos`)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	var out []model.MailInfo
+	for rows.Next() {
+		var m model.MailInfo
+		if err := rows.Scan(&m.ID, &m.Type, &m.LocationID, &m.Received); err != nil {
+			return nil, err
+		}
+		out = append(out, m)
+	}
+	return out, rows.Err()
+}
+
+// LoadTrades returns every persisted trade, newest first (received then trade_id).
+func (s *SQLite) LoadTrades(ctx context.Context) ([]model.Trade, error) {
+	rows, err := s.db.QueryContext(ctx, `
+		SELECT trade_id, direction, source, item_id, item_index, partial_amount, total_amount,
+		       gross, setup_fee, sales_tax, net, tax_estimated, unit_silver, received, location_id
+		FROM trades ORDER BY received DESC, trade_id DESC`)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	var out []model.Trade
+	for rows.Next() {
+		var t model.Trade
+		var est int
+		if err := rows.Scan(&t.TradeID, &t.Direction, &t.Source, &t.ItemID, &t.ItemIndex,
+			&t.PartialAmount, &t.TotalAmount, &t.Gross, &t.SetupFee, &t.SalesTax, &t.Net,
+			&est, &t.UnitSilver, &t.Received, &t.LocationID); err != nil {
+			return nil, err
+		}
+		t.TaxEstimated = est == 1
+		out = append(out, t)
 	}
 	return out, rows.Err()
 }

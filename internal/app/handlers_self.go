@@ -36,6 +36,8 @@ func handleOwnState(p *Pipeline, _ probe.Kind, _ int, params map[byte]interface{
 	// E:81 later refreshes it (newest-wins in SetWallet).
 	if silver, ok := capture.JoinWallet(params); ok {
 		p.sink.SetWallet(silver, p.nowMS())
+		p.seedWalletBaseline(silver) // baseline for instant-trade delta (017): without it,
+		//                              a sale before the session's first E:81 is lost
 	}
 }
 

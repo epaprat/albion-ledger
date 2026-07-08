@@ -34,6 +34,13 @@
     { "kind": "event", "code": 153, "category": "spec_delta" },
     { "kind": "event", "code": 152, "category": "spec_done" },
     { "kind": "event", "code": 155, "category": "spec_unlocked" },
-    { "kind": "event", "code": 1, "category": "spec_full_board" }
+    { "kind": "event", "code": 1, "category": "spec_full_board" },
+    { "kind": "response", "code": 174, "category": "mail_infos" },
+    { "kind": "response", "code": 176, "category": "mail_read" },
+    { "kind": "request", "code": 315, "category": "instant_sell" },
+    { "kind": "request", "code": 83, "category": "instant_buy" },
+    { "kind": "request", "code": 485, "category": "quicksell" },
+    { "kind": "request", "code": 79, "category": "sell_order" },
+    { "kind": "request", "code": 80, "category": "buy_order" }
   ]
 }

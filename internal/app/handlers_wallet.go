@@ -24,6 +24,10 @@ func handleWallet(p *Pipeline, _ probe.Kind, _ int, params map[byte]interface{})
 		return
 	}
 	p.sink.SetWallet(silver, p.nowMS())
+	// The balance change also drives instant-trade silver: a delta that follows an instant
+	// sell/buy/quicksell request (op 315/83/485) within the window is that trade's silver
+	// (017 expansion). A delta with no pending trade is ignored here.
+	p.correlateWallet(silver)
 	if p.debug {
 		log.Printf("[wallet] balance=%d", silver)
 	}
