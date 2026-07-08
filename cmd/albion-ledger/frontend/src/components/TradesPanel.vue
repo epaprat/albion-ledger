@@ -1,8 +1,8 @@
 <script setup>
-import { computed, reactive, toRef } from 'vue'
+import { computed, reactive, ref } from 'vue'
 import { fmt, compact } from '../format.js'
 import { useTable } from '../composables/useTable.js'
-import { dirLabel, netClass as netClassOf, amountText as amountTextOf, sourceLabel, tradeFields, tradeAccessor } from '../composables/trades.js'
+import { netClass as netClassOf, amountText as amountTextOf, sourceLabel, tradeFields, tradeAccessor } from '../composables/trades.js'
 import StateBlock from './StateBlock.vue'
 import SortTh from './SortTh.vue'
 import FilterBar from './FilterBar.vue'
@@ -12,8 +12,11 @@ const props = defineProps({
   summary: { type: Object, required: true }, // TradeSummary
 })
 
-const list = toRef(props, 'trades')
-const table = useTable(list, {
+// Direction filter: all / sold (income) / bought (expense incl. fees).
+const dirFilter = ref('all')
+const filtered = computed(() =>
+  dirFilter.value === 'all' ? props.trades : props.trades.filter((t) => t.direction === dirFilter.value))
+const table = useTable(filtered, {
   fields: tradeFields,
   accessor: tradeAccessor,
   defaultSort: { key: 'received', dir: 'desc' },
@@ -21,6 +24,13 @@ const table = useTable(list, {
 
 const netClass = computed(() => netClassOf(props.summary.net))
 const amountText = (r) => amountTextOf(r, fmt)
+// Classify by P&L direction, not the transaction verb — a sell-order setup fee is an
+// Expense, not a "Bought". Sold → Income, everything else (buy, fee) → Expense.
+const typeLabel = (r) => (r.direction === 'sold' ? 'Income' : 'Expense')
+const typeClass = (r) => (r.direction === 'sold' ? 'sold' : 'bought')
+// When the trade happened — real sale time for mail order-fills, capture time for live.
+const whenText = (ms) =>
+  ms ? new Date(ms).toLocaleString('en-US', { month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit', hour12: false }) : '—'
 
 // Item-render icon (official CDN, same as Holdings). A quicksell batch has no single
 // item; broken/absent icons fall back to initials.
@@ -61,7 +71,14 @@ const netText = (r) => (r.net >= 0 ? '+' : '') + fmt(r.net)
     </StateBlock>
 
     <template v-else>
-      <FilterBar v-model="table.query.value" :shown="table.shown.value" :total="table.total.value" placeholder="Filter trades by item…" />
+      <div class="controls">
+        <FilterBar v-model="table.query.value" :shown="table.shown.value" :total="table.total.value" placeholder="Filter trades by item…" />
+        <span class="seg" role="group" aria-label="Filter by direction">
+          <button :class="{ active: dirFilter === 'all' }" @click="dirFilter = 'all'" :aria-pressed="dirFilter === 'all'">All</button>
+          <button :class="{ active: dirFilter === 'sold' }" @click="dirFilter = 'sold'" :aria-pressed="dirFilter === 'sold'">Income</button>
+          <button :class="{ active: dirFilter === 'bought' }" @click="dirFilter = 'bought'" :aria-pressed="dirFilter === 'bought'">Expense</button>
+        </span>
+      </div>
       <StateBlock v-if="table.shown.value === 0" variant="empty" title="No matches"
         :action="{ label: 'Clear filter', onClick: table.clearFilter }">
         Nothing matches the current filter.
@@ -72,6 +89,7 @@ const netText = (r) => (r.net >= 0 ? '+' : '') + fmt(r.net)
             <th class="c-item">
               <SortTh label="Item" col-key="item" :sort-key="table.sortKey.value" :sort-dir="table.sortDir.value" @toggle="k => table.toggleSort(k, 'asc')" />
             </th>
+            <SortTh label="When" col-key="received" align="num" :sort-key="table.sortKey.value" :sort-dir="table.sortDir.value" @toggle="table.toggleSort" />
             <SortTh label="Amount" col-key="amount" align="num" :sort-key="table.sortKey.value" :sort-dir="table.sortDir.value" @toggle="table.toggleSort" />
             <SortTh label="Gross" col-key="gross" align="num" :sort-key="table.sortKey.value" :sort-dir="table.sortDir.value" @toggle="table.toggleSort" />
             <SortTh label="Tax" col-key="tax" align="num" :sort-key="table.sortKey.value" :sort-dir="table.sortDir.value" @toggle="table.toggleSort" />
@@ -88,11 +106,12 @@ const netText = (r) => (r.net >= 0 ? '+' : '') + fmt(r.net)
                 <span class="name-cell">
                   <span class="name">{{ r.itemName || r.itemId || 'Unknown item' }}</span>
                   <span class="tags">
-                    <span class="badge" :class="r.direction">{{ dirLabel(r.direction) }}</span>
+                    <span class="badge" :class="typeClass(r)">{{ typeLabel(r) }}</span>
                     <span class="src" v-if="r.source !== 'mail'">{{ sourceLabel(r.source) }}</span>
                   </span>
                 </span>
               </td>
+              <td class="num dim when">{{ whenText(r.received) }}</td>
               <td class="num dim">{{ amountText(r) }}</td>
               <td class="num">{{ r.gross ? fmt(r.gross) : '—' }}</td>
               <td class="num fee">{{ r.salesTax ? '−' + fmt(r.salesTax) : '—' }}<span v-if="r.taxEstimated && r.salesTax" class="est" title="Estimated from the sales-tax rate">≈</span></td>
@@ -130,6 +149,7 @@ thead th.c-item { text-align: left; }
 tbody td { padding: 8px 14px; text-align: right; border-bottom: 1px solid color-mix(in srgb, var(--border) 45%, transparent); font-variant-numeric: tabular-nums; }
 tbody tr:hover td { background: color-mix(in srgb, var(--muted) 8%, transparent); }
 .num { white-space: nowrap; }
+.when { font-size: 12px; }
 .dim { color: var(--muted); }
 .net { font-weight: 600; }
 
@@ -147,6 +167,15 @@ td.c-item { display: flex; align-items: center; gap: 12px; }
 .badge { font-size: 10px; font-weight: 600; padding: 1px 7px; border-radius: 4px; text-transform: uppercase; letter-spacing: .03em; }
 .badge.sold { background: rgba(63,185,80,.16); color: var(--good, #3fb950); }
 .badge.bought { background: rgba(248,81,73,.16); color: var(--bad, #f85149); }
+.badge.fee { background: rgba(210,153,34,.16); color: var(--warn, #d29922); }
+
+/* Controls row: item filter + direction segmented control */
+.controls { display: flex; align-items: center; gap: 12px; }
+.controls > :first-child { flex: 1; min-width: 0; }
+.seg { display: inline-flex; border: 1px solid var(--border); border-radius: 6px; overflow: hidden; flex: none; }
+.seg button { background: transparent; border: 0; color: var(--muted); padding: 4px 12px; font-size: 12px; cursor: pointer; }
+.seg button.active { background: var(--panel, #1c2128); color: var(--text); }
+.seg button:focus-visible { outline: 2px solid var(--accent); outline-offset: -2px; }
 .src { font-size: 10px; color: var(--muted); text-transform: uppercase; letter-spacing: .04em; }
 .est { font-size: 10px; color: var(--muted); margin-left: 1px; }
 </style>
