@@ -40,9 +40,12 @@ func TestRegistryAcceptsNewCategoryWithoutCentralChanges(t *testing.T) {
 		model.CatCurrentLocation, model.CatInventoryPut, model.CatInventoryDelete,
 		model.CatSilver, model.CatLoot, model.CatGatherFishing, model.CatLootSource,
 		model.CatLootMove, model.CatFame,
-		model.CatBankLocations, model.CatBankTabs, model.CatBankTabContent,
+		model.CatBankLocations, model.CatBankTabs, model.CatBankTabContent, model.CatBankTabRequest,
 		model.CatMarketSellOrders, model.CatMarketBuyOrders,
-		model.CatSpecSnapshot, model.CatSpecDelta, model.CatSpecDone, model.CatSpecUnlocked, model.CatSpecFullBoard,
+		model.CatSpecSnapshot, model.CatSpecDelta, model.CatSpecDone, model.CatSpecUnlocked, model.CatSpecFullBoard, model.CatWallet,
+		model.CatMailInfos, model.CatMailRead,
+		model.CatInstantSell, model.CatInstantBuy, model.CatQuicksell,
+		model.CatSellOrder, model.CatBuyOrder,
 	} {
 		if _, ok := registry[cat]; !ok {
 			t.Fatalf("category %q has no registered handler", cat)

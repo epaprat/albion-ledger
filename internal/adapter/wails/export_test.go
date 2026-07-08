@@ -21,6 +21,7 @@ func TestBuildDatasetHeaders(t *testing.T) {
 		"zones":    "zone",
 		"market":   "item",
 		"spec":     "id",
+		"trades":   "time",
 	}
 	for _, key := range DatasetKeys {
 		header, _, err := svc.buildDataset(key, "")

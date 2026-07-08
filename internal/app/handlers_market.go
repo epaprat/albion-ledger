@@ -32,6 +32,7 @@ func handleMarketOrders(p *Pipeline, _ probe.Kind, code int, params map[byte]int
 		if !o.IsOffer {
 			continue
 		}
+		p.putOffer(o.OrderID, o.UniqueName) // name a later instant buy (op 83) by its order id
 		p.sink.IngestMarketPrice(o.UniqueName, o.Quality, o.UnitRaw/vaultValueScale)
 		fed++
 	}

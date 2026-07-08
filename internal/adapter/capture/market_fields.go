@@ -20,6 +20,7 @@ const maxMarketOrders = 128
 
 // MarketOrder is one parsed order row.
 type MarketOrder struct {
+	OrderID    int64  // marketplace order id (for instant-buy item resolution, 017)
 	UniqueName string // ItemTypeId with "@N" appended for enchanted items
 	Quality    int
 	UnitRaw    int64 // silver ×10000
@@ -27,6 +28,7 @@ type MarketOrder struct {
 }
 
 type wireOrder struct {
+	ID               int64  `json:"Id"`
 	UnitPriceSilver  int64  `json:"UnitPriceSilver"`
 	ItemTypeID       string `json:"ItemTypeId"`
 	EnchantmentLevel int    `json:"EnchantmentLevel"`
@@ -61,6 +63,7 @@ func MarketOrders(params map[byte]interface{}) ([]MarketOrder, bool) {
 			q = 0
 		}
 		out = append(out, MarketOrder{
+			OrderID:    w.ID,
 			UniqueName: name,
 			Quality:    q,
 			UnitRaw:    w.UnitPriceSilver,

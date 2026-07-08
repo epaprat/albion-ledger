@@ -126,3 +126,19 @@ func TestEmptySlicesHeaderOnly(t *testing.T) {
 }
 
 func mustRows(_ []string, rows [][]string) [][]string { return rows }
+
+func TestTradeGolden(t *testing.T) {
+	header, rows := TradeRows([]model.Trade{{
+		TradeID: "mail:1", Direction: "sold", Source: "mail", ItemName: "Adept's Bag", ItemID: "T4_BAG@1",
+		PartialAmount: 1, TotalAmount: 1, Gross: 8951, SetupFee: 0, SalesTax: 358, Net: 8593,
+		TaxEstimated: true, UnitSilver: 8951, Received: 1_700_000_000_000, LocationID: "3005",
+	}})
+	wantHeader := []string{"time", "type", "source", "item", "uniqueName", "amount", "totalAmount",
+		"gross", "setupFee", "salesTax", "net", "taxEstimated", "unitSilver", "location"}
+	if !reflect.DeepEqual(header, wantHeader) {
+		t.Fatalf("trades header contract broken: %v", header)
+	}
+	if len(rows) != 1 || rows[0][1] != "sold" || rows[0][7] != "8951" || rows[0][10] != "8593" {
+		t.Fatalf("trade row wrong: %v", rows[0])
+	}
+}

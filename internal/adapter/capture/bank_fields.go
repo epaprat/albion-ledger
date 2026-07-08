@@ -116,18 +116,36 @@ type BankTabRow struct {
 // is what keeps unrelated op-1 responses out (the classification double-lock).
 // The count array is width-variable ([]int16 or []byte when all counts ≤255 —
 // live-seen both ways); quality (k7) and unit values (k5) are optional extras.
-func BankTabContent(params map[byte]interface{}) (tabGUID string, rows []BankTabRow, ok bool) {
-	guid, gok := params[0].([]byte)
-	if !gok || len(guid) != 16 {
-		return "", nil, false
+// BankTabRequest reads the tab guid the client asks content for (op 518 request), so a
+// following GUID-LESS content response (the default/open tab) can be attributed to it.
+func BankTabRequest(params map[byte]interface{}) (tabGUID string, ok bool) {
+	if guid, gok := params[0].([]byte); gok && len(guid) == 16 {
+		return hex.EncodeToString(guid), true
 	}
-	// Width-variable everywhere (the classic Photon trap, live-hit three times in
-	// this feature alone): indexes, counts, qualities and values each shrink to the
-	// narrowest element type that fits the packet's values.
+	return "", false
+}
+
+func BankTabContent(params map[byte]interface{}) (tabGUID string, rows []BankTabRow, ok bool) {
+	// The item arrays are the real content check. The tab guid (k0) is normally present,
+	// but the default/open tab's content (the one shown when the bank overview opens)
+	// arrives GUID-LESS (k0 nil, plus an extra k13) — live-decoded 2026-07-08. Return an
+	// empty guid in that case; the handler fills it from the pending tab request.
+	// Width-variable everywhere (the classic Photon trap, live-hit repeatedly): indexes,
+	// counts, qualities and values each shrink to the narrowest element type that fits.
 	idx := byteOrIntSlice(params[2])
 	counts := byteOrIntSlice(params[4])
 	if idx == nil || counts == nil || len(idx) != len(counts) || len(idx) == 0 || len(idx) > maxBankTabRows {
 		return "", nil, false
+	}
+	// Guid: a valid 16-byte k0 → use it. k0 absent/nil → the default/open tab (guid-less);
+	// the handler fills the guid from the pending request. k0 present but malformed
+	// (wrong length/type) → reject (a corrupt or unrelated op-1, contract rule 4).
+	if v, present := params[0]; present && v != nil {
+		guid, gok := v.([]byte)
+		if !gok || len(guid) != 16 {
+			return "", nil, false
+		}
+		tabGUID = hex.EncodeToString(guid)
 	}
 	qualities := byteOrIntSlice(params[7])
 	values := int64Slice(params[5])
@@ -141,7 +159,7 @@ func BankTabContent(params map[byte]interface{}) (tabGUID string, rows []BankTab
 			rows[i].UnitValue = values[i]
 		}
 	}
-	return hex.EncodeToString(guid), rows, true
+	return tabGUID, rows, true
 }
 
 // byteOrIntSlice reads a small-int array in ANY Photon width — the serializer picks

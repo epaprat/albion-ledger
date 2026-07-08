@@ -141,3 +141,31 @@ func TestBankWidthVariants(t *testing.T) {
 		t.Fatalf("byte-width indexes rejected: %+v ok=%v", rows, ok)
 	}
 }
+
+func TestBankTabRequest(t *testing.T) {
+	g := make([]byte, 16)
+	g[0] = 0xd6
+	if guid, ok := BankTabRequest(map[byte]interface{}{0: g}); !ok || guid != "d6000000000000000000000000000000" {
+		t.Fatalf("BankTabRequest wrong: %q ok=%v", guid, ok)
+	}
+	if _, ok := BankTabRequest(map[byte]interface{}{0: []byte{1, 2}}); ok {
+		t.Fatal("short guid must reject")
+	}
+}
+
+func TestBankTabContentGuidless(t *testing.T) {
+	// The default/open tab's content arrives with NO guid at k0 — still parses; the
+	// handler supplies the guid from the pending tab request (010 fix).
+	params := map[byte]interface{}{
+		2: []int16{101, 102, 103}, // item indexes
+		4: []int16{1, 2, 3},       // counts
+		7: []byte{1, 1, 1},        // qualities
+	}
+	guid, rows, ok := BankTabContent(params)
+	if !ok || guid != "" || len(rows) != 3 {
+		t.Fatalf("guid-less content: guid=%q rows=%d ok=%v", guid, len(rows), ok)
+	}
+	if rows[1].ItemIndex != 102 || rows[1].Count != 2 {
+		t.Fatalf("row parse wrong: %+v", rows[1])
+	}
+}

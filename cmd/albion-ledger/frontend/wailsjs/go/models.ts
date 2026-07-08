@@ -397,6 +397,10 @@ export namespace model {
 	}
 	export class HoldingsSummary {
 	    totalValue: number;
+	    walletSilver: number;
+	    walletKnown: boolean;
+	    walletLastSeen: number;
+	    netWorth: number;
 	    gameEstTotal: number;
 	    unvaluedCount: number;
 	    cities: CitySummary[];
@@ -408,6 +412,10 @@ export namespace model {
 	    constructor(source: any = {}) {
 	        if ('string' === typeof source) source = JSON.parse(source);
 	        this.totalValue = source["totalValue"];
+	        this.walletSilver = source["walletSilver"];
+	        this.walletKnown = source["walletKnown"];
+	        this.walletLastSeen = source["walletLastSeen"];
+	        this.netWorth = source["netWorth"];
 	        this.gameEstTotal = source["gameEstTotal"];
 	        this.unvaluedCount = source["unvaluedCount"];
 	        this.cities = this.convertValues(source["cities"], CitySummary);
@@ -507,6 +515,72 @@ export namespace model {
 	    }
 	}
 	
+	export class Trade {
+	    tradeId: string;
+	    direction: string;
+	    source: string;
+	    itemId: string;
+	    itemName: string;
+	    itemIndex: number;
+	    partialAmount: number;
+	    totalAmount: number;
+	    gross: number;
+	    setupFee: number;
+	    salesTax: number;
+	    net: number;
+	    taxEstimated: boolean;
+	    unitSilver: number;
+	    received: number;
+	    locationId: string;
+	
+	    static createFrom(source: any = {}) {
+	        return new Trade(source);
+	    }
+	
+	    constructor(source: any = {}) {
+	        if ('string' === typeof source) source = JSON.parse(source);
+	        this.tradeId = source["tradeId"];
+	        this.direction = source["direction"];
+	        this.source = source["source"];
+	        this.itemId = source["itemId"];
+	        this.itemName = source["itemName"];
+	        this.itemIndex = source["itemIndex"];
+	        this.partialAmount = source["partialAmount"];
+	        this.totalAmount = source["totalAmount"];
+	        this.gross = source["gross"];
+	        this.setupFee = source["setupFee"];
+	        this.salesTax = source["salesTax"];
+	        this.net = source["net"];
+	        this.taxEstimated = source["taxEstimated"];
+	        this.unitSilver = source["unitSilver"];
+	        this.received = source["received"];
+	        this.locationId = source["locationId"];
+	    }
+	}
+	export class TradeSummary {
+	    grossIncome: number;
+	    grossExpense: number;
+	    salesTax: number;
+	    setupFee: number;
+	    net: number;
+	    count: number;
+	    scope: string;
+	
+	    static createFrom(source: any = {}) {
+	        return new TradeSummary(source);
+	    }
+	
+	    constructor(source: any = {}) {
+	        if ('string' === typeof source) source = JSON.parse(source);
+	        this.grossIncome = source["grossIncome"];
+	        this.grossExpense = source["grossExpense"];
+	        this.salesTax = source["salesTax"];
+	        this.setupFee = source["setupFee"];
+	        this.net = source["net"];
+	        this.count = source["count"];
+	        this.scope = source["scope"];
+	    }
+	}
 	
 	export class ZoneActivityStatView {
 	    kind: string;

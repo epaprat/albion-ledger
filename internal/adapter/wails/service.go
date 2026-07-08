@@ -5,8 +5,10 @@ package wailsadapter
 
 import (
 	"context"
+	"fmt"
 	"log"
 	"sort"
+	"strings"
 	"sync"
 	"sync/atomic"
 	"time"
@@ -33,6 +35,7 @@ const (
 	EventHoldingsChanged = "holdings:changed"
 	EventSpecChanged     = "spec:changed"
 	EventFlowChanged     = "flow:changed"
+	EventTradesChanged   = "trades:changed"
 )
 
 // Service holds the bounded live-view state and the bound methods.
@@ -58,9 +61,16 @@ type Service struct {
 
 	externalNudge chan struct{} // buffered(1) — K content signals the external price loop (010)
 
-	specUnlockedIDs []int // latest E:155 unlocked-node set, for persistence (011)
-	specEnumIDs     []int // latest E:1 board enumeration (position→id), for persistence (012)
+	specUnlockedIDs []int           // latest E:155 unlocked-node set, for persistence (011)
+	specEnumIDs     []int           // latest E:1 board enumeration (position→id), for persistence (012)
 	uiCtx           context.Context // wails runtime ctx for native dialogs (013); set at OnStartup
+	walletSilver    int64           // liquid silver balance (016); valid only when walletKnown
+	walletKnown     bool
+	walletLastSeen  int64
+
+	tradeStore TradeStore             // marketplace trade persistence (017); nil = in-memory
+	trades     map[string]model.Trade // by trade id (dedup, FR-010)
+	tradeOrder []string               // insertion order for FIFO cap eviction
 
 	mu     sync.Mutex
 	items  map[int]*model.LiveViewItem // by item index
@@ -76,6 +86,7 @@ func NewService(cat port.Catalog, book *valuation.Book, val port.Valuer, emit Em
 	return &Service{
 		cat: cat, book: book, val: val, emit: emit, cap: cap, nowMS: nowMS,
 		items:         map[int]*model.LiveViewItem{},
+		trades:        map[string]model.Trade{},
 		agg:           holdings.New(cat, val, model.DefaultStaleAfterMS),
 		flow:          flow.New(val, flow.DefaultIdleMS, flow.DefaultCap),
 		externalNudge: make(chan struct{}, 1),
@@ -642,12 +653,230 @@ func (s *Service) Status() model.CaptureStatusView {
 // ListHoldings returns the player's held items (inventory/bank/equipped).
 func (s *Service) ListHoldings() []model.HoldingItem { return s.agg.List() }
 
-// HoldingsSummary returns the total value + per-location seen/stale state.
-func (s *Service) HoldingsSummary() model.HoldingsSummary { return s.agg.Summary(s.nowMS()) }
+// SetWallet records the liquid silver balance (016). Newest-wins by arrival time: a
+// source whose timestamp is older than the last applied one is ignored (the R:2 login
+// seed fires on every zone change, so this also drops the redundant re-seeds). Only a
+// real change re-emits.
+func (s *Service) SetWallet(silver int64, ts int64) {
+	s.mu.Lock()
+	applied := ts >= s.walletLastSeen
+	if applied {
+		s.walletSilver, s.walletKnown, s.walletLastSeen = silver, true, ts
+	}
+	s.mu.Unlock()
+	if applied {
+		s.emitHoldings()
+	}
+}
+
+// HoldingsSummary returns the total value + per-location seen/stale state, with the
+// wallet and net worth (016) overlaid. Net worth = wallet + holdings value; when the
+// wallet is unknown it equals the holdings value (the caller labels it "wallet excluded"
+// — no fabricated zero, FR-003).
+func (s *Service) HoldingsSummary() model.HoldingsSummary {
+	sum := s.agg.Summary(s.nowMS())
+	s.mu.Lock()
+	silver, known, seen := s.walletSilver, s.walletKnown, s.walletLastSeen
+	s.mu.Unlock()
+	if known {
+		sum.WalletSilver, sum.WalletKnown, sum.WalletLastSeen = silver, true, seen
+		sum.NetWorth = silver + sum.TotalValue
+	} else {
+		sum.NetWorth = sum.TotalValue
+	}
+	return sum
+}
 
 // Spec returns the player's character specialization levels.
 func (s *Service) Spec() model.CharacterSpec {
 	s.mu.Lock()
 	defer s.mu.Unlock()
 	return s.spec
+}
+
+// ── Marketplace trades (017) ─────────────────────────────────────────────────
+
+// TradeStore persists captured trades + the mail-type map so both survive restarts
+// (Principle VIII/XI). Low-frequency (per opened mail / trade) → writes are direct.
+type TradeStore interface {
+	SaveTrade(ctx context.Context, t model.Trade) error
+	SaveMailInfo(ctx context.Context, id int64, typ, location string, received int64) error
+}
+
+// SaveMailInfo persists one mail's type so a later session can decode a mail the game
+// client-cached and never re-listed (017). No-op without a store.
+func (s *Service) SaveMailInfo(id int64, typ, location string, received int64) {
+	s.mu.Lock()
+	store := s.tradeStore
+	s.mu.Unlock()
+	if store != nil {
+		if err := store.SaveMailInfo(context.Background(), id, typ, location, received); err != nil {
+			log.Printf("mail-info store write failed (%d): %v", id, err)
+		}
+	}
+}
+
+// SetTradeStore wires the persistence sink (nil keeps the ledger purely in-memory).
+func (s *Service) SetTradeStore(store TradeStore) {
+	s.mu.Lock()
+	s.tradeStore = store
+	s.mu.Unlock()
+}
+
+// SeedTrades preloads the persisted ledger into the live view at startup (FR-011).
+// LoadTrades returns newest-first, but tradeOrder must be oldest-first (evictTrades drops
+// the front as the FIFO victim) — so iterate in reverse, else the first live trade of the
+// session would evict the newest history instead of the oldest (review).
+func (s *Service) SeedTrades(trades []model.Trade) {
+	s.mu.Lock()
+	for i := len(trades) - 1; i >= 0; i-- {
+		t := trades[i]
+		if _, ok := s.trades[t.TradeID]; !ok {
+			s.tradeOrder = append(s.tradeOrder, t.TradeID)
+		}
+		s.trades[t.TradeID] = t
+	}
+	s.evictTrades()
+	s.mu.Unlock()
+	s.emitTrades()
+}
+
+// AddTrade records one captured order-fill mail, deduped by mail id (reading the same
+// mail twice must not double-count, FR-006). Only a genuinely new/changed trade persists
+// and re-emits — no redundant refresh (mirrors SetWallet, 016).
+func (s *Service) AddTrade(t model.Trade) {
+	s.mu.Lock()
+	prev, existed := s.trades[t.TradeID]
+	changed := !existed || prev != t
+	if !existed {
+		s.tradeOrder = append(s.tradeOrder, t.TradeID)
+	}
+	if changed {
+		s.trades[t.TradeID] = t
+		s.evictTrades()
+	}
+	store := s.tradeStore
+	s.mu.Unlock()
+	if !changed {
+		return
+	}
+	if store != nil {
+		if err := store.SaveTrade(context.Background(), t); err != nil {
+			log.Printf("trade store write failed (%s): %v", t.TradeID, err)
+		}
+	}
+	s.emitTrades()
+}
+
+func (s *Service) evictTrades() {
+	for len(s.trades) > s.cap && len(s.tradeOrder) > 0 {
+		oldest := s.tradeOrder[0]
+		s.tradeOrder = s.tradeOrder[1:]
+		delete(s.trades, oldest)
+	}
+}
+
+// tradeItemName resolves a mail item id to a display name. The catalog keys enchanted
+// resources by the FULL uniqueName (e.g. "T5_HIDE_LEVEL2@2"), so try the whole id first;
+// only fall back to the @-stripped base for items keyed by their unenchanted name. Raw id
+// if neither is known.
+func (s *Service) tradeItemName(itemID string) string {
+	if idx, ok := s.cat.IndexOf(itemID); ok {
+		if it := s.cat.Resolve(idx, 0); it.DisplayName != "" {
+			return it.DisplayName
+		}
+	}
+	if i := strings.IndexByte(itemID, '@'); i >= 0 {
+		if idx, ok := s.cat.IndexOf(itemID[:i]); ok {
+			if it := s.cat.Resolve(idx, 0); it.DisplayName != "" {
+				return it.DisplayName
+			}
+		}
+	}
+	return itemID
+}
+
+// Trades returns the captured trades, newest first (received then trade id). The item
+// name is resolved at READ time (Principle V) — only ItemID is persisted, so a seeded
+// trade (restored from the store) resolves the same as a freshly captured one. An item
+// index (instant sell) resolves through the catalog even without a uniqueName.
+func (s *Service) Trades() []model.Trade {
+	s.mu.Lock()
+	out := make([]model.Trade, 0, len(s.trades))
+	for _, t := range s.trades {
+		out = append(out, t)
+	}
+	s.mu.Unlock()
+	for i := range out {
+		out[i].ItemName = s.resolveTradeName(out[i])
+		out[i].Received = normalizeTradeMs(out[i].Received) // heal rows persisted as .NET ticks
+		// Fill the uniqueName (used for the item-render icon) for trades that only carry
+		// the catalog index (instant sell, buy-order setup).
+		if out[i].ItemID == "" && out[i].ItemIndex > 0 {
+			if it := s.cat.Resolve(out[i].ItemIndex, 0); it.UniqueName != "" {
+				out[i].ItemID = it.UniqueName
+			}
+		}
+	}
+	sort.Slice(out, func(i, j int) bool {
+		if out[i].Received != out[j].Received {
+			return out[i].Received > out[j].Received
+		}
+		return out[i].TradeID > out[j].TradeID
+	})
+	return out
+}
+
+// resolveTradeName resolves a trade's display name: a quicksell is an aggregate batch;
+// an instant sell carries the item type index; a mail carries the uniqueName; otherwise
+// (instant buy without an offer cache) the item is unknown.
+func (s *Service) resolveTradeName(t model.Trade) string {
+	if t.Source == model.TradeSourceQuick {
+		return fmt.Sprintf("Quicksell (%d items)", t.TotalAmount)
+	}
+	if t.ItemIndex > 0 {
+		if it := s.cat.Resolve(t.ItemIndex, 0); it.DisplayName != "" && it.Known {
+			return it.DisplayName
+		}
+	}
+	if t.ItemID != "" {
+		return s.tradeItemName(t.ItemID)
+	}
+	return "Unknown item"
+}
+
+// TradeSummary rolls up the fee/tax/net breakdown over captured trades (read-time,
+// Principle V) — each component summed SEPARATELY (FR-008). Net = income − expense (the
+// real wallet movement). Scope is the honest coverage label.
+func (s *Service) TradeSummary() model.TradeSummary {
+	s.mu.Lock()
+	defer s.mu.Unlock()
+	sum := model.TradeSummary{Count: len(s.trades), Scope: "opened mails + live trades"}
+	for _, t := range s.trades {
+		if t.Direction == model.TradeBought {
+			sum.GrossExpense += t.Gross
+		} else {
+			sum.GrossIncome += t.Gross
+		}
+		sum.SalesTax += t.SalesTax
+		sum.SetupFee += t.SetupFee
+		sum.Net += t.Net
+	}
+	return sum
+}
+
+// normalizeTradeMs heals a Received value that was persisted as raw .NET DateTime ticks
+// (~6e17) into unix ms, so old rows and freshly-converted ones share one time base and
+// render as valid dates. Values already in ms pass through.
+func normalizeTradeMs(v int64) int64 {
+	if v > 1e15 {
+		return (v - 621355968000000000) / 10000
+	}
+	return v
+}
+
+func (s *Service) emitTrades() {
+	if s.emit != nil {
+		s.emit.Emit(EventTradesChanged, s.TradeSummary())
+	}
 }
