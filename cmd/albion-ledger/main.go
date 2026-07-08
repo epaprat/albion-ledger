@@ -157,6 +157,21 @@ func main() {
 				} else if err != nil {
 					log.Printf("store LoadSpecEnum: %v", err)
 				}
+				// Persisted marketplace P&L (017): the trade ledger is historical, so
+				// seed it and wire the store so new order-fill mails persist.
+				if trades, err := flowStore.LoadTrades(ctx); err == nil && len(trades) > 0 {
+					svc.SeedTrades(trades)
+				} else if err != nil {
+					log.Printf("store LoadTrades: %v", err)
+				}
+				svc.SetTradeStore(flowStore)
+				// Persisted mail-type map (017): decode mails whose GetMailInfos list the
+				// game client-cached and never re-sent this session.
+				if infos, err := flowStore.LoadMailInfos(ctx); err == nil && len(infos) > 0 {
+					pipe.SeedMailInfos(infos)
+				} else if err != nil {
+					log.Printf("store LoadMailInfos: %v", err)
+				}
 				if err := flowStore.StartSession(ctx, model.CaptureSession{
 					ID: sessionID, StartedAt: nowMS(), SourceKind: srcKind, Interface: *iface,
 				}); err != nil {

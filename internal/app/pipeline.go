@@ -25,6 +25,7 @@ import (
 	"github.com/epaprat/albion-ledger/internal/pending"
 	"github.com/epaprat/albion-ledger/internal/specboard"
 	"github.com/epaprat/albion-ledger/internal/specenum"
+	"github.com/epaprat/albion-ledger/internal/tradecalc"
 )
 
 // Fixed container ids for the player's own bag + equipped sets, which arrive in
@@ -74,6 +75,8 @@ type Sink interface {
 	SetSpecUnlocked(ids []int)
 	SetSpecEnum(ids []int)
 	SetWallet(silver int64, ts int64)
+	AddTrade(t model.Trade)
+	SaveMailInfo(id int64, typ, location string, received int64)
 }
 
 // SpecResolver maps a Destiny Board node id to a readable name + category (011).
@@ -135,7 +138,60 @@ type Pipeline struct {
 	//                                 classification (unlocked ∖ empty-board would mark ALL 100)
 	specEnum      *specenum.Enum // E:1 board enumeration (012): position→id for warm logins
 	specFullBoard bool           // true once E:1 gave the complete board — it's the authority
+
+	// Mail P&L correlation (017): R:174 GetMailInfos populates id→{type,location,received};
+	// R:176 ReadMail looks the type up to parse the body. Bounded (oldest evicted) so a
+	// large mailbox can't grow it without limit (Principle XI). Session-transient — the
+	// resulting Trade is what persists, not this cache.
+	mailInfo      map[int64]mailInfoEntry
+	mailInfoOrder []int64
+
+	// Instant-trade wallet correlation (017 expansion): an instant sell/buy/quicksell
+	// request (op 315/83/485) carries the item+amount but NOT the silver; the silver is
+	// the wallet delta (E:81) that follows. armInstant records the pending context;
+	// correlateWallet attributes the next matching delta(s) to it (within a window). A
+	// wallet change with no fresh trade context (loot, repair) is ignored for trades.
+	walletSilver int64 // last observed wallet balance (real silver), for delta
+	walletSeen   bool
+	instant      *instantCtx
+	instantSeq   int64
+
+	// offerCache maps a marketplace sell-offer id → its item uniqueName (from R:81), so an
+	// instant buy (op 83, which carries only the order id) can name its item. Bounded.
+	offerCache map[int64]string
+	offerOrder []int64
 }
+
+// offerCacheCap bounds the order-id→item cache (Principle XI).
+const offerCacheCap = 8192
+
+// instantCtx is a pending instant trade awaiting its wallet delta(s) (017).
+type instantCtx struct {
+	direction string // sold | bought
+	source    string // instant | quicksell
+	tradeID   string
+	itemIndex int    // instant sell (item type index); 0 otherwise
+	itemID    string // resolved uniqueName, else ""
+	amount    int    // units traded
+	count     int    // items in a quicksell batch
+	net       int64  // accumulated wallet delta (signed: + sold, − bought)
+	single    bool   // true = one delta then disarm (instant sell/buy); false = accumulate a quicksell burst
+	expiresMS int64  // correlation window end
+}
+
+// instantWindowMS bounds how long after a trade request a wallet delta may be attributed
+// to it — long enough for a quicksell burst, short enough to exclude unrelated income.
+const instantWindowMS = 2000
+
+// mailInfoEntry is one GetMailInfos row cached for a later ReadMail (017).
+type mailInfoEntry struct {
+	typ      string
+	location string
+	received int64
+}
+
+// mailInfoCap bounds the id→info correlation cache (Principle XI).
+const mailInfoCap = 4096
 
 // New wires a Pipeline. locs may be nil (zones stay raw cluster ids).
 func New(sink Sink, clf *probe.Classifier, locs *locations.Locations, specNames SpecResolver, nowMS func() int64, debug bool) *Pipeline {
@@ -156,6 +212,151 @@ func New(sink Sink, clf *probe.Classifier, locs *locations.Locations, specNames 
 		board:              specboard.New(),
 		specNames:          specNames,
 		specEnum:           specenum.New(),
+		mailInfo:           map[int64]mailInfoEntry{},
+		offerCache:         map[int64]string{},
+	}
+}
+
+// putOffer caches a sell-offer id → item uniqueName (bounded, oldest evicted).
+func (p *Pipeline) putOffer(id int64, uniqueName string) {
+	if id <= 0 || uniqueName == "" {
+		return
+	}
+	if _, exists := p.offerCache[id]; !exists {
+		if len(p.offerCache) >= offerCacheCap && len(p.offerOrder) > 0 {
+			delete(p.offerCache, p.offerOrder[0])
+			p.offerOrder = p.offerOrder[1:]
+		}
+		p.offerOrder = append(p.offerOrder, id)
+	}
+	p.offerCache[id] = uniqueName
+}
+
+// putMailInfo caches a GetMailInfos row for a later ReadMail, evicting the oldest entry
+// when the cache is full (bounded, Principle XI). Re-inserting a known id refreshes it
+// without growing the order list.
+func (p *Pipeline) putMailInfo(id int64, e mailInfoEntry) {
+	if _, exists := p.mailInfo[id]; !exists {
+		if len(p.mailInfo) >= mailInfoCap && len(p.mailInfoOrder) > 0 {
+			delete(p.mailInfo, p.mailInfoOrder[0])
+			p.mailInfoOrder = p.mailInfoOrder[1:]
+		}
+		p.mailInfoOrder = append(p.mailInfoOrder, id)
+	}
+	p.mailInfo[id] = e
+}
+
+// getMailInfo returns the cached info for a mail id (false if its GetMailInfos row was
+// never seen — the ReadMail is then dropped, the honest passive limit, FR-004).
+func (p *Pipeline) getMailInfo(id int64) (mailInfoEntry, bool) {
+	e, ok := p.mailInfo[id]
+	return e, ok
+}
+
+// SeedMailInfos restores the persisted mail-type map at startup so a mail whose
+// GetMailInfos list the game client-cached (and never re-sent) can still be decoded (017).
+func (p *Pipeline) SeedMailInfos(infos []model.MailInfo) {
+	for _, mi := range infos {
+		p.putMailInfo(mi.ID, mailInfoEntry{typ: mi.Type, location: mi.LocationID, received: mi.Received})
+	}
+}
+
+// armInstant records a pending instant trade so the following wallet delta(s) attribute
+// to it. Replaces any prior context (the previous trade's deltas have already been
+// applied incrementally, so nothing is lost).
+func (p *Pipeline) armInstant(c *instantCtx) {
+	p.instantSeq++
+	prefix := "inst"
+	if c.source == model.TradeSourceQuick {
+		prefix = "quick"
+	}
+	// Id includes the wall-clock time so a per-run counter can't collide with a persisted
+	// trade after a restart (the counter resets, the clock doesn't).
+	c.tradeID = fmt.Sprintf("%s:%d-%d", prefix, p.nowMS(), p.instantSeq)
+	c.expiresMS = p.nowMS() + instantWindowMS
+	p.instant = c
+	if p.debug {
+		log.Printf("[trade] armed %s %s item=%d amount=%d count=%d", c.source, c.direction, c.itemIndex, c.amount, c.count)
+	}
+}
+
+// correlateWallet processes a new wallet balance: it attributes the delta to a fresh
+// instant-trade context (right sign, within window) and emits/updates that trade, then
+// records the balance for the next delta. A delta with no matching context is ignored
+// for trades (it's other income — loot, repair refund).
+func (p *Pipeline) correlateWallet(silver int64) {
+	now := p.nowMS()
+	if p.walletSeen && p.instant != nil && now <= p.instant.expiresMS {
+		delta := silver - p.walletSilver
+		sold := p.instant.direction == model.TradeSold
+		if (sold && delta > 0) || (!sold && delta < 0) {
+			p.instant.net += delta
+			p.emitInstantTrade()
+			if p.instant.single {
+				p.instant = nil // one item, one delta — don't let later deltas leak in
+			} else {
+				p.instant.expiresMS = now + instantWindowMS // quicksell burst keeps accumulating
+			}
+		}
+	}
+	p.walletSilver = silver
+	p.walletSeen = true
+}
+
+// clearInstant drops any pending instant context — used when an order-placement (op
+// 79/80) fires so its escrow/setup-fee wallet delta can't be mis-attributed to a prior
+// instant trade (017).
+func (p *Pipeline) clearInstant() { p.instant = nil }
+
+// emitSetupTrade records one order-listing setup fee as its own ledger row (Source
+// "setup", a pure expense: gross 0, net = −fee). The fee comes from the order value, not
+// a wallet delta (a buy order's delta also holds refundable escrow).
+func (p *Pipeline) emitSetupTrade(itemIndex, qty int, fee int64) {
+	p.instantSeq++
+	p.sink.AddTrade(model.Trade{
+		TradeID:       fmt.Sprintf("setup:%d-%d", p.nowMS(), p.instantSeq),
+		Direction:     model.TradeBought,
+		Source:        model.TradeSourceSetup,
+		ItemIndex:     itemIndex,
+		PartialAmount: qty,
+		TotalAmount:   qty,
+		SetupFee:      fee,
+		Net:           -fee,
+		Received:      p.nowMS(),
+	})
+}
+
+// emitInstantTrade builds the trade from the accumulated instant context and upserts it
+// (same trade id → a quicksell burst accumulates rather than duplicating). Net is the
+// real wallet delta; gross/tax are reconstructed from the sales-tax rate.
+func (p *Pipeline) emitInstantTrade() {
+	c := p.instant
+	var bd tradecalc.Breakdown
+	if c.direction == model.TradeSold {
+		bd = tradecalc.SoldFromNet(c.net, tradecalc.DefaultSalesTaxRate)
+	} else {
+		bd = tradecalc.Bought(-c.net) // c.net is negative for a buy
+	}
+	amount := c.amount
+	if c.source == model.TradeSourceQuick {
+		amount = c.count
+	}
+	p.sink.AddTrade(model.Trade{
+		TradeID:       c.tradeID,
+		Direction:     c.direction,
+		Source:        c.source,
+		ItemID:        c.itemID,
+		ItemIndex:     c.itemIndex,
+		PartialAmount: amount,
+		TotalAmount:   amount,
+		Gross:         bd.Gross,
+		SalesTax:      bd.SalesTax,
+		Net:           bd.Net,
+		TaxEstimated:  bd.Estimated,
+		Received:      p.nowMS(),
+	})
+	if p.debug {
+		log.Printf("[trade] %s %s net=%d gross=%d (%s)", c.source, c.direction, bd.Net, bd.Gross, c.tradeID)
 	}
 }
 

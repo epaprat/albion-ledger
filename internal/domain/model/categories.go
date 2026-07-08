@@ -61,6 +61,23 @@ const (
 	// k2 node ids + k3 levels (incl 100). Cold login sends k2; warm login omits it.
 	// Shape-locked against the chat-settings E:1 (which shares event code 1).
 	CatSpecFullBoard Category = "spec_full_board"
+	// CatMailInfos = R:174 GetMailInfos (mailbox list: id→type/location/received) and
+	// CatMailRead = R:176 ReadMail (one opened mail's body) carry the marketplace
+	// order-fill P&L (feature 017): sale income / purchase expense, itemized. RESPONSE
+	// codes — E:174/E:176 (if any) are unrelated; the classifier keys by (kind, code).
+	// Not probe coverage targets.
+	CatMailInfos Category = "mail_infos"
+	CatMailRead  Category = "mail_read"
+	// CatInstantSell/CatInstantBuy/CatQuicksell are the player's own instant marketplace
+	// actions (017 expansion, REQUEST ops 315/83/485). They carry the item/amount; the
+	// silver is the wallet delta (E:81) correlated in the pipeline. Not probe targets.
+	CatInstantSell Category = "instant_sell"
+	CatInstantBuy  Category = "instant_buy"
+	CatQuicksell   Category = "quicksell"
+	// CatSellOrder/CatBuyOrder = the player's own order LISTING (017, REQUEST ops 79/80).
+	// They carry item/qty/price; the 2.5% setup fee is computed from the order value.
+	CatSellOrder Category = "sell_order"
+	CatBuyOrder  Category = "buy_order"
 )
 
 // AllCategories is the full ordered set of target categories (13). The coverage

@@ -126,6 +126,12 @@ func handleBankTabs(p *Pipeline, _ probe.Kind, _ int, params map[byte]interface{
 // Meta not seen yet (content-first ordering) → tolerant fallback; a later 517 +
 // re-browse corrects name and city (contract rules 2/7 — no permanent wrongness).
 func handleBankTabContent(p *Pipeline, _ probe.Kind, _ int, params map[byte]interface{}) {
+	// The bulk mail-list sync (GetMailInfos, many mails) arrives as an op-1 response —
+	// the same code as bank tab content. Its MARKETPLACE type-array signature routes it
+	// to mail handling before the bank shape guard (017; live-decoded 2026-07-08).
+	if p.ingestMailInfos(params) {
+		return
+	}
 	tabGUID, rows, ok := capture.BankTabContent(params)
 	if !ok {
 		return // shape lock: unrelated op-1 responses die here (contract rule 4)
