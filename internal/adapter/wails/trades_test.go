@@ -103,3 +103,14 @@ func TestSeedTrades_RestoresLedger(t *testing.T) {
 		t.Fatalf("seeded net wrong: %+v", sum)
 	}
 }
+
+func TestNormalizeTradeMs(t *testing.T) {
+	// Raw .NET ticks → unix ms (~2026-07).
+	if ms := normalizeTradeMs(639191077368469880); ms < 1_780_000_000_000 || ms > 1_790_000_000_000 {
+		t.Fatalf("ticks heal wrong: %d", ms)
+	}
+	// Already ms → unchanged.
+	if ms := normalizeTradeMs(1_783_520_195_293); ms != 1_783_520_195_293 {
+		t.Fatalf("ms passthrough wrong: %d", ms)
+	}
+}

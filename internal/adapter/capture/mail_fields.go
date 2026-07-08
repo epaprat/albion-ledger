@@ -116,19 +116,41 @@ func hasAnyMailType(s []string) bool {
 	return false
 }
 
-// timestampSlice returns the first int array (other than excludeKey) whose first value
-// looks like a unix-seconds timestamp (> 1e9). Best-effort — received is optional.
+// timestampSlice returns the received-time array: among the int64 arrays (other than the
+// id array), the one with the SMALLEST first value — a mail carries a received time and,
+// sometimes, a later expiry; received is always the earlier of the two.
 func timestampSlice(params map[byte]interface{}, excludeKey int) []int64 {
+	var best []int64
 	for k, v := range params {
 		if int(k) == excludeKey {
 			continue
 		}
 		s := int64Slice(v)
-		if len(s) > 0 && s[0] > 1_000_000_000 {
-			return s
+		if len(s) > 0 && s[0] > 1_000_000_000 && (best == nil || s[0] < best[0]) {
+			best = s
 		}
 	}
-	return nil
+	return best
+}
+
+// netTicksEpoch is the number of .NET DateTime ticks (100ns) at the unix epoch.
+const netTicksEpoch = 621355968000000000
+
+// MailReceivedMs normalizes a mail's wire timestamp to unix milliseconds so it orders
+// against live trades (which use wall-clock ms). Albion sends .NET DateTime ticks; older
+// captures used unix seconds. Returns 0 when the value isn't a plausible timestamp (the
+// caller then falls back to capture time).
+func MailReceivedMs(raw int64) int64 {
+	switch {
+	case raw > 1e17: // .NET ticks (100ns since year 1)
+		return (raw - netTicksEpoch) / 10000
+	case raw > 1e12: // already unix ms
+		return raw
+	case raw > 1e9: // unix seconds
+		return raw * 1000
+	default:
+		return 0
+	}
 }
 
 func min2(a, b int) int {

@@ -776,16 +776,21 @@ func (s *Service) evictTrades() {
 	}
 }
 
-// tradeItemName resolves a mail item id (wire uniqueName with @enchant) to a display
-// name, falling back to the raw id when the catalog doesn't know it.
+// tradeItemName resolves a mail item id to a display name. The catalog keys enchanted
+// resources by the FULL uniqueName (e.g. "T5_HIDE_LEVEL2@2"), so try the whole id first;
+// only fall back to the @-stripped base for items keyed by their unenchanted name. Raw id
+// if neither is known.
 func (s *Service) tradeItemName(itemID string) string {
-	base := itemID
-	if i := strings.IndexByte(itemID, '@'); i >= 0 {
-		base = itemID[:i]
-	}
-	if idx, ok := s.cat.IndexOf(base); ok {
+	if idx, ok := s.cat.IndexOf(itemID); ok {
 		if it := s.cat.Resolve(idx, 0); it.DisplayName != "" {
 			return it.DisplayName
+		}
+	}
+	if i := strings.IndexByte(itemID, '@'); i >= 0 {
+		if idx, ok := s.cat.IndexOf(itemID[:i]); ok {
+			if it := s.cat.Resolve(idx, 0); it.DisplayName != "" {
+				return it.DisplayName
+			}
 		}
 	}
 	return itemID
@@ -804,6 +809,7 @@ func (s *Service) Trades() []model.Trade {
 	s.mu.Unlock()
 	for i := range out {
 		out[i].ItemName = s.resolveTradeName(out[i])
+		out[i].Received = normalizeTradeMs(out[i].Received) // heal rows persisted as .NET ticks
 		// Fill the uniqueName (used for the item-render icon) for trades that only carry
 		// the catalog index (instant sell, buy-order setup).
 		if out[i].ItemID == "" && out[i].ItemIndex > 0 {
@@ -857,6 +863,16 @@ func (s *Service) TradeSummary() model.TradeSummary {
 		sum.Net += t.Net
 	}
 	return sum
+}
+
+// normalizeTradeMs heals a Received value that was persisted as raw .NET DateTime ticks
+// (~6e17) into unix ms, so old rows and freshly-converted ones share one time base and
+// render as valid dates. Values already in ms pass through.
+func normalizeTradeMs(v int64) int64 {
+	if v > 1e15 {
+		return (v - 621355968000000000) / 10000
+	}
+	return v
 }
 
 func (s *Service) emitTrades() {

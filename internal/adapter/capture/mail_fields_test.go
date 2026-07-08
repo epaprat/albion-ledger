@@ -76,3 +76,22 @@ func TestReadMail(t *testing.T) {
 		t.Fatal("missing id must be rejected")
 	}
 }
+
+func TestMailReceivedMs(t *testing.T) {
+	// .NET ticks (live) → unix ms ~2026-07.
+	if ms := MailReceivedMs(639191053823215690); ms < 1_780_000_000_000 || ms > 1_790_000_000_000 {
+		t.Fatalf(".NET ticks conversion wrong: %d", ms)
+	}
+	// unix seconds → ms.
+	if ms := MailReceivedMs(1_549_840_000); ms != 1_549_840_000_000 {
+		t.Fatalf("unix seconds conversion wrong: %d", ms)
+	}
+	// already ms → unchanged.
+	if ms := MailReceivedMs(1_783_000_000_000); ms != 1_783_000_000_000 {
+		t.Fatalf("ms passthrough wrong: %d", ms)
+	}
+	// implausible → 0 (caller falls back).
+	if ms := MailReceivedMs(42); ms != 0 {
+		t.Fatalf("implausible must be 0: %d", ms)
+	}
+}

@@ -31,6 +31,15 @@ func handleMailInfos(p *Pipeline, _ probe.Kind, _ int, params map[byte]interface
 	p.ingestMailInfos(params)
 }
 
+// mailReceived normalizes the wire mail timestamp to unix ms, falling back to the given
+// capture time when it isn't usable.
+func mailReceived(raw, fallback int64) int64 {
+	if ms := capture.MailReceivedMs(raw); ms > 0 {
+		return ms
+	}
+	return fallback
+}
+
 // ingestMailInfos caches + persists a GetMailInfos list when params carry the mail-list
 // shape (a MARKETPLACE_/BLACKMARKET_ type array). Returns true when it was mail-shaped.
 // The list arrives as R:174 for a small mailbox, but as a bulk R:1 sync for a large one
@@ -89,10 +98,11 @@ func handleMailRead(p *Pipeline, _ probe.Kind, _ int, params map[byte]interface{
 		SalesTax:      bd.SalesTax,
 		Net:           bd.Net,
 		TaxEstimated:  bd.Estimated,
-		UnitSilver:    parsed.UnitSilver,
-		// Order by capture time: the wire's mail timestamp can't be told apart from the
-		// expiry field on a multi-array packet (review), so it isn't a reliable sort key.
-		Received:   p.nowMS(),
+		UnitSilver: parsed.UnitSilver,
+		// Order by the real sale time from the mail (normalized to unix ms) so a recent
+		// order-fill sorts by when it SOLD, not when the mail was opened; fall back to
+		// capture time when the wire carries no usable timestamp.
+		Received:   mailReceived(info.received, p.nowMS()),
 		LocationID: info.location,
 	})
 	if p.debug {
