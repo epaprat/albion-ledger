@@ -1,6 +1,7 @@
 <script setup>
 import { ref, computed, onMounted } from 'vue'
 import HoldingsPanel from './components/HoldingsPanel.vue'
+import TradesPanel from './components/TradesPanel.vue'
 import FlowPanel from './components/FlowPanel.vue'
 import SessionSummaryBar from './components/SessionSummaryBar.vue'
 import { fmt, compact, tierLabel, qLabel, srcText } from './format.js'
@@ -21,6 +22,8 @@ const flowView = ref('items')        // active FlowPanel view ('zones' gates the
 const zoneWindow = ref('session')    // time window for zone stats
 const flowSummary = ref({ active: false, netSilver: 0, silverPerHour: 0, lootValue: 0, gatherValue: 0, fame: 0, famePerHour: 0, rateReady: false, unvaluedCount: 0, eventCount: 0 })
 const spec = ref({ masteries: [], nodeCount: 0, totalFame: 0, complete: false })
+const trades = ref([])                // Trade[] (017 marketplace P&L)
+const tradeSummary = ref({ grossIncome: 0, grossExpense: 0, salesTax: 0, setupFee: 0, net: 0, count: 0, scope: '' })
 const exportResults = ref({})        // dataset key -> last ExportResult (013)
 const exportBusy = ref(false)
 const specFilter = ref('')
@@ -131,6 +134,12 @@ async function refreshFlow() {
 function setFlowView(v) { flowView.value = v; if (v === 'zones') refreshFlow() }
 function setZoneWindow(w) { zoneWindow.value = w; refreshFlow() }
 
+async function refreshTrades() {
+  const s = svc(); if (!s) return
+  trades.value = (await s.Trades()) || []
+  tradeSummary.value = await s.TradeSummary()
+}
+
 // ── CSV export (013) ─────────────────────────────────────────────────────────
 const exportSets = computed(() => ([
   { key: 'holdings', name: 'Holdings', rows: holdings.value.length },
@@ -172,6 +181,7 @@ onMounted(async () => {
     for (const it of (await s.ListItems()) || []) upsertMarket(it)
     await refreshHoldings()
     await refreshFlow()
+    await refreshTrades()
     spec.value = await s.Spec()
     status.value = await s.Status()
   } catch (_) {}
@@ -184,6 +194,7 @@ onMounted(async () => {
     window.runtime.EventsOn('holdings:changed', scheduleHoldingsRefresh)
     window.runtime.EventsOn('flow:changed', scheduleFlowRefresh)
     window.runtime.EventsOn('spec:changed', (sp) => { spec.value = sp })
+    window.runtime.EventsOn('trades:changed', refreshTrades)
   }
 })
 
@@ -201,6 +212,7 @@ onMounted(async () => {
       <nav class="tabs" role="tablist" aria-label="Views">
         <button :class="{ active: tab === 'flow' }" @click="tab = 'flow'" role="tab" :aria-selected="tab === 'flow'">Flow</button>
         <button :class="{ active: tab === 'holdings' }" @click="tab = 'holdings'" role="tab" :aria-selected="tab === 'holdings'">Holdings</button>
+        <button :class="{ active: tab === 'trades' }" @click="tab = 'trades'" role="tab" :aria-selected="tab === 'trades'">Trades</button>
         <button :class="{ active: tab === 'market' }" @click="tab = 'market'" role="tab" :aria-selected="tab === 'market'">Market</button>
         <button :class="{ active: tab === 'spec' }" @click="tab = 'spec'" role="tab" :aria-selected="tab === 'spec'">Spec</button>
         <button :class="{ active: tab === 'export' }" @click="tab = 'export'" role="tab" :aria-selected="tab === 'export'">Export</button>
@@ -227,6 +239,9 @@ onMounted(async () => {
         :holdings="holdings"
         :encrypted="encrypted"
       />
+
+      <!-- TRADES (marketplace P&L, 017) -->
+      <TradesPanel v-else-if="tab === 'trades'" :trades="trades" :summary="tradeSummary" />
 
       <!-- MARKET -->
       <section v-else-if="tab === 'market'">
