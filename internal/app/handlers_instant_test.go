@@ -55,12 +55,13 @@ func TestInstant_BuyFromWalletDelta(t *testing.T) {
 
 func TestInstant_BuyItemFromOfferCache(t *testing.T) {
 	svc, p := newGlue(t)
-	// Browsing offers (R:81) caches order id → item; the instant buy then names it.
-	offer := `{"Id":999,"UnitPriceSilver":100000,"ItemTypeId":"T7_WOOD","EnchantmentLevel":0,"QualityLevel":1,"AuctionType":"offer"}`
+	// Browsing offers (R:81) caches order id → item + price; the instant buy then names it
+	// AND its −30000 delta matches the expected 3 × 10000 spend (018 bracket).
+	offer := `{"Id":999,"UnitPriceSilver":100000000,"ItemTypeId":"T7_WOOD","EnchantmentLevel":0,"QualityLevel":1,"AuctionType":"offer"}`
 	p.dispatch(probe.KindResponse, 81, map[byte]interface{}{0: []string{offer}})
 	p.dispatch(probe.KindEvent, 81, walletEvent(100000)) // baseline
 	p.dispatch(probe.KindRequest, 83, map[byte]interface{}{1: int32(3), 2: int64(999)})
-	p.dispatch(probe.KindEvent, 81, walletEvent(70000)) // −30000 spent
+	p.dispatch(probe.KindEvent, 81, walletEvent(70000)) // −30000 spent = 3 × 10000 unit
 
 	trades := svc.Trades()
 	if len(trades) != 1 || trades[0].ItemName != "Ashenbark Logs" {
@@ -136,18 +137,18 @@ func TestSetupFee_SellAndBuyOrders(t *testing.T) {
 		t.Fatalf("setup fees wrong: sell=%d buy=%d", sellFee, buyFee)
 	}
 	// Setup fees flow into the summary's separate SetupFee total (FR-008).
-	if sum := svc.TradeSummary(); sum.SetupFee != 4496+2663 || sum.Net != -(4496+2663) {
+	if sum := svc.TradeSummary("all"); sum.SetupFee != 4496+2663 || sum.Net != -(4496+2663) {
 		t.Fatalf("setup summary wrong: %+v", sum)
 	}
 }
 
 func TestInstant_QuicksellCapsAtItemCount(t *testing.T) {
 	svc, p := newGlue(t)
-	p.dispatch(probe.KindEvent, 81, walletEvent(1000)) // baseline
+	p.dispatch(probe.KindEvent, 81, walletEvent(1000))                                                 // baseline
 	p.dispatch(probe.KindRequest, 485, map[byte]interface{}{1: make([]int32, 2), 2: make([]int64, 2)}) // 2 items
-	p.dispatch(probe.KindEvent, 81, walletEvent(1100)) // +100 item 1
-	p.dispatch(probe.KindEvent, 81, walletEvent(1250)) // +150 item 2 → count reached, disarm
-	p.dispatch(probe.KindEvent, 81, walletEvent(1900)) // +650 LATER income must NOT fold in
+	p.dispatch(probe.KindEvent, 81, walletEvent(1100))                                                 // +100 item 1
+	p.dispatch(probe.KindEvent, 81, walletEvent(1250))                                                 // +150 item 2 → count reached, disarm
+	p.dispatch(probe.KindEvent, 81, walletEvent(1900))                                                 // +650 LATER income must NOT fold in
 
 	trades := svc.Trades()
 	if len(trades) != 1 || trades[0].Net != 250 {
@@ -174,5 +175,86 @@ func TestInstant_UnrelatedWalletChangeIgnored(t *testing.T) {
 	p.dispatch(probe.KindEvent, 81, walletEvent(1500)) // +500 with NO armed trade (loot silver)
 	if trades := svc.Trades(); len(trades) != 0 {
 		t.Fatalf("unarmed wallet delta must not create a trade, got %d", len(trades))
+	}
+}
+
+// ── 018: expected-value correlation ──────────────────────────────────────────
+
+// T006 — handleMarketOrders caches BOTH offers (sell) and requests (buy) so an instant
+// buy/sell can price its expected value; valuation still consumes offers only (contract C1).
+func TestMarketOrders_CachesBothSides(t *testing.T) {
+	_, p := newGlue(t)
+	offer := `{"Id":100,"UnitPriceSilver":100000000,"ItemTypeId":"T7_WOOD","AuctionType":"offer"}`
+	req := `{"Id":200,"UnitPriceSilver":90000000,"ItemTypeId":"T7_WOOD","AuctionType":"request"}`
+	p.dispatch(probe.KindResponse, 81, map[byte]interface{}{0: []string{offer, req}})
+	if oi, ok := p.orderInfoFor(100); !ok || !oi.isOffer || oi.unitRaw != 100000000 {
+		t.Fatalf("offer must be cached as an offer: %+v ok=%v", oi, ok)
+	}
+	if oi, ok := p.orderInfoFor(200); !ok || oi.isOffer || oi.unitRaw != 90000000 {
+		t.Fatalf("request must be cached as a request: %+v ok=%v", oi, ok)
+	}
+}
+
+// T007a — an instant buy takes only the delta matching its expected spend; an unrelated
+// escrow drop in the window is NOT folded in (SC-001).
+func TestInstant_BuyBracketRejectsUnrelatedDelta(t *testing.T) {
+	svc, p := newGlue(t)
+	offer := `{"Id":999,"UnitPriceSilver":100000000,"ItemTypeId":"T7_WOOD","AuctionType":"offer"}` // 10000/unit
+	p.dispatch(probe.KindResponse, 82, map[byte]interface{}{0: []string{offer}})
+	p.dispatch(probe.KindEvent, 81, walletEvent(100000))                                // baseline
+	p.dispatch(probe.KindRequest, 83, map[byte]interface{}{1: int32(3), 2: int64(999)}) // expect −30000
+	p.dispatch(probe.KindEvent, 81, walletEvent(95000))                                 // −5000 unrelated (out of bracket) → held
+	p.dispatch(probe.KindEvent, 81, walletEvent(65000))                                 // −30000 the real buy (in bracket) → accepted
+	trades := svc.Trades()
+	if len(trades) != 1 || trades[0].Net != -30000 || trades[0].NetEstimated {
+		t.Fatalf("buy must take only the −30000 in-bracket delta (verified): %+v", trades)
+	}
+}
+
+// T007b — an instant sell's net sits below gross by an unknown tax; a taxed net is accepted
+// inside the bracket while unrelated income in the window is rejected (SC-001/SC-002).
+func TestInstant_SellBracketAcceptsTaxedNet(t *testing.T) {
+	svc, p := newGlue(t)
+	req := `{"Id":777,"UnitPriceSilver":100000000,"ItemTypeId":"T7_WOOD","AuctionType":"request"}` // 10000/unit
+	p.dispatch(probe.KindResponse, 81, map[byte]interface{}{0: []string{req}})
+	p.dispatch(probe.KindEvent, 81, walletEvent(1000))                                                   // baseline
+	p.dispatch(probe.KindRequest, 315, map[byte]interface{}{1: int64(777), 2: int32(3543), 4: int32(1)}) // expect gross 10000
+	p.dispatch(probe.KindEvent, 81, walletEvent(1500))                                                   // +500 unrelated (out of bracket) → held
+	p.dispatch(probe.KindEvent, 81, walletEvent(11100))                                                  // +9600 taxed net (from 1500) → in bracket
+	trades := svc.Trades()
+	if len(trades) != 1 || trades[0].Net != 9600 || trades[0].NetEstimated {
+		t.Fatalf("sell must accept only the taxed in-bracket net 9600 (verified): %+v", trades)
+	}
+}
+
+// T007c — price known but no delta ever lands in-bracket: on window expiry the closest
+// candidate is emitted flagged estimated, not silently dropped (FR-003).
+func TestInstant_OutOfBracketEmitsEstimatedOnExpiry(t *testing.T) {
+	svc, p := newGlue(t)
+	clock := int64(1000)
+	p.nowMS = func() int64 { return clock }
+	offer := `{"Id":999,"UnitPriceSilver":100000000,"ItemTypeId":"T7_WOOD","AuctionType":"offer"}` // 10000/unit
+	p.dispatch(probe.KindResponse, 82, map[byte]interface{}{0: []string{offer}})
+	p.dispatch(probe.KindEvent, 81, walletEvent(100000))                                // baseline
+	p.dispatch(probe.KindRequest, 83, map[byte]interface{}{1: int32(3), 2: int64(999)}) // expect −30000
+	p.dispatch(probe.KindEvent, 81, walletEvent(50000))                                 // −50000 out of bracket → held as closest
+	clock = 5000                                                                        // advance past the 2s window
+	p.dispatch(probe.KindEvent, 81, walletEvent(50000))                                 // finalize the expired context
+	trades := svc.Trades()
+	if len(trades) != 1 || !trades[0].NetEstimated || trades[0].Net != -50000 {
+		t.Fatalf("expired out-of-bracket single must emit closest as estimated: %+v", trades)
+	}
+}
+
+// T007d — when the order price is NOT cached, the 017 sign-only correlation applies
+// unchanged: a first correct-sign delta is taken as the net (regression guard, SC-003).
+func TestInstant_UnknownPriceFallsBackToSignGate(t *testing.T) {
+	svc, p := newGlue(t)
+	p.dispatch(probe.KindEvent, 81, walletEvent(100000))                                 // baseline
+	p.dispatch(probe.KindRequest, 83, map[byte]interface{}{1: int32(3), 2: int64(4242)}) // order id never browsed
+	p.dispatch(probe.KindEvent, 81, walletEvent(70000))                                  // −30000
+	trades := svc.Trades()
+	if len(trades) != 1 || trades[0].Net != -30000 || trades[0].NetEstimated {
+		t.Fatalf("unknown-price buy must use the 017 sign gate (net −30000, not estimated): %+v", trades)
 	}
 }

@@ -40,12 +40,13 @@ const (
 
 // Service holds the bounded live-view state and the bound methods.
 type Service struct {
-	cat   port.Catalog
-	book  *valuation.Book
-	val   port.Valuer
-	emit  Emitter
-	cap   int
-	nowMS func() int64
+	cat     port.Catalog
+	book    *valuation.Book
+	val     port.Valuer
+	emit    Emitter
+	cap     int
+	nowMS   func() int64
+	startMS int64 // process/session start (realized-P&L window "session", 018)
 
 	agg  *holdings.Aggregator
 	flow *flow.Ledger
@@ -85,6 +86,7 @@ func NewService(cat port.Catalog, book *valuation.Book, val port.Valuer, emit Em
 	}
 	return &Service{
 		cat: cat, book: book, val: val, emit: emit, cap: cap, nowMS: nowMS,
+		startMS:       nowMS(),
 		items:         map[int]*model.LiveViewItem{},
 		trades:        map[string]model.Trade{},
 		agg:           holdings.New(cat, val, model.DefaultStaleAfterMS),
@@ -845,14 +847,21 @@ func (s *Service) resolveTradeName(t model.Trade) string {
 	return "Unknown item"
 }
 
-// TradeSummary rolls up the fee/tax/net breakdown over captured trades (read-time,
-// Principle V) — each component summed SEPARATELY (FR-008). Net = income − expense (the
-// real wallet movement). Scope is the honest coverage label.
-func (s *Service) TradeSummary() model.TradeSummary {
+// TradeSummary rolls up the fee/tax/net breakdown over captured trades for a time window
+// (read-time, Principle V) — each component summed SEPARATELY (FR-008). Net = income −
+// expense (the real wallet movement). window ∈ {"session","today","7d","all"} ("" → all).
+// The window boundary is the single realizedWindowStart rule so this and the Holdings
+// header can never disagree (SC-005).
+func (s *Service) TradeSummary(window string) model.TradeSummary {
+	start := s.realizedWindowStart(window)
 	s.mu.Lock()
 	defer s.mu.Unlock()
-	sum := model.TradeSummary{Count: len(s.trades), Scope: "opened mails + live trades"}
+	sum := model.TradeSummary{Scope: realizedScope(window)}
 	for _, t := range s.trades {
+		if normalizeTradeMs(t.Received) < start {
+			continue // outside the window (heal .NET ticks before comparing)
+		}
+		sum.Count++
 		if t.Direction == model.TradeBought {
 			sum.GrossExpense += t.Gross
 		} else {
@@ -863,6 +872,43 @@ func (s *Service) TradeSummary() model.TradeSummary {
 		sum.Net += t.Net
 	}
 	return sum
+}
+
+// realizedWindowStart returns the earliest received-ms included for a window (018). ONE
+// rule — received >= start — shared by every realized-P&L read (SC-005).
+func (s *Service) realizedWindowStart(window string) int64 {
+	now := s.nowMS()
+	switch window {
+	case "session":
+		return s.startMS
+	case "today":
+		return startOfLocalDayMS(now)
+	case "7d":
+		return now - 7*86_400_000
+	default: // "all" and any unknown → everything
+		return 0
+	}
+}
+
+// startOfLocalDayMS returns local midnight (ms) for the day containing nowMS.
+func startOfLocalDayMS(nowMS int64) int64 {
+	t := time.UnixMilli(nowMS)
+	y, m, d := t.Date()
+	return time.Date(y, m, d, 0, 0, 0, 0, t.Location()).UnixMilli()
+}
+
+// realizedScope is the honest coverage label shown with a window's totals.
+func realizedScope(window string) string {
+	switch window {
+	case "session":
+		return "this session"
+	case "today":
+		return "today"
+	case "7d":
+		return "last 7 days"
+	default:
+		return "all time"
+	}
 }
 
 // normalizeTradeMs heals a Received value that was persisted as raw .NET DateTime ticks
@@ -877,6 +923,6 @@ func normalizeTradeMs(v int64) int64 {
 
 func (s *Service) emitTrades() {
 	if s.emit != nil {
-		s.emit.Emit(EventTradesChanged, s.TradeSummary())
+		s.emit.Emit(EventTradesChanged, s.TradeSummary("all"))
 	}
 }

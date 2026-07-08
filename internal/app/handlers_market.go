@@ -29,10 +29,13 @@ func handleMarketOrders(p *Pipeline, _ probe.Kind, code int, params map[byte]int
 	}
 	fed := 0
 	for _, o := range orders {
+		// Cache BOTH sides: an offer (sell) names + prices a later instant buy (op 83); a
+		// request (buy) prices an instant sell/quicksell that fills into it (018). Only
+		// offers feed valuation — a buyer's bid must not inflate a "what is this worth" price.
+		p.putOrder(o.OrderID, o.UniqueName, o.UnitRaw, o.IsOffer)
 		if !o.IsOffer {
 			continue
 		}
-		p.putOffer(o.OrderID, o.UniqueName) // name a later instant buy (op 83) by its order id
 		p.sink.IngestMarketPrice(o.UniqueName, o.Quality, o.UnitRaw/vaultValueScale)
 		fed++
 	}

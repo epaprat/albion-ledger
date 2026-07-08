@@ -159,13 +159,23 @@ type Pipeline struct {
 	instant      *instantCtx
 	instantSeq   int64
 
-	// offerCache maps a marketplace sell-offer id → its item uniqueName (from R:81), so an
-	// instant buy (op 83, which carries only the order id) can name its item. Bounded.
-	offerCache map[int64]string
+	// offerCache maps a marketplace order id → its item name + unit price + side (from
+	// R:81/82), so an instant buy (op 83, order id only) can name its item AND an instant
+	// sell/buy can build an EXPECTED value (price × amount) to gate the wallet delta (018).
+	// Both offers (sell) and requests (buy) are cached; valuation is still fed offers only.
+	// Bounded.
+	offerCache map[int64]orderInfo
 	offerOrder []int64
 }
 
-// offerCacheCap bounds the order-id→item cache (Principle XI).
+// orderInfo is one cached marketplace order: item, unit price (×10000), and side (018).
+type orderInfo struct {
+	name    string
+	unitRaw int64
+	isOffer bool // true = sell offer, false = buy request
+}
+
+// offerCacheCap bounds the order-id→info cache (Principle XI).
 const offerCacheCap = 8192
 
 // instantCtx is a pending instant trade awaiting its wallet delta(s) (017).
@@ -181,11 +191,31 @@ type instantCtx struct {
 	single    bool   // true = one delta then disarm (instant sell/buy); false = accumulate a quicksell burst
 	deltas    int    // wallet deltas attributed so far (a quicksell disarms at count)
 	expiresMS int64  // correlation window end
+	// Expected-value correlation (018): when the order unit price is known, expectedGross =
+	// Σ (unit price × amount) lets a wallet delta be gated on MAGNITUDE, not just sign —
+	// so unrelated income (loot, escrow, refund) in the window is not mis-attributed.
+	expectedGross int64 // 0 when unknown
+	expectedKnown bool  // false → fall back to 017 sign-only correlation (no regression)
+	// bestNet tracks the closest correct-sign delta seen for a single trade whose magnitude
+	// fell OUTSIDE the bracket — used to emit an honest "estimated" net on window expiry
+	// rather than silently dropping the trade (FR-003).
+	bestNet      int64
+	bestSet      bool
+	netEstimated bool // net could not be bracket-verified → surfaced as Trade.NetEstimated
 }
 
 // instantWindowMS bounds how long after a trade request a wallet delta may be attributed
 // to it — long enough for a quicksell burst, short enough to exclude unrelated income.
 const instantWindowMS = 2000
+
+// Expected-value tolerance (018, research D3). A buy pays the order price EXACTLY, so its
+// delta may differ only by rounding. A sell's net is the price minus an unknown (premium-
+// dependent) tax, so the true net is bracketed in [gross×(1−maxTax), gross]. Both bands are
+// far tighter than sign-only: unrelated income almost never lands inside them.
+const (
+	instantBuyEpsilonRate = 0.02 // buy: |delta| within ±2% of expected spend (rounding)
+	instantSellMaxTaxRate = 0.08 // sell: net floor = gross×(1−0.08) (base 4% + safety margin)
+)
 
 // mailInfoEntry is one GetMailInfos row cached for a later ReadMail (017).
 type mailInfoEntry struct {
@@ -217,13 +247,14 @@ func New(sink Sink, clf *probe.Classifier, locs *locations.Locations, specNames 
 		specNames:          specNames,
 		specEnum:           specenum.New(),
 		mailInfo:           map[int64]mailInfoEntry{},
-		offerCache:         map[int64]string{},
+		offerCache:         map[int64]orderInfo{},
 	}
 }
 
-// putOffer caches a sell-offer id → item uniqueName (bounded, oldest evicted).
-func (p *Pipeline) putOffer(id int64, uniqueName string) {
-	if id <= 0 || uniqueName == "" {
+// putOrder caches an order id → item name + unit price + side (bounded, oldest evicted).
+// Re-inserting a known id refreshes it (newest-wins price) without growing the order list.
+func (p *Pipeline) putOrder(id int64, uniqueName string, unitRaw int64, isOffer bool) {
+	if id <= 0 || uniqueName == "" || unitRaw <= 0 {
 		return
 	}
 	if _, exists := p.offerCache[id]; !exists {
@@ -233,7 +264,23 @@ func (p *Pipeline) putOffer(id int64, uniqueName string) {
 		}
 		p.offerOrder = append(p.offerOrder, id)
 	}
-	p.offerCache[id] = uniqueName
+	p.offerCache[id] = orderInfo{name: uniqueName, unitRaw: unitRaw, isOffer: isOffer}
+}
+
+// orderInfoFor returns the cached order for an id (false if never browsed).
+func (p *Pipeline) orderInfoFor(id int64) (orderInfo, bool) {
+	oi, ok := p.offerCache[id]
+	return oi, ok
+}
+
+// orderValue returns the expected gross (unit price × amount, real silver) for a cached
+// order and whether the price was known — the reference for the delta bracket (018).
+func (p *Pipeline) orderValue(orderID int64, amount int) (int64, bool) {
+	oi, ok := p.offerCache[orderID]
+	if !ok || oi.unitRaw <= 0 || amount <= 0 {
+		return 0, false
+	}
+	return int64(amount) * oi.unitRaw / silverScale, true
 }
 
 // putMailInfo caches a GetMailInfos row for a later ReadMail, evicting the oldest entry
@@ -287,28 +334,136 @@ func (p *Pipeline) armInstant(c *instantCtx) {
 // correlateWallet processes a new wallet balance: it attributes the delta to a fresh
 // instant-trade context (right sign, within window) and emits/updates that trade, then
 // records the balance for the next delta. A delta with no matching context is ignored
-// for trades (it's other income — loot, repair refund).
+// for trades (it's other income — loot, repair refund). When the order price is known,
+// the delta is also gated on MAGNITUDE (expected-value bracket, 018) so unrelated income
+// in the window is not mis-attributed; when it is not, the 017 sign-only path applies.
 func (p *Pipeline) correlateWallet(silver int64) {
 	now := p.nowMS()
+	// An expired context is finalized before this balance becomes the baseline: emit an
+	// honest estimate if a close candidate was seen, else drop it (no fabricated trade).
+	if p.instant != nil && now > p.instant.expiresMS {
+		p.finalizeExpiredInstant()
+	}
 	if p.walletSeen && p.instant != nil && now <= p.instant.expiresMS {
 		delta := silver - p.walletSilver
 		sold := p.instant.direction == model.TradeSold
 		if (sold && delta > 0) || (!sold && delta < 0) {
-			p.instant.net += delta
-			p.instant.deltas++
-			p.emitInstantTrade()
-			// A single instant trade disarms after its one delta; a quicksell burst keeps
-			// accumulating but is CAPPED at its known item count so it can't absorb an
-			// endless stream of unrelated income within rolling windows (review).
-			if p.instant.single || (p.instant.count > 0 && p.instant.deltas >= p.instant.count) {
-				p.instant = nil
-			} else {
-				p.instant.expiresMS = now + instantWindowMS
-			}
+			p.attributeDelta(delta, now)
 		}
 	}
 	p.walletSilver = silver
 	p.walletSeen = true
+}
+
+// attributeDelta applies one correct-sign wallet delta to the pending instant context.
+func (p *Pipeline) attributeDelta(delta, now int64) {
+	c := p.instant
+	// Fallback: no known price → 017 sign-only correlation, unchanged (no regression).
+	if !c.expectedKnown {
+		c.net += delta
+		c.deltas++
+		p.emitInstantTrade()
+		p.disarmOrExtend(now)
+		return
+	}
+	if c.single {
+		if p.deltaInBracket(delta) {
+			c.net = delta
+			c.deltas++
+			c.netEstimated = false
+			p.emitInstantTrade()
+			p.instant = nil
+			return
+		}
+		// Out of bracket: this delta is unrelated income (loot/escrow/refund), NOT the
+		// trade. Hold the context; remember the closest candidate so an honest estimate
+		// can be emitted if the real delta never arrives (FR-003).
+		target := c.expectedGross
+		if !c.bestSet || abs64(abs64(delta)-target) < abs64(abs64(c.bestNet)-target) {
+			c.bestNet = delta
+			c.bestSet = true
+		}
+		return
+	}
+	// Quicksell: accumulate (count-capped, 017) but ALSO disarm once the accumulated net
+	// reaches the expected floor, so trailing unrelated income can't be absorbed (018).
+	c.net += delta
+	c.deltas++
+	reached := c.net >= p.sellNetFloor(c.expectedGross)
+	disarm := (c.count > 0 && c.deltas >= c.count) || reached
+	if disarm {
+		c.netEstimated = !p.sellNetInBracket(c.net, c.expectedGross)
+	}
+	p.emitInstantTrade()
+	if disarm {
+		p.instant = nil
+	} else {
+		c.expiresMS = now + instantWindowMS
+	}
+}
+
+// disarmOrExtend applies the 017 sign-only disarm rule (single → one delta; quicksell →
+// capped at its item count) or extends the window for the next burst delta.
+func (p *Pipeline) disarmOrExtend(now int64) {
+	c := p.instant
+	if c.single || (c.count > 0 && c.deltas >= c.count) {
+		p.instant = nil
+	} else {
+		c.expiresMS = now + instantWindowMS
+	}
+}
+
+// finalizeExpiredInstant closes a context whose window elapsed without a clean match. A
+// single trade with a close-but-out-of-bracket candidate is emitted flagged estimated; a
+// partial quicksell keeps its accumulated (estimated) net; nothing is fabricated.
+func (p *Pipeline) finalizeExpiredInstant() {
+	c := p.instant
+	switch {
+	case c.expectedKnown && c.single && c.bestSet:
+		c.net = c.bestNet
+		c.deltas++
+		c.netEstimated = true
+		p.emitInstantTrade()
+	case c.expectedKnown && !c.single && c.deltas > 0:
+		if !p.sellNetInBracket(c.net, c.expectedGross) {
+			c.netEstimated = true
+			p.emitInstantTrade()
+		}
+	}
+	p.instant = nil
+}
+
+// deltaInBracket reports whether a correct-sign delta matches the expected order value for
+// the current SINGLE instant trade. A buy pays the price exactly (±ε rounding); a sell nets
+// the price minus an unknown (premium-dependent) tax, so |delta| ∈ [gross×(1−maxTax), gross].
+func (p *Pipeline) deltaInBracket(delta int64) bool {
+	c := p.instant
+	g := float64(c.expectedGross)
+	mag := float64(abs64(delta))
+	if c.direction == model.TradeBought {
+		return mag >= g*(1-instantBuyEpsilonRate) && mag <= g*(1+instantBuyEpsilonRate)
+	}
+	return mag >= g*(1-instantSellMaxTaxRate) && mag <= g*(1+instantBuyEpsilonRate)
+}
+
+// sellNetInBracket reports whether an accumulated sell net sits within the expected band.
+func (p *Pipeline) sellNetInBracket(net, gross int64) bool {
+	g := float64(gross)
+	n := float64(net)
+	return n >= g*(1-instantSellMaxTaxRate) && n <= g*(1+instantBuyEpsilonRate)
+}
+
+// sellNetFloor is the lowest net a sale of this gross could honestly yield (highest tax).
+func (p *Pipeline) sellNetFloor(gross int64) int64 {
+	return int64(float64(gross) * (1 - instantSellMaxTaxRate))
+}
+
+// abs64 returns the absolute value of x.
+func abs64(x int64) int64 {
+	if x < 0 {
+		return -x
+	}
+	return x
 }
 
 // seedWalletBaseline records the login wallet (R:2 Join) as the delta baseline, but only
@@ -371,10 +526,11 @@ func (p *Pipeline) emitInstantTrade() {
 		SalesTax:      bd.SalesTax,
 		Net:           bd.Net,
 		TaxEstimated:  bd.Estimated,
+		NetEstimated:  c.netEstimated,
 		Received:      p.nowMS(),
 	})
 	if p.debug {
-		log.Printf("[trade] %s %s net=%d gross=%d (%s)", c.source, c.direction, bd.Net, bd.Gross, c.tradeID)
+		log.Printf("[trade] %s %s net=%d gross=%d estimated=%t (%s)", c.source, c.direction, bd.Net, bd.Gross, c.netEstimated, c.tradeID)
 	}
 }
 

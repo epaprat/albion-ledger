@@ -13,14 +13,17 @@ package capture
 //	Q:485 QuickSellAuctionSellAction (quicksell a batch to buy orders):
 //	  k1 = []item object ids (batch size), k2 = []order ids.
 
-// InstantSell reads an instant-sell request: item type index (k2) + amount (k4).
-func InstantSell(params map[byte]interface{}) (itemIndex, amount int, ok bool) {
+// InstantSell reads an instant-sell request: item type index (k2) + amount (k4) + the buy
+// order id it sells INTO (k1), used to price the expected value from the cached buy order
+// (018). orderID is 0 when absent — the caller then falls back to sign-only correlation.
+func InstantSell(params map[byte]interface{}) (itemIndex, amount int, orderID int64, ok bool) {
 	idx, iok := IntParam(params, 2)
 	amt, aok := IntParam(params, 4)
 	if !iok || idx <= 0 || !aok || amt <= 0 {
-		return 0, 0, false
+		return 0, 0, 0, false
 	}
-	return idx, amt, true
+	oid, _ := int64Val(params[1]) // order id optional; 0 → expected value unknown
+	return idx, amt, oid, true
 }
 
 // InstantBuy reads an instant-buy request: amount (k1) + order id (k2). The item is not
@@ -35,13 +38,15 @@ func InstantBuy(params map[byte]interface{}) (amount int, orderID int64, ok bool
 }
 
 // Quicksell reads a quicksell request: the count of items in the batch (len of the k1
-// item-object array). Silver is the sum of the following wallet deltas (aggregate row).
-func Quicksell(params map[byte]interface{}) (count int, ok bool) {
+// item-object array) and the buy order ids it sells into (k2), used to price the expected
+// batch value (018). Silver is the sum of the following wallet deltas (aggregate row).
+// orderIDs is nil when absent — the caller then falls back to sign-only correlation.
+func Quicksell(params map[byte]interface{}) (count int, orderIDs []int64, ok bool) {
 	n := sliceLen(params[1])
 	if n <= 0 {
-		return 0, false
+		return 0, nil, false
 	}
-	return n, true
+	return n, int64Slice(params[2]), true
 }
 
 // sliceLen returns the element count of a wire array of any width, else 0.
