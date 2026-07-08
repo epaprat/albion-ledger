@@ -38,13 +38,18 @@ your own data stays local unless you explicitly opt in to sharing.
 
 ## Screenshots
 
-| Destiny Board | Holdings | Export |
-| --- | --- | --- |
-| ![Destiny Board](docs/screenshots/spec.png) | ![Holdings](docs/screenshots/holdings.png) | ![Export](docs/screenshots/export.png) |
+| Trades | Holdings |
+| --- | --- |
+| ![Trades ledger](docs/screenshots/trades.png) | ![Holdings](docs/screenshots/holdings.png) |
 
-The **Destiny Board** shows your full skill tree by gear slot (maxed skills read
-`100/120`); **Holdings** values your inventory and every city bank; **Export** saves any
-dataset as Excel-compatible CSV.
+| Destiny Board | Export |
+| --- | --- |
+| ![Destiny Board](docs/screenshots/spec.png) | ![Export](docs/screenshots/export.png) |
+
+The **Trades** ledger breaks every marketplace sale and purchase — order fills, instant
+sells, quicksells, buys — into gross, sales tax, setup fee and net; **Holdings** values
+your inventory and every city bank; the **Destiny Board** shows your full skill tree by
+gear slot (maxed skills read `100/120`); **Export** saves any dataset as Excel-compatible CSV.
 
 ## Install
 
