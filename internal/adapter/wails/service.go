@@ -800,6 +800,13 @@ func (s *Service) Trades() []model.Trade {
 	s.mu.Unlock()
 	for i := range out {
 		out[i].ItemName = s.resolveTradeName(out[i])
+		// Fill the uniqueName (used for the item-render icon) for trades that only carry
+		// the catalog index (instant sell, buy-order setup).
+		if out[i].ItemID == "" && out[i].ItemIndex > 0 {
+			if it := s.cat.Resolve(out[i].ItemIndex, 0); it.UniqueName != "" {
+				out[i].ItemID = it.UniqueName
+			}
+		}
 	}
 	sort.Slice(out, func(i, j int) bool {
 		if out[i].Received != out[j].Received {
