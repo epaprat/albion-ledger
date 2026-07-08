@@ -141,6 +141,33 @@ func TestSetupFee_SellAndBuyOrders(t *testing.T) {
 	}
 }
 
+func TestInstant_QuicksellCapsAtItemCount(t *testing.T) {
+	svc, p := newGlue(t)
+	p.dispatch(probe.KindEvent, 81, walletEvent(1000)) // baseline
+	p.dispatch(probe.KindRequest, 485, map[byte]interface{}{1: make([]int32, 2), 2: make([]int64, 2)}) // 2 items
+	p.dispatch(probe.KindEvent, 81, walletEvent(1100)) // +100 item 1
+	p.dispatch(probe.KindEvent, 81, walletEvent(1250)) // +150 item 2 → count reached, disarm
+	p.dispatch(probe.KindEvent, 81, walletEvent(1900)) // +650 LATER income must NOT fold in
+
+	trades := svc.Trades()
+	if len(trades) != 1 || trades[0].Net != 250 {
+		t.Fatalf("quicksell must cap at its 2-item count (net 250), got %+v", trades)
+	}
+}
+
+func TestInstant_LoginSeedBaselineCorrelatesFirstDelta(t *testing.T) {
+	svc, p := newGlue(t)
+	// R:2 login seed sets the baseline; NO E:81 has arrived yet.
+	p.seedWalletBaseline(1000)
+	p.dispatch(probe.KindRequest, 315, map[byte]interface{}{1: int64(9), 2: int32(920), 4: int32(1)})
+	p.dispatch(probe.KindEvent, 81, walletEvent(1561)) // the session's FIRST E:81 = the sale proceeds
+
+	trades := svc.Trades()
+	if len(trades) != 1 || trades[0].Net != 561 {
+		t.Fatalf("a sale before the first live E:81 must still correlate (net 561), got %+v", trades)
+	}
+}
+
 func TestInstant_UnrelatedWalletChangeIgnored(t *testing.T) {
 	svc, p := newGlue(t)
 	p.dispatch(probe.KindEvent, 81, walletEvent(1000)) // baseline

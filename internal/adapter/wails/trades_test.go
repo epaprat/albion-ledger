@@ -57,6 +57,39 @@ func TestTradeSummary_Breakdown(t *testing.T) {
 	}
 }
 
+func TestSeedTrades_EvictsOldestNotNewest(t *testing.T) {
+	s, _, _ := newHoldSvc(t) // cap = 100
+	// LoadTrades returns newest-first; seed 101 rows so eviction must fire.
+	seed := make([]model.Trade, 101)
+	for i := 0; i < 101; i++ {
+		received := int64(101 - i) // index 0 = newest (received 101), last = oldest (received 1)
+		seed[i] = model.Trade{TradeID: "t" + itoa101(received), Direction: model.TradeSold, Gross: 10, Net: 10, Received: received}
+	}
+	s.SeedTrades(seed)
+	got := s.Trades()
+	if len(got) != 100 {
+		t.Fatalf("expected cap 100 after seed+evict, got %d", len(got))
+	}
+	// Newest (received 101) must survive; oldest (received 1) must be evicted.
+	if got[0].Received != 101 {
+		t.Fatalf("newest trade must survive, top received=%d", got[0].Received)
+	}
+	for _, tr := range got {
+		if tr.Received == 1 {
+			t.Fatal("oldest trade (received 1) must be evicted, not the newest")
+		}
+	}
+}
+
+func itoa101(n int64) string {
+	b := []byte("000")
+	for i := 2; i >= 0 && n > 0; i-- {
+		b[i] = byte('0' + n%10)
+		n /= 10
+	}
+	return string(b)
+}
+
 func TestSeedTrades_RestoresLedger(t *testing.T) {
 	s, _, _ := newHoldSvc(t)
 	s.SeedTrades([]model.Trade{

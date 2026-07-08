@@ -176,6 +176,7 @@ type instantCtx struct {
 	count     int    // items in a quicksell batch
 	net       int64  // accumulated wallet delta (signed: + sold, − bought)
 	single    bool   // true = one delta then disarm (instant sell/buy); false = accumulate a quicksell burst
+	deltas    int    // wallet deltas attributed so far (a quicksell disarms at count)
 	expiresMS int64  // correlation window end
 }
 
@@ -291,16 +292,30 @@ func (p *Pipeline) correlateWallet(silver int64) {
 		sold := p.instant.direction == model.TradeSold
 		if (sold && delta > 0) || (!sold && delta < 0) {
 			p.instant.net += delta
+			p.instant.deltas++
 			p.emitInstantTrade()
-			if p.instant.single {
-				p.instant = nil // one item, one delta — don't let later deltas leak in
+			// A single instant trade disarms after its one delta; a quicksell burst keeps
+			// accumulating but is CAPPED at its known item count so it can't absorb an
+			// endless stream of unrelated income within rolling windows (review).
+			if p.instant.single || (p.instant.count > 0 && p.instant.deltas >= p.instant.count) {
+				p.instant = nil
 			} else {
-				p.instant.expiresMS = now + instantWindowMS // quicksell burst keeps accumulating
+				p.instant.expiresMS = now + instantWindowMS
 			}
 		}
 	}
 	p.walletSilver = silver
 	p.walletSeen = true
+}
+
+// seedWalletBaseline records the login wallet (R:2 Join) as the delta baseline, but only
+// before any live E:81 — so an instant trade whose proceeds are the session's FIRST E:81
+// still correlates. Later zone-change re-seeds must not overwrite a fresher live balance.
+func (p *Pipeline) seedWalletBaseline(silver int64) {
+	if !p.walletSeen {
+		p.walletSilver = silver
+		p.walletSeen = true
+	}
 }
 
 // clearInstant drops any pending instant context — used when an order-placement (op

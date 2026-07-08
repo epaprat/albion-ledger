@@ -90,8 +90,10 @@ func handleMailRead(p *Pipeline, _ probe.Kind, _ int, params map[byte]interface{
 		Net:           bd.Net,
 		TaxEstimated:  bd.Estimated,
 		UnitSilver:    parsed.UnitSilver,
-		Received:      info.received,
-		LocationID:    info.location,
+		// Order by capture time: the wire's mail timestamp can't be told apart from the
+		// expiry field on a multi-array packet (review), so it isn't a reliable sort key.
+		Received:   p.nowMS(),
+		LocationID: info.location,
 	})
 	if p.debug {
 		log.Printf("[mail] trade: %s %s x%d gross=%d net=%d", parsed.Direction, parsed.ItemID, parsed.PartialAmount, bd.Gross, bd.Net)

@@ -76,6 +76,11 @@ func TestParseBody_Rejects(t *testing.T) {
 	if _, ok := ParseBody(BuyOrderFinished, "10|item|nope|100"); ok {
 		t.Fatal("non-numeric silver must be rejected")
 	}
+	// A fully-filled expired buy (remaining 0) can't infer a price → dropped, not recorded
+	// as a free purchase.
+	if _, ok := ParseBody(BuyOrderExpired, "50|50|0|T5_ITEM|"); ok {
+		t.Fatal("fully-filled expired buy must be dropped, not recorded free")
+	}
 }
 
 func TestTypeFromString(t *testing.T) {

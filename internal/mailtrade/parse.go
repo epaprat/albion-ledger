@@ -130,10 +130,13 @@ func ParseBody(t MailType, body string) (Parsed, bool) {
 		}
 		refund := float64(refundRaw) / silverScale
 		remaining := totalAmt - bought
-		unit := 0.0
-		if remaining > 0 {
-			unit = refund / float64(remaining)
+		if remaining <= 0 {
+			// Price is inferred from the refund of the UNFILLED remainder; a fully-filled
+			// expired order exposes none, so drop it rather than record a free purchase
+			// (a fully-filled order normally arrives as FINISHED anyway). Review.
+			return Parsed{}, false
 		}
+		unit := refund / float64(remaining)
 		unit = round2(unit)
 		total := int64(math.Round(unit * float64(bought)))
 		return Parsed{

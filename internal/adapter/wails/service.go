@@ -724,9 +724,13 @@ func (s *Service) SetTradeStore(store TradeStore) {
 }
 
 // SeedTrades preloads the persisted ledger into the live view at startup (FR-011).
+// LoadTrades returns newest-first, but tradeOrder must be oldest-first (evictTrades drops
+// the front as the FIFO victim) — so iterate in reverse, else the first live trade of the
+// session would evict the newest history instead of the oldest (review).
 func (s *Service) SeedTrades(trades []model.Trade) {
 	s.mu.Lock()
-	for _, t := range trades {
+	for i := len(trades) - 1; i >= 0; i-- {
+		t := trades[i]
 		if _, ok := s.trades[t.TradeID]; !ok {
 			s.tradeOrder = append(s.tradeOrder, t.TradeID)
 		}
