@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest'
-import { dirLabel, netClass, amountText, tradeAccessor, tradeFields } from './trades.js'
+import { dirLabel, netClass, amountText, tradeAccessor, tradeFields, realizedWindows, windowLabel, netText } from './trades.js'
 import { sortRows, filterRows } from './useTable.js'
 
 const fmt = (n) => String(n)
@@ -25,6 +25,26 @@ describe('amountText', () => {
   })
   it('shows filled / total for a partially-filled (expired) order', () => {
     expect(amountText({ partialAmount: 12, totalAmount: 39 }, fmt)).toBe('12 / 39')
+  })
+})
+
+describe('realizedWindows (018)', () => {
+  it('exposes the four window options in order with backend-matching values', () => {
+    expect(realizedWindows.map((o) => o.value)).toEqual(['session', 'today', '7d', 'all'])
+  })
+  it('windowLabel maps a value to its human label, falling back to the raw value', () => {
+    expect(windowLabel('7d')).toBe('Last 7 days')
+    expect(windowLabel('all')).toBe('All time')
+    expect(windowLabel('bogus')).toBe('bogus')
+  })
+})
+
+describe('netText (018)', () => {
+  it('renders a verified net as-is', () => {
+    expect(netText({ net: 9600, netEstimated: false }, fmt)).toBe('9600')
+  })
+  it('prefixes ~ for an unverified (estimated) net', () => {
+    expect(netText({ net: -50000, netEstimated: true }, fmt)).toBe('~-50000')
   })
 })
 
