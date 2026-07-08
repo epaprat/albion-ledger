@@ -125,6 +125,9 @@ type Pipeline struct {
 	// vaultCity is REBUILT per R:516 (full list); tabMeta upserts, capped.
 	vaultCity map[string]string
 	tabMeta   map[string]tabInfo
+	// lastBankTabGUID: tab guid from the most recent op-518 request, so the default/open
+	// tab's GUID-LESS content response can be attributed to it (010 fix, 2026-07-08).
+	lastBankTabGUID string
 
 	// Destiny Board (011): live skill-tree state + node-name resolver. The snapshot
 	// arrives as several E:154 packets per Join; specReplacePending (armed on every
