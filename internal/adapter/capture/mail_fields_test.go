@@ -9,7 +9,7 @@ func TestMailInfos_ShapeTolerant(t *testing.T) {
 	}
 	ids := []int64{1001, 1002}
 	locs := []string{"3005", "4002"}
-	recv := []int64{1_549_840_000, 1_549_850_000}
+	recv := []int64{639191053823215690, 639191053900000000} // .NET ticks (tick-scale)
 
 	// The two reference clients disagree on key indices; both must resolve identically
 	// because ids ride k3 (agreed) and types are found by content signature.
@@ -24,8 +24,8 @@ func TestMailInfos_ShapeTolerant(t *testing.T) {
 				t.Fatalf("MailInfos ok=%v n=%d", ok, len(got))
 			}
 			want := []MailInfo{
-				{ID: 1001, Type: types[0], LocationID: "3005", Received: 1_549_840_000},
-				{ID: 1002, Type: types[1], LocationID: "4002", Received: 1_549_850_000},
+				{ID: 1001, Type: types[0], LocationID: "3005", Received: 639191053823215690},
+				{ID: 1002, Type: types[1], LocationID: "4002", Received: 639191053900000000},
 			}
 			for i := range want {
 				if got[i] != want[i] {

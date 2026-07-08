@@ -116,9 +116,15 @@ func hasAnyMailType(s []string) bool {
 	return false
 }
 
-// timestampSlice returns the received-time array: among the int64 arrays (other than the
-// id array), the one with the SMALLEST first value — a mail carries a received time and,
-// sometimes, a later expiry; received is always the earlier of the two.
+// timestampFloor: only .NET-tick-scale values (~6e17) are treated as mail timestamps.
+// This deliberately excludes a stray int64 array of ids/silver (which sits far below tick
+// scale) so it can't be mistaken for the received time; a server that sends seconds/ms
+// instead simply falls back to capture time (received is display/ordering only).
+const timestampFloor = 1_000_000_000_000_000 // 1e15
+
+// timestampSlice returns the received-time array: among the tick-scale int64 arrays (other
+// than the id array), the one with the SMALLEST first value — a mail carries a received
+// time and, sometimes, a later expiry; received is always the earlier of the two.
 func timestampSlice(params map[byte]interface{}, excludeKey int) []int64 {
 	var best []int64
 	for k, v := range params {
@@ -126,7 +132,7 @@ func timestampSlice(params map[byte]interface{}, excludeKey int) []int64 {
 			continue
 		}
 		s := int64Slice(v)
-		if len(s) > 0 && s[0] > 1_000_000_000 && (best == nil || s[0] < best[0]) {
+		if len(s) > 0 && s[0] > timestampFloor && (best == nil || s[0] < best[0]) {
 			best = s
 		}
 	}
@@ -142,8 +148,8 @@ const netTicksEpoch = 621355968000000000
 // caller then falls back to capture time).
 func MailReceivedMs(raw int64) int64 {
 	switch {
-	case raw > 1e17: // .NET ticks (100ns since year 1)
-		return (raw - netTicksEpoch) / 10000
+	case raw > timestampFloor: // .NET ticks (100ns since year 1) — same 1e15 threshold the
+		return (raw - netTicksEpoch) / 10000 // read-time heal (normalizeTradeMs) uses
 	case raw > 1e12: // already unix ms
 		return raw
 	case raw > 1e9: // unix seconds

@@ -29,8 +29,12 @@ const amountText = (r) => amountTextOf(r, fmt)
 const typeLabel = (r) => (r.direction === 'sold' ? 'Income' : 'Expense')
 const typeClass = (r) => (r.direction === 'sold' ? 'sold' : 'bought')
 // When the trade happened — real sale time for mail order-fills, capture time for live.
+// hourCycle:'h23' (not hour12:false) — WebKit renders midnight as "24:xx" with the latter.
 const whenText = (ms) =>
-  ms ? new Date(ms).toLocaleString('en-US', { month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit', hour12: false }) : '—'
+  ms ? new Date(ms).toLocaleString('en-US', { month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit', hourCycle: 'h23' }) : '—'
+// Reset BOTH the text query and the direction segment — an empty table can come from
+// either, so the "Clear filter" action must clear both.
+const clearFilters = () => { table.clearFilter(); dirFilter.value = 'all' }
 
 // Item-render icon (official CDN, same as Holdings). A quicksell batch has no single
 // item; broken/absent icons fall back to initials.
@@ -80,7 +84,7 @@ const netText = (r) => (r.net >= 0 ? '+' : '') + fmt(r.net)
         </span>
       </div>
       <StateBlock v-if="table.shown.value === 0" variant="empty" title="No matches"
-        :action="{ label: 'Clear filter', onClick: table.clearFilter }">
+        :action="{ label: 'Clear filter', onClick: clearFilters }">
         Nothing matches the current filter.
       </StateBlock>
       <div v-else class="scroll">
