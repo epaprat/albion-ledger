@@ -32,6 +32,11 @@ func handleOwnState(p *Pipeline, _ probe.Kind, _ int, params map[byte]interface{
 		p.bagSlots = slots
 		p.clearSelfPendingPuts()
 	}
+	// Login wallet seed (016): the R:2 Join snapshot carries k33 = wallet ×10000. A live
+	// E:81 later refreshes it (newest-wins in SetWallet).
+	if silver, ok := capture.JoinWallet(params); ok {
+		p.sink.SetWallet(silver, p.nowMS())
+	}
 }
 
 // handleCurrentCity — notification event 163: "you entered <city>".

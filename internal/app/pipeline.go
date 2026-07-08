@@ -73,6 +73,7 @@ type Sink interface {
 	SetSpec(spec model.CharacterSpec)
 	SetSpecUnlocked(ids []int)
 	SetSpecEnum(ids []int)
+	SetWallet(silver int64, ts int64)
 }
 
 // SpecResolver maps a Destiny Board node id to a readable name + category (011).

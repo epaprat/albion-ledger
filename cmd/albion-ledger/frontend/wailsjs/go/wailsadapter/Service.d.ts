@@ -76,6 +76,8 @@ export function SetStatus(arg1:model.CaptureStatusView):Promise<void>;
 
 export function SetUIContext(arg1:context.Context):Promise<void>;
 
+export function SetWallet(arg1:number,arg2:number):Promise<void>;
+
 export function SetZone(arg1:string):Promise<void>;
 
 export function Spec():Promise<model.CharacterSpec>;

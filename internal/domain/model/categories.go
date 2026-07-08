@@ -14,11 +14,14 @@ const (
 	CatEquipment        Category = "equipment"
 	CatBank             Category = "bank"
 	CatCharacterSpec    Category = "character_spec"
-	CatLoot             Category = "loot"
-	CatGatherFishing    Category = "gather_fishing"
-	CatSilver           Category = "silver"
-	CatFame             Category = "fame"
-	CatItemValueEMV     Category = "item_value_emv"
+	// CatWallet = E:81 (EVENT) liquid silver balance ×10000 (016). NOT R:81 (RESPONSE,
+	// market buy orders) — the classifier keys by (kind, code) so they never collide.
+	CatWallet        Category = "wallet"
+	CatLoot          Category = "loot"
+	CatGatherFishing Category = "gather_fishing"
+	CatSilver        Category = "silver"
+	CatFame          Category = "fame"
+	CatItemValueEMV  Category = "item_value_emv"
 	// CatCurrentLocation is the player's own current city/cluster (Join response key 8),
 	// consumed by the holdings-by-location view (feature 004). It is NOT a probe coverage
 	// target, so it is intentionally absent from AllCategories/ExpectedFields.
@@ -82,13 +85,13 @@ var ExpectedFields = map[Category][]byte{
 	CatCharacterSpec:    {55},      // own-state discriminator (key 55 present = op-2 own-state; it holds the bag object ids, not masteries)
 	// Flow categories list only ALWAYS-PRESENT keys (live-verified 2026-07-01) — optional
 	// keys (taxes, premium, satchel) would crater completeness and raise false drift alarms.
-	CatLoot:             {0, 3}, // OtherGrabbedLoot(279): objId + isSilver (98 now maps to loot_source)
-	CatGatherFishing:    {3},    // only key present in BOTH layouts: 61 (node objId) and 267 (quantity)
-	CatSilver:           {0, 3}, // TakeSilver(62): receiving player + yield (taxes 5/6 often absent)
-	CatFame:             {2},    // UpdateFame(82): zone-mult fame gain (premium/satchel/bonus optional)
-	CatLootSource:       {0},    // lootable object id (98/393/395 all carry key 0)
-	CatLootMove:         {0},    // key 0 present in both layouts (op-30: src slot, op-39: src guid)
-	CatItemValueEMV:     {0, 1},    // item id array + estimated value array
+	CatLoot:          {0, 3}, // OtherGrabbedLoot(279): objId + isSilver (98 now maps to loot_source)
+	CatGatherFishing: {3},    // only key present in BOTH layouts: 61 (node objId) and 267 (quantity)
+	CatSilver:        {0, 3}, // TakeSilver(62): receiving player + yield (taxes 5/6 often absent)
+	CatFame:          {2},    // UpdateFame(82): zone-mult fame gain (premium/satchel/bonus optional)
+	CatLootSource:    {0},    // lootable object id (98/393/395 all carry key 0)
+	CatLootMove:      {0},    // key 0 present in both layouts (op-30: src slot, op-39: src guid)
+	CatItemValueEMV:  {0, 1}, // item id array + estimated value array
 }
 
 // FieldsExpected returns how many fields a category is expected to carry.

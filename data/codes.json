@@ -22,6 +22,7 @@
     { "kind": "event", "code": 466, "category": "item_value_emv" },
     { "kind": "response", "code": 82,  "category": "market_sell_orders" },
     { "kind": "response", "code": 81,  "category": "market_buy_orders" },
+    { "kind": "event",    "code": 81,  "category": "wallet" },
     { "kind": "response", "code": 95,  "category": "market_history" },
     { "kind": "response", "code": 248, "category": "gold_price" },
     { "kind": "response", "code": 2,   "category": "character_spec", "guardKey": 55 },
