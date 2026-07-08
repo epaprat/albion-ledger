@@ -34,9 +34,10 @@ const (
 )
 
 type segmentedPackage struct {
-	totalLength  int
-	bytesWritten int
-	payload      []byte
+	totalLength   int
+	fragmentCount int
+	received      map[int]bool // distinct fragment numbers seen (dedups reliable retransmits)
+	payload       []byte
 }
 
 // PhotonParser decodes raw Photon UDP payloads and fires callbacks per message.
@@ -238,8 +239,12 @@ func (p *PhotonParser) handleSendFragment(src []byte, offset, cmdLen int) int {
 	startSeq := int(binary.BigEndian.Uint32(src[offset:]))
 	offset += 4
 	cmdLen -= 4
-	offset += 8 // fragmentCount + fragmentNumber
-	cmdLen -= 8
+	fragmentCount := int(binary.BigEndian.Uint32(src[offset:]))
+	offset += 4
+	cmdLen -= 4
+	fragmentNumber := int(binary.BigEndian.Uint32(src[offset:]))
+	offset += 4
+	cmdLen -= 4
 	totalLen := int(binary.BigEndian.Uint32(src[offset:]))
 	offset += 4
 	cmdLen -= 4
@@ -251,27 +256,32 @@ func (p *PhotonParser) handleSendFragment(src []byte, offset, cmdLen int) int {
 	if fragLen < 0 || !available(src, offset, fragLen) {
 		return offset + max(fragLen, 0)
 	}
-	// Reject absurd total lengths so a corrupt header can't request a huge alloc.
-	if totalLen < 0 || totalLen > 1<<20 || fragOffset < 0 || fragOffset > totalLen {
+	// Reject absurd headers so a corrupt one can't request a huge alloc or loop.
+	if totalLen < 0 || totalLen > 1<<20 || fragOffset < 0 || fragOffset > totalLen ||
+		fragmentCount <= 0 || fragmentCount > 4096 || fragmentNumber < 0 || fragmentNumber >= fragmentCount {
 		return offset + fragLen
 	}
 
 	seg, ok := p.pendingSegments[startSeq]
 	if !ok {
 		p.evictIfFull()
-		seg = &segmentedPackage{totalLength: totalLen, payload: make([]byte, totalLen)}
+		seg = &segmentedPackage{totalLength: totalLen, fragmentCount: fragmentCount, received: make(map[int]bool, fragmentCount), payload: make([]byte, totalLen)}
 		p.pendingSegments[startSeq] = seg
 		p.segOrder = append(p.segOrder, startSeq)
 	}
 
+	// Copy each fragment number ONCE — the Photon reliable layer retransmits, and
+	// counting duplicate bytes would "complete" a message while leaving holes (the large
+	// GetMailInfos response never reassembled, live-hit 2026-07-08). Completion is by
+	// distinct fragment count, not byte total.
 	end := fragOffset + fragLen
-	if end <= len(seg.payload) {
+	if !seg.received[fragmentNumber] && end <= len(seg.payload) {
 		copy(seg.payload[fragOffset:end], src[offset:offset+fragLen])
+		seg.received[fragmentNumber] = true
 	}
 	offset += fragLen
-	seg.bytesWritten += fragLen
 
-	if seg.bytesWritten >= seg.totalLength {
+	if len(seg.received) >= seg.fragmentCount {
 		p.removeSegment(startSeq)
 		p.handleSendReliable(seg.payload, 0, len(seg.payload))
 	}
