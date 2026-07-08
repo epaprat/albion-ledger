@@ -5,6 +5,42 @@ All notable changes to Albion Ledger are documented here. The format follows
 [Semantic Versioning](https://semver.org/). Pre-1.0, minor versions may still
 change the public surface.
 
+## [0.1.2] — 2026-07-08
+
+Money in, money out — this release makes the tool answer "what am I worth?" and
+"did that trade pay off?" on top of the existing holdings and earnings views.
+
+### Added
+
+- **Net worth** — a single figure combining your liquid silver (wallet) and the
+  valued total of everything you hold. Shown in the Holdings header alongside the
+  wallet balance. When the wallet has not been seen yet, the total says so
+  instead of pretending you have zero silver.
+- **Trade ledger** — a new Trades screen that itemizes your marketplace activity
+  as profit and loss. It captures all four trade types (instant sell, sell order,
+  instant buy, buy order) plus the in-game mailbox, and breaks every transaction
+  into gross, sales tax, setup fee, and net so the real number is never hidden.
+  Income and Expense are labeled and filterable, sorted most-recent-first, each
+  row showing the item icon, readable name, and the time it happened.
+- Trade ledger joins the CSV export set (holdings, flow, zones, market, destiny
+  board, and now trades).
+
+### Fixed
+
+- The default/open bank tab is now captured when you press K, without opening the
+  bank — previously that first tab's contents were silently dropped, which made
+  net worth read low against the in-game estimate.
+- Photon packet reassembly now dedupes retransmitted fragments, so large
+  responses (such as a full mailbox sync) no longer arrive incomplete.
+
+### Changed
+
+- The Holdings header now explains how its total is derived (our prices vs. the
+  game's own estimate vs. unpriced items), so the difference from the in-game
+  figure is understandable rather than mysterious.
+
+[0.1.2]: https://github.com/epaprat/albion-ledger/releases/tag/v0.1.2
+
 ## [0.1.1] — 2026-07-07
 
 Repository and release-process maturation — no application feature change.
