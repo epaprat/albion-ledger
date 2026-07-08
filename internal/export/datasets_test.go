@@ -134,7 +134,7 @@ func TestTradeGolden(t *testing.T) {
 		TaxEstimated: true, UnitSilver: 8951, Received: 1_700_000_000_000, LocationID: "3005",
 	}})
 	wantHeader := []string{"time", "type", "source", "item", "uniqueName", "amount", "totalAmount",
-		"gross", "setupFee", "salesTax", "net", "taxEstimated", "unitSilver", "location"}
+		"gross", "setupFee", "salesTax", "net", "taxEstimated", "unitSilver", "location", "netEstimated"}
 	if !reflect.DeepEqual(header, wantHeader) {
 		t.Fatalf("trades header contract broken: %v", header)
 	}
