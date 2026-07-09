@@ -70,6 +70,22 @@ func TestInvariantUnderChurn(t *testing.T) {
 	}
 }
 
+// Values returns every live value (order-independent) — used by iterating call sites.
+func TestValuesSnapshot(t *testing.T) {
+	b := New[int, string](3)
+	b.Put(1, "a")
+	b.Put(2, "b")
+	b.Put(3, "c")
+	b.Put(4, "d") // evicts 1
+	got := map[string]bool{}
+	for _, v := range b.Values() {
+		got[v] = true
+	}
+	if len(got) != 3 || !got["b"] || !got["c"] || !got["d"] || got["a"] {
+		t.Fatalf("Values must snapshot live entries {b,c,d}, got %v", got)
+	}
+}
+
 // Rule 5 — generic over key types actually used by the call sites (int64/int/string).
 func TestGenericKeyTypes(t *testing.T) {
 	bi := New[int64, string](2)

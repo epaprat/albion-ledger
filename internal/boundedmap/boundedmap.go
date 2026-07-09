@@ -49,3 +49,13 @@ func (b *Map[K, V]) Get(k K) (V, bool) {
 
 // Len is the number of live entries (always ≤ capacity).
 func (b *Map[K, V]) Len() int { return len(b.m) }
+
+// Values returns a snapshot slice of every live value in unspecified order. Callers that
+// need ordering sort the result themselves (the eviction order is not a display order).
+func (b *Map[K, V]) Values() []V {
+	out := make([]V, 0, len(b.m))
+	for _, v := range b.m {
+		out = append(out, v)
+	}
+	return out
+}
