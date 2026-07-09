@@ -18,6 +18,7 @@ import (
 	"sync"
 
 	"github.com/epaprat/albion-ledger/internal/adapter/capture"
+	"github.com/epaprat/albion-ledger/internal/boundedmap"
 	"github.com/epaprat/albion-ledger/internal/domain/model"
 	"github.com/epaprat/albion-ledger/internal/domain/probe"
 	"github.com/epaprat/albion-ledger/internal/holdings"
@@ -165,8 +166,7 @@ type Pipeline struct {
 	// sell/buy can build an EXPECTED value (price × amount) to gate the wallet delta (018).
 	// Both offers (sell) and requests (buy) are cached; valuation is still fed offers only.
 	// Bounded.
-	offerCache map[int64]orderInfo
-	offerOrder []int64
+	offerCache *boundedmap.Map[int64, orderInfo]
 }
 
 // orderInfo is one cached marketplace order: item, unit price (×10000), and side (018).
@@ -244,7 +244,7 @@ func New(sink Sink, clf *probe.Classifier, locs *locations.Locations, specNames 
 		specNames:          specNames,
 		specEnum:           specenum.New(),
 		mailInfo:           map[int64]mailInfoEntry{},
-		offerCache:         map[int64]orderInfo{},
+		offerCache:         boundedmap.New[int64, orderInfo](offerCacheCap),
 	}
 }
 
@@ -254,26 +254,18 @@ func (p *Pipeline) putOrder(id int64, uniqueName string, unitRaw int64, isOffer 
 	if id <= 0 || uniqueName == "" || unitRaw <= 0 {
 		return
 	}
-	if _, exists := p.offerCache[id]; !exists {
-		if len(p.offerCache) >= offerCacheCap && len(p.offerOrder) > 0 {
-			delete(p.offerCache, p.offerOrder[0])
-			p.offerOrder = p.offerOrder[1:]
-		}
-		p.offerOrder = append(p.offerOrder, id)
-	}
-	p.offerCache[id] = orderInfo{name: uniqueName, unitRaw: unitRaw, isOffer: isOffer}
+	p.offerCache.Put(id, orderInfo{name: uniqueName, unitRaw: unitRaw, isOffer: isOffer})
 }
 
 // orderInfoFor returns the cached order for an id (false if never browsed).
 func (p *Pipeline) orderInfoFor(id int64) (orderInfo, bool) {
-	oi, ok := p.offerCache[id]
-	return oi, ok
+	return p.offerCache.Get(id)
 }
 
 // orderValue returns the expected gross (unit price × amount, real silver) for a cached
 // order and whether the price was known — the reference for the delta bracket (018).
 func (p *Pipeline) orderValue(orderID int64, amount int) (int64, bool) {
-	oi, ok := p.offerCache[orderID]
+	oi, ok := p.offerCache.Get(orderID)
 	if !ok || oi.unitRaw <= 0 || amount <= 0 {
 		return 0, false
 	}

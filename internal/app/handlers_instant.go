@@ -51,7 +51,7 @@ func handleInstantBuy(p *Pipeline, _ probe.Kind, _ int, params map[byte]interfac
 	}
 	expected, known := p.orderValue(orderID, amount)
 	if p.debug {
-		log.Printf("[trade] instant buy orderId=%d cacheSize=%d resolved=%q expected=%d known=%t", orderID, len(p.offerCache), itemID, expected, known)
+		log.Printf("[trade] instant buy orderId=%d cacheSize=%d resolved=%q expected=%d known=%t", orderID, p.offerCache.Len(), itemID, expected, known)
 	}
 	p.armInstant(&instantCtx{
 		direction: model.TradeBought, source: model.TradeSourceInst,
