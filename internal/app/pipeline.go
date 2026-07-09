@@ -108,9 +108,8 @@ type Pipeline struct {
 	// objReg maps in-world object ids to their item type+quality (New*Item, codes
 	// 30-37); container slots reference object ids. objMu also serializes the pending
 	// queues against the registry (see package comment).
-	objMu    sync.Mutex
-	objReg   map[int]holdings.ItemRef
-	objOrder []int
+	objMu  sync.Mutex
+	objReg *boundedmap.Map[int, holdings.ItemRef]
 
 	// pending queues (internal/pending: cap+TTL+counted drops; loss logs stay here).
 	pendingInv             *pending.Map[string] // own-state slot → its self container (no TTL)
@@ -232,7 +231,7 @@ func New(sink Sink, clf *probe.Classifier, locs *locations.Locations, specNames 
 		nowMS:              nowMS,
 		debug:              debug,
 		lootTracker:        loot.New(),
-		objReg:             map[int]holdings.ItemRef{},
+		objReg:             boundedmap.New[int, holdings.ItemRef](objRegCap),
 		pendingInv:         pending.New[string](1024, 0),
 		pendingLootResolve: pending.New[string](256, 10_000),
 		pendingPuts:        pending.New[string](256, 10_000),
@@ -597,15 +596,8 @@ func (p *Pipeline) registerNewItem(code int, params map[byte]interface{}) {
 		quality = 0
 	}
 	p.objMu.Lock()
-	if _, exists := p.objReg[objID]; !exists {
-		if len(p.objReg) >= objRegCap && len(p.objOrder) > 0 {
-			delete(p.objReg, p.objOrder[0])
-			p.objOrder = p.objOrder[1:]
-		}
-		p.objOrder = append(p.objOrder, objID)
-	}
 	ref := holdings.ItemRef{Index: idx, Quality: quality, Count: count}
-	p.objReg[objID] = ref
+	p.objReg.Put(objID, ref)
 	now := p.nowMS()
 	pendGUID, invPending := p.pendingInv.Take(objID, now)        // own-state slot awaiting this declaration
 	source, lootPending := p.pendingLootResolve.Take(objID, now) // loot hit awaiting it (TTL-guarded:
@@ -645,7 +637,7 @@ func (p *Pipeline) resolveObjects(objIDs []int) []holdings.SlotItem {
 	defer p.objMu.Unlock()
 	slots := make([]holdings.SlotItem, 0, len(objIDs))
 	for _, id := range objIDs {
-		if r, ok := p.objReg[id]; ok {
+		if r, ok := p.objReg.Get(id); ok {
 			slots = append(slots, holdings.SlotItem{ObjID: id, Ref: r})
 		}
 	}
@@ -656,8 +648,7 @@ func (p *Pipeline) resolveObjects(objIDs []int) []holdings.SlotItem {
 func (p *Pipeline) resolveObj(objID int) (holdings.ItemRef, bool) {
 	p.objMu.Lock()
 	defer p.objMu.Unlock()
-	r, ok := p.objReg[objID]
-	return r, ok
+	return p.objReg.Get(objID)
 }
 
 // ── Holdings freshness glue (008) ────────────────────────────────────────────
