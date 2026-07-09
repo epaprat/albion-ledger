@@ -113,16 +113,12 @@ func handleBankTabs(p *Pipeline, _ probe.Kind, _ int, params map[byte]interface{
 		// from a previous (ephemeral-guid) opening — recording its tabs with an
 		// empty city would mint unreconcilable ghost containers. Skip; the next
 		// 516+517 pair re-delivers everything (live/replay-seen 2026-07-05).
-		if p.debug {
-			log.Printf("[bank] tabs for unknown vault %s dropped", vault)
-		}
+		p.dropf("[bank] tabs for unknown vault %s dropped", vault)
 		return
 	}
 	for _, t := range tabs {
 		if _, exists := p.tabMeta[t.TabGUID]; !exists && len(p.tabMeta) >= maxTabMetaEntries {
-			if p.debug {
-				log.Printf("[bank] tabMeta full, dropped tab %s", t.TabGUID)
-			}
+			p.dropf("[bank] tabMeta full, dropped tab %s", t.TabGUID)
 			continue
 		}
 		p.tabMeta[t.TabGUID] = tabInfo{city: city, name: t.Name}
@@ -157,9 +153,7 @@ func handleBankTabContent(p *Pipeline, _ probe.Kind, _ int, params map[byte]inte
 		// racing ahead of its 517 (never observed live — 516/517 always precede).
 		// Skipping is safer than inventing a fallback identity: ephemeral guids mean
 		// a mislabeled container could never be reconciled later (live 2026-07-05).
-		if p.debug {
-			log.Printf("[bank] content for unknown tab %s dropped (no meta)", tabGUID)
-		}
+		p.dropf("[bank] content for unknown tab %s dropped (no meta)", tabGUID)
 		return
 	}
 	refs := make([]holdings.ItemRef, len(rows))

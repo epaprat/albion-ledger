@@ -171,7 +171,7 @@ func TestSoakBounded(t *testing.T) {
 	if n := len(l.order); n > capN {
 		t.Fatalf("order ring = %d, want ≤ %d", n, capN)
 	}
-	if n := len(l.dedup); n > capN*4 {
+	if n := l.dedup.Len(); n > capN*4 {
 		t.Fatalf("dedup set = %d, want ≤ %d", n, capN*4)
 	}
 	if n := len(l.List()); n != capN {

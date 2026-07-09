@@ -9,6 +9,7 @@ import (
 	"sort"
 	"sync"
 
+	"github.com/epaprat/albion-ledger/internal/boundedmap"
 	"github.com/epaprat/albion-ledger/internal/domain/model"
 	"github.com/epaprat/albion-ledger/internal/port"
 )
@@ -62,12 +63,11 @@ type Ledger struct {
 	selfName  string
 	zone      string // current zone/cluster label, stamped onto each event (006 analytics)
 
-	events         map[string]*model.FlowEvent // by id (bounded ring)
-	order          []string                    // event ids, oldest first
-	dedup          map[string]struct{}         // seen ids (persists past ring eviction, FR-008)
-	dedupOrder     []string
-	unvaluedByItem map[ik][]string     // item identity -> live unvalued event ids (FR-009)
-	itemAgg        map[ikk]*itemStat   // per-item session totals (loot/gather breakdown)
+	events         map[string]*model.FlowEvent       // by id (bounded ring)
+	order          []string                          // event ids, oldest first
+	dedup          *boundedmap.Map[string, struct{}] // seen ids (persists past ring eviction, FR-008; bounded)
+	unvaluedByItem map[ik][]string                   // item identity -> live unvalued event ids (FR-009)
+	itemAgg        map[ikk]*itemStat                 // per-item session totals (loot/gather breakdown)
 
 	startedMS      int64
 	lastActivityMS int64
@@ -91,7 +91,7 @@ func New(val port.Valuer, idleMS int64, maxEvents int) *Ledger {
 	return &Ledger{
 		val: val, idleMS: idleMS, maxEvents: maxEvents,
 		events:         map[string]*model.FlowEvent{},
-		dedup:          map[string]struct{}{},
+		dedup:          boundedmap.New[string, struct{}](maxEvents * 4),
 		unvaluedByItem: map[ik][]string{},
 		itemAgg:        map[ikk]*itemStat{},
 	}
@@ -331,8 +331,7 @@ func (l *Ledger) startSession(ts int64) {
 	l.lastActivityMS = ts
 	l.events = map[string]*model.FlowEvent{}
 	l.order = nil
-	l.dedup = map[string]struct{}{}
-	l.dedupOrder = nil
+	l.dedup = boundedmap.New[string, struct{}](l.maxEvents * 4)
 	l.unvaluedByItem = map[ik][]string{}
 	l.itemAgg = map[ikk]*itemStat{}
 	l.netSilver, l.lootValue, l.gatherValue, l.fame = 0, 0, 0, 0
@@ -342,16 +341,10 @@ func (l *Ledger) startSession(ts int64) {
 // dup returns true if id was already seen this session; otherwise records it. The
 // dedup set persists past ring eviction so a re-sent event never double-counts (FR-008).
 func (l *Ledger) dup(id string) bool {
-	if _, ok := l.dedup[id]; ok {
+	if _, ok := l.dedup.Get(id); ok {
 		return true
 	}
-	l.dedup[id] = struct{}{}
-	l.dedupOrder = append(l.dedupOrder, id)
-	if len(l.dedupOrder) > l.maxEvents*4 { // one append per call → at most one over
-		old := l.dedupOrder[0]
-		l.dedupOrder = l.dedupOrder[1:]
-		delete(l.dedup, old)
-	}
+	l.dedup.Put(id, struct{}{}) // bounded at maxEvents*4, oldest-evicted
 	return false
 }
 
