@@ -1,6 +1,35 @@
 package wailsadapter
 
-import "testing"
+import (
+	"sync"
+	"testing"
+)
+
+// 019 review fix — EmitFlowNow runs on the status-ticker goroutine and must not touch the
+// pipeline-only batch flags. Run a batch cycle on one goroutine while EmitFlowNow fires on
+// another; `go test -race` proves there is no unsynchronized shared access (this failed
+// before EmitFlowNow was routed through broadcastFlow).
+func TestFlowBatch_EmitFlowNowNoRace(t *testing.T) {
+	s, _, book := newHoldSvc(t)
+	book.SetEMV(920, 0, 100, 1000)
+	var wg sync.WaitGroup
+	wg.Add(2)
+	go func() {
+		defer wg.Done()
+		for i := 0; i < 500; i++ {
+			s.BeginFlowBatch()
+			s.IngestLoot("lt:"+string(rune('a'+i%26)), 920, 0, 1, 1000, "corpse")
+			s.EndFlowBatch()
+		}
+	}()
+	go func() {
+		defer wg.Done()
+		for i := 0; i < 500; i++ {
+			s.EmitFlowNow()
+		}
+	}()
+	wg.Wait()
+}
 
 // 019 US4 / SC-003 — BeginFlowBatch/EndFlowBatch coalesce a burst of loot ingests (a
 // take-all move) into ONE flow-changed refresh, while every event still lands in the

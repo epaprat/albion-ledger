@@ -355,7 +355,9 @@ func (s *Service) SetZone(zone string) { s.flow.SetZone(zone) }
 // calls this periodically so idle auto-close and the live elapsed/rate stay observable
 // between earnings — the summary is otherwise only pushed on ingest, which would leave
 // the UI frozen on "Active" after the last earning.
-func (s *Service) EmitFlowNow() { s.emitFlow() }
+// It runs on the status-ticker goroutine, so it broadcasts directly — bypassing the
+// pipeline-only flow-batch flags — to avoid an unsynchronized cross-goroutine read of them.
+func (s *Service) EmitFlowNow() { s.broadcastFlow() }
 
 // IngestSilver records a net-silver earning and broadcasts the flow summary.
 // A deduped (nil) event changes nothing, so it neither persists nor emits.
@@ -391,8 +393,10 @@ func (s *Service) IngestFame(id string, fame int64, ts int64) {
 }
 
 // BeginFlowBatch/EndFlowBatch coalesce flow-changed refreshes across a burst of ingests
-// (take-all loot) into a single emit (019). The pipeline runs single-threaded, so the flag
-// needs no lock. Events themselves are unaffected — only the refresh count drops.
+// (take-all loot) into a single emit (019). The flowBatch/flowDirty flags are touched ONLY
+// by the pipeline goroutine — the Ingest* path plus this Begin/End — so they need no lock.
+// EmitFlowNow (status-ticker goroutine) deliberately bypasses them via broadcastFlow, so
+// there is no cross-goroutine access to these flags.
 func (s *Service) BeginFlowBatch() {
 	s.flowBatch = true
 	s.flowDirty = false
@@ -402,15 +406,24 @@ func (s *Service) EndFlowBatch() {
 	s.flowBatch = false
 	if s.flowDirty {
 		s.flowDirty = false
-		s.emitFlow()
+		s.broadcastFlow()
 	}
 }
 
+// emitFlow is the pipeline-goroutine flow refresh: it coalesces into an open batch when one
+// is active, else broadcasts immediately.
 func (s *Service) emitFlow() {
 	if s.flowBatch {
-		s.flowDirty = true // a refresh is owed; EndFlowBatch will emit it once
+		s.flowDirty = true // a refresh is owed; EndFlowBatch will broadcast it once
 		return
 	}
+	s.broadcastFlow()
+}
+
+// broadcastFlow emits the current session summary unconditionally. It touches no batch
+// state (only the immutable emitter + the internally-locked flow ledger), so it is safe to
+// call from any goroutine — the status ticker's EmitFlowNow does.
+func (s *Service) broadcastFlow() {
 	if s.emit != nil {
 		s.emit.Emit(EventFlowChanged, s.flow.Summary(s.nowMS()))
 	}
