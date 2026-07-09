@@ -71,6 +71,11 @@ type Sink interface {
 	IngestMarketPrice(uniqueName string, quality int, silver int64)
 	IngestSilver(id string, net int64, ts int64, source string)
 	IngestLoot(id string, index, quality, count int, ts int64, source string)
+	// BeginFlowBatch/EndFlowBatch coalesce the flow-changed refresh across a burst of loot
+	// ingests (a take-all move drops N items) into a single UI refresh (019). The flow
+	// EVENTS are unchanged — only the emit count drops from N to 1.
+	BeginFlowBatch()
+	EndFlowBatch()
 	IngestGather(id string, index, quality, count int, ts int64, source string)
 	IngestFame(id string, fame int64, ts int64)
 	SetSpec(spec model.CharacterSpec)
@@ -814,6 +819,13 @@ func (p *Pipeline) ingestLootObj(itemObjID int, ref holdings.ItemRef, source str
 // valuation works (closes the ADR-022 quality-0 gap for loot). Undeclared objects wait
 // in pendingLootResolve until their declaration arrives or the TTL expires.
 func (p *Pipeline) emitLootHits(hits []loot.Hit) {
+	if len(hits) == 0 {
+		return
+	}
+	// A take-all move resolves many hits at once; coalesce their flow refreshes into one
+	// (019). Single-hit callers (op-30) still emit exactly once — behaviour unchanged.
+	p.sink.BeginFlowBatch()
+	defer p.sink.EndFlowBatch()
 	for _, h := range hits {
 		if p.debug {
 			log.Printf("[flow] loot hit: itemObj=%d source=%q", h.ItemObjID, h.Source)

@@ -73,6 +73,9 @@ type Service struct {
 	tradeStore TradeStore                           // marketplace trade persistence (017); nil = in-memory
 	trades     *boundedmap.Map[string, model.Trade] // by trade id (dedup, FR-010; bounded FIFO)
 
+	flowBatch bool // coalesce flow-changed emits during a loot burst (019)
+	flowDirty bool // a flow refresh is owed when the batch ends
+
 	mu     sync.Mutex
 	items  map[int]*model.LiveViewItem // by item index
 	order  []int                       // insertion order for FIFO cap eviction
@@ -387,7 +390,27 @@ func (s *Service) IngestFame(id string, fame int64, ts int64) {
 	}
 }
 
+// BeginFlowBatch/EndFlowBatch coalesce flow-changed refreshes across a burst of ingests
+// (take-all loot) into a single emit (019). The pipeline runs single-threaded, so the flag
+// needs no lock. Events themselves are unaffected — only the refresh count drops.
+func (s *Service) BeginFlowBatch() {
+	s.flowBatch = true
+	s.flowDirty = false
+}
+
+func (s *Service) EndFlowBatch() {
+	s.flowBatch = false
+	if s.flowDirty {
+		s.flowDirty = false
+		s.emitFlow()
+	}
+}
+
 func (s *Service) emitFlow() {
+	if s.flowBatch {
+		s.flowDirty = true // a refresh is owed; EndFlowBatch will emit it once
+		return
+	}
 	if s.emit != nil {
 		s.emit.Emit(EventFlowChanged, s.flow.Summary(s.nowMS()))
 	}
