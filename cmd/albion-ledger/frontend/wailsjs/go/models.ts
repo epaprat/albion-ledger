@@ -565,11 +565,12 @@ export namespace model {
 	    net: number;
 	    count: number;
 	    scope: string;
-	
+	    windowStart: number;
+
 	    static createFrom(source: any = {}) {
 	        return new TradeSummary(source);
 	    }
-	
+
 	    constructor(source: any = {}) {
 	        if ('string' === typeof source) source = JSON.parse(source);
 	        this.grossIncome = source["grossIncome"];
@@ -579,6 +580,7 @@ export namespace model {
 	        this.net = source["net"];
 	        this.count = source["count"];
 	        this.scope = source["scope"];
+	        this.windowStart = source["windowStart"];
 	    }
 	}
 	

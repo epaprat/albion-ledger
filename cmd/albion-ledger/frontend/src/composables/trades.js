@@ -32,3 +32,15 @@ export const tradeAccessor = (r, k) => ({
 
 // sourceLabel names how a trade was captured.
 export const sourceLabel = (s) => ({ mail: 'Order', instant: 'Instant', quicksell: 'Quicksell', setup: 'Setup fee' }[s] || s || '')
+
+// realizedWindows is the single source of the realized-P&L window options (018). The value
+// must match the backend TradeSummary(window) keys; the label is what the player reads.
+export const realizedWindows = [
+  { value: 'session', label: 'This session' },
+  { value: 'today', label: 'Today' },
+  { value: '7d', label: 'Last 7 days' },
+  { value: 'all', label: 'All time' },
+]
+
+// windowLabel maps a window value to its human label (falls back to the raw value).
+export const windowLabel = (w) => (realizedWindows.find((o) => o.value === w) || {}).label || w

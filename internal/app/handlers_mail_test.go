@@ -41,7 +41,7 @@ func TestMailFlow_SellIncome(t *testing.T) {
 	if tr.SalesTax != 6_199 || tr.Net != 148_785 || !tr.TaxEstimated || tr.Source != "mail" {
 		t.Fatalf("breakdown wrong: %+v", tr)
 	}
-	if sum := svc.TradeSummary(); sum.GrossIncome != 154_984 || sum.SalesTax != 6_199 || sum.Net != 148_785 || sum.Count != 1 {
+	if sum := svc.TradeSummary("all"); sum.GrossIncome != 154_984 || sum.SalesTax != 6_199 || sum.Net != 148_785 || sum.Count != 1 {
 		t.Fatalf("summary wrong: %+v", sum)
 	}
 }
@@ -52,9 +52,9 @@ func TestMailFlow_BulkListArrivesAsOp1(t *testing.T) {
 	// tab content), NOT R:174 — live-decoded 2026-07-08. The MARKETPLACE type signature
 	// must route it to mail caching so the subsequent reads decode.
 	op1Mail := map[byte]interface{}{
-		2: uint8(0),
-		3: []int32{1001},
-		7: []string{"4301"},
+		2:  uint8(0),
+		3:  []int32{1001},
+		7:  []string{"4301"},
 		11: []string{"MARKETPLACE_SELLORDER_FINISHED_SUMMARY"},
 		12: []int64{1_549_840_000},
 	}
@@ -85,7 +85,7 @@ func TestMailFlow_DedupSameMail(t *testing.T) {
 	if trades := svc.Trades(); len(trades) != 1 {
 		t.Fatalf("expected 1 trade after re-open (dedup), got %d", len(trades))
 	}
-	if sum := svc.TradeSummary(); sum.Count != 1 {
+	if sum := svc.TradeSummary("all"); sum.Count != 1 {
 		t.Fatalf("count must stay 1, got %d", sum.Count)
 	}
 }
@@ -98,7 +98,7 @@ func TestMailFlow_BothDirectionsNet(t *testing.T) {
 	p.dispatch(probe.KindResponse, 176, readMailParams(1002, "10|T7_ALCHEMY_RARE_ENT|11000100000|1100010000")) // -1100010 expense
 
 	// sell gross 154984 (net 148785 after 4% tax); buy gross 1100010 (net −1100010).
-	sum := svc.TradeSummary()
+	sum := svc.TradeSummary("all")
 	if sum.GrossIncome != 154_984 || sum.GrossExpense != 1_100_010 || sum.Net != 148_785-1_100_010 {
 		t.Fatalf("two-direction summary wrong: %+v", sum)
 	}
