@@ -723,6 +723,16 @@ func (p *Pipeline) logDrops(dropped int, lastLogMS *int64, nowMS int64, format s
 	}
 }
 
+// dropf logs a one-off "dropped this packet" diagnostic, gated on debug (019). It unifies
+// the repeated `if p.debug { log.Printf(...) }` around single-event drops; the recurring,
+// counted drops keep the rate-limited logDrops above. Behaviour (which data is dropped) is
+// decided by the caller — this only formats the note.
+func (p *Pipeline) dropf(format string, args ...any) {
+	if p.debug {
+		log.Printf(format, args...)
+	}
+}
+
 func (p *Pipeline) queuePendingPut(objID int, target string) {
 	now := p.nowMS()
 	p.objMu.Lock()
@@ -783,18 +793,14 @@ func (p *Pipeline) applyMovedObject(itemObj int, srcGUID, dstGUID string, dstSlo
 	}
 	if target == "" {
 		p.sink.IngestDeleteItem(itemObj) // leaves every tracked view; reappears via snapshots
-		if p.debug {
-			log.Printf("[hold] move → no dst, dropped from view: obj=%d", itemObj)
-		}
+		p.dropf("[hold] move → no dst, dropped from view: obj=%d", itemObj)
 		return
 	}
 	if ref, ok := p.resolveObj(itemObj); ok {
 		if !p.sink.IngestPutItem(target, itemObj, ref) {
 			p.sink.IngestDeleteItem(itemObj)
 			p.bagSlotClear(itemObj)
-			if p.debug {
-				log.Printf("[hold] move → untracked dst, dropped from view: obj=%d", itemObj)
-			}
+			p.dropf("[hold] move → untracked dst, dropped from view: obj=%d", itemObj)
 			return
 		}
 	} else {
