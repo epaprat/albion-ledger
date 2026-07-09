@@ -148,8 +148,7 @@ type Pipeline struct {
 	// R:176 ReadMail looks the type up to parse the body. Bounded (oldest evicted) so a
 	// large mailbox can't grow it without limit (Principle XI). Session-transient — the
 	// resulting Trade is what persists, not this cache.
-	mailInfo      map[int64]mailInfoEntry
-	mailInfoOrder []int64
+	mailInfo *boundedmap.Map[int64, mailInfoEntry]
 
 	// Instant-trade wallet correlation (017 expansion): an instant sell/buy/quicksell
 	// request (op 315/83/485) carries the item+amount but NOT the silver; the silver is
@@ -243,7 +242,7 @@ func New(sink Sink, clf *probe.Classifier, locs *locations.Locations, specNames 
 		board:              specboard.New(),
 		specNames:          specNames,
 		specEnum:           specenum.New(),
-		mailInfo:           map[int64]mailInfoEntry{},
+		mailInfo:           boundedmap.New[int64, mailInfoEntry](mailInfoCap),
 		offerCache:         boundedmap.New[int64, orderInfo](offerCacheCap),
 	}
 }
@@ -281,21 +280,13 @@ func (p *Pipeline) orderValue(orderID int64, amount int) (int64, bool) {
 // when the cache is full (bounded, Principle XI). Re-inserting a known id refreshes it
 // without growing the order list.
 func (p *Pipeline) putMailInfo(id int64, e mailInfoEntry) {
-	if _, exists := p.mailInfo[id]; !exists {
-		if len(p.mailInfo) >= mailInfoCap && len(p.mailInfoOrder) > 0 {
-			delete(p.mailInfo, p.mailInfoOrder[0])
-			p.mailInfoOrder = p.mailInfoOrder[1:]
-		}
-		p.mailInfoOrder = append(p.mailInfoOrder, id)
-	}
-	p.mailInfo[id] = e
+	p.mailInfo.Put(id, e)
 }
 
 // getMailInfo returns the cached info for a mail id (false if its GetMailInfos row was
 // never seen — the ReadMail is then dropped, the honest passive limit, FR-004).
 func (p *Pipeline) getMailInfo(id int64) (mailInfoEntry, bool) {
-	e, ok := p.mailInfo[id]
-	return e, ok
+	return p.mailInfo.Get(id)
 }
 
 // SeedMailInfos restores the persisted mail-type map at startup so a mail whose
