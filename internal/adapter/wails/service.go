@@ -13,6 +13,7 @@ import (
 	"sync/atomic"
 	"time"
 
+	"github.com/epaprat/albion-ledger/internal/boundedmap"
 	"github.com/epaprat/albion-ledger/internal/domain/model"
 	"github.com/epaprat/albion-ledger/internal/flow"
 	"github.com/epaprat/albion-ledger/internal/holdings"
@@ -69,9 +70,8 @@ type Service struct {
 	walletKnown     bool
 	walletLastSeen  int64
 
-	tradeStore TradeStore             // marketplace trade persistence (017); nil = in-memory
-	trades     map[string]model.Trade // by trade id (dedup, FR-010)
-	tradeOrder []string               // insertion order for FIFO cap eviction
+	tradeStore TradeStore                           // marketplace trade persistence (017); nil = in-memory
+	trades     *boundedmap.Map[string, model.Trade] // by trade id (dedup, FR-010; bounded FIFO)
 
 	mu     sync.Mutex
 	items  map[int]*model.LiveViewItem // by item index
@@ -88,7 +88,7 @@ func NewService(cat port.Catalog, book *valuation.Book, val port.Valuer, emit Em
 		cat: cat, book: book, val: val, emit: emit, cap: cap, nowMS: nowMS,
 		startMS:       nowMS(),
 		items:         map[int]*model.LiveViewItem{},
-		trades:        map[string]model.Trade{},
+		trades:        boundedmap.New[string, model.Trade](cap),
 		agg:           holdings.New(cat, val, model.DefaultStaleAfterMS),
 		flow:          flow.New(val, flow.DefaultIdleMS, flow.DefaultCap),
 		externalNudge: make(chan struct{}, 1),
@@ -726,19 +726,14 @@ func (s *Service) SetTradeStore(store TradeStore) {
 }
 
 // SeedTrades preloads the persisted ledger into the live view at startup (FR-011).
-// LoadTrades returns newest-first, but tradeOrder must be oldest-first (evictTrades drops
-// the front as the FIFO victim) — so iterate in reverse, else the first live trade of the
-// session would evict the newest history instead of the oldest (review).
+// LoadTrades returns newest-first, but the cache evicts oldest-inserted first — so seed in
+// reverse (oldest first), else the first live trade of the session would evict the newest
+// history instead of the oldest (review).
 func (s *Service) SeedTrades(trades []model.Trade) {
 	s.mu.Lock()
 	for i := len(trades) - 1; i >= 0; i-- {
-		t := trades[i]
-		if _, ok := s.trades[t.TradeID]; !ok {
-			s.tradeOrder = append(s.tradeOrder, t.TradeID)
-		}
-		s.trades[t.TradeID] = t
+		s.trades.Put(trades[i].TradeID, trades[i])
 	}
-	s.evictTrades()
 	s.mu.Unlock()
 	s.emitTrades()
 }
@@ -748,14 +743,10 @@ func (s *Service) SeedTrades(trades []model.Trade) {
 // and re-emits — no redundant refresh (mirrors SetWallet, 016).
 func (s *Service) AddTrade(t model.Trade) {
 	s.mu.Lock()
-	prev, existed := s.trades[t.TradeID]
+	prev, existed := s.trades.Get(t.TradeID)
 	changed := !existed || prev != t
-	if !existed {
-		s.tradeOrder = append(s.tradeOrder, t.TradeID)
-	}
 	if changed {
-		s.trades[t.TradeID] = t
-		s.evictTrades()
+		s.trades.Put(t.TradeID, t) // new key evicts oldest at cap; existing refreshes in place
 	}
 	store := s.tradeStore
 	s.mu.Unlock()
@@ -768,14 +759,6 @@ func (s *Service) AddTrade(t model.Trade) {
 		}
 	}
 	s.emitTrades()
-}
-
-func (s *Service) evictTrades() {
-	for len(s.trades) > s.cap && len(s.tradeOrder) > 0 {
-		oldest := s.tradeOrder[0]
-		s.tradeOrder = s.tradeOrder[1:]
-		delete(s.trades, oldest)
-	}
 }
 
 // tradeItemName resolves a mail item id to a display name. The catalog keys enchanted
@@ -804,10 +787,7 @@ func (s *Service) tradeItemName(itemID string) string {
 // index (instant sell) resolves through the catalog even without a uniqueName.
 func (s *Service) Trades() []model.Trade {
 	s.mu.Lock()
-	out := make([]model.Trade, 0, len(s.trades))
-	for _, t := range s.trades {
-		out = append(out, t)
-	}
+	out := s.trades.Values()
 	s.mu.Unlock()
 	for i := range out {
 		out[i].ItemName = s.resolveTradeName(out[i])
@@ -857,7 +837,7 @@ func (s *Service) TradeSummary(window string) model.TradeSummary {
 	s.mu.Lock()
 	defer s.mu.Unlock()
 	sum := model.TradeSummary{Scope: realizedScope(window), WindowStart: start}
-	for _, t := range s.trades {
+	for _, t := range s.trades.Values() {
 		if normalizeTradeMs(t.Received) < start {
 			continue // outside the window (heal .NET ticks before comparing)
 		}
