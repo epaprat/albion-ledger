@@ -100,7 +100,7 @@ export function Status():Promise<model.CaptureStatusView>;
 
 export function StopFlowPersistence():Promise<void>;
 
-export function TradeSummary():Promise<model.TradeSummary>;
+export function TradeSummary(arg1:string):Promise<model.TradeSummary>;
 
 export function Trades():Promise<Array<model.Trade>>;
 

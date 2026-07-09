@@ -203,11 +203,11 @@ func TestInstant_BuyBracketRejectsUnrelatedDelta(t *testing.T) {
 	p.dispatch(probe.KindResponse, 82, map[byte]interface{}{0: []string{offer}})
 	p.dispatch(probe.KindEvent, 81, walletEvent(100000))                                // baseline
 	p.dispatch(probe.KindRequest, 83, map[byte]interface{}{1: int32(3), 2: int64(999)}) // expect −30000
-	p.dispatch(probe.KindEvent, 81, walletEvent(95000))                                 // −5000 unrelated (out of bracket) → held
+	p.dispatch(probe.KindEvent, 81, walletEvent(95000))                                 // −5000 unrelated (out of bracket) → ignored
 	p.dispatch(probe.KindEvent, 81, walletEvent(65000))                                 // −30000 the real buy (in bracket) → accepted
 	trades := svc.Trades()
-	if len(trades) != 1 || trades[0].Net != -30000 || trades[0].NetEstimated {
-		t.Fatalf("buy must take only the −30000 in-bracket delta (verified): %+v", trades)
+	if len(trades) != 1 || trades[0].Net != -30000 {
+		t.Fatalf("buy must take only the −30000 in-bracket delta: %+v", trades)
 	}
 }
 
@@ -219,30 +219,25 @@ func TestInstant_SellBracketAcceptsTaxedNet(t *testing.T) {
 	p.dispatch(probe.KindResponse, 81, map[byte]interface{}{0: []string{req}})
 	p.dispatch(probe.KindEvent, 81, walletEvent(1000))                                                   // baseline
 	p.dispatch(probe.KindRequest, 315, map[byte]interface{}{1: int64(777), 2: int32(3543), 4: int32(1)}) // expect gross 10000
-	p.dispatch(probe.KindEvent, 81, walletEvent(1500))                                                   // +500 unrelated (out of bracket) → held
+	p.dispatch(probe.KindEvent, 81, walletEvent(1500))                                                   // +500 unrelated (out of bracket) → ignored
 	p.dispatch(probe.KindEvent, 81, walletEvent(11100))                                                  // +9600 taxed net (from 1500) → in bracket
 	trades := svc.Trades()
-	if len(trades) != 1 || trades[0].Net != 9600 || trades[0].NetEstimated {
-		t.Fatalf("sell must accept only the taxed in-bracket net 9600 (verified): %+v", trades)
+	if len(trades) != 1 || trades[0].Net != 9600 {
+		t.Fatalf("sell must accept only the taxed in-bracket net 9600: %+v", trades)
 	}
 }
 
-// T007c — price known but no delta ever lands in-bracket: on window expiry the closest
-// candidate is emitted flagged estimated, not silently dropped (FR-003).
-func TestInstant_OutOfBracketEmitsEstimatedOnExpiry(t *testing.T) {
+// T007c — price known but the only delta in the window is out of bracket: it is unrelated
+// income, so NO trade is recorded (an honest omission beats a misleading guess).
+func TestInstant_OutOfBracketOnlyRecordsNothing(t *testing.T) {
 	svc, p := newGlue(t)
-	clock := int64(1000)
-	p.nowMS = func() int64 { return clock }
 	offer := `{"Id":999,"UnitPriceSilver":100000000,"ItemTypeId":"T7_WOOD","AuctionType":"offer"}` // 10000/unit
 	p.dispatch(probe.KindResponse, 82, map[byte]interface{}{0: []string{offer}})
 	p.dispatch(probe.KindEvent, 81, walletEvent(100000))                                // baseline
 	p.dispatch(probe.KindRequest, 83, map[byte]interface{}{1: int32(3), 2: int64(999)}) // expect −30000
-	p.dispatch(probe.KindEvent, 81, walletEvent(50000))                                 // −50000 out of bracket → held as closest
-	clock = 5000                                                                        // advance past the 2s window
-	p.dispatch(probe.KindEvent, 81, walletEvent(50000))                                 // finalize the expired context
-	trades := svc.Trades()
-	if len(trades) != 1 || !trades[0].NetEstimated || trades[0].Net != -50000 {
-		t.Fatalf("expired out-of-bracket single must emit closest as estimated: %+v", trades)
+	p.dispatch(probe.KindEvent, 81, walletEvent(50000))                                 // −50000 out of bracket → ignored
+	if trades := svc.Trades(); len(trades) != 0 {
+		t.Fatalf("an out-of-bracket-only window must record no trade, got %+v", trades)
 	}
 }
 
@@ -254,7 +249,7 @@ func TestInstant_UnknownPriceFallsBackToSignGate(t *testing.T) {
 	p.dispatch(probe.KindRequest, 83, map[byte]interface{}{1: int32(3), 2: int64(4242)}) // order id never browsed
 	p.dispatch(probe.KindEvent, 81, walletEvent(70000))                                  // −30000
 	trades := svc.Trades()
-	if len(trades) != 1 || trades[0].Net != -30000 || trades[0].NetEstimated {
-		t.Fatalf("unknown-price buy must use the 017 sign gate (net −30000, not estimated): %+v", trades)
+	if len(trades) != 1 || trades[0].Net != -30000 {
+		t.Fatalf("unknown-price buy must use the 017 sign gate (net −30000): %+v", trades)
 	}
 }

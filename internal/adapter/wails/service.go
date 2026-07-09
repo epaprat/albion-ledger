@@ -856,7 +856,7 @@ func (s *Service) TradeSummary(window string) model.TradeSummary {
 	start := s.realizedWindowStart(window)
 	s.mu.Lock()
 	defer s.mu.Unlock()
-	sum := model.TradeSummary{Scope: realizedScope(window)}
+	sum := model.TradeSummary{Scope: realizedScope(window), WindowStart: start}
 	for _, t := range s.trades {
 		if normalizeTradeMs(t.Received) < start {
 			continue // outside the window (heal .NET ticks before comparing)

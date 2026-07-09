@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest'
-import { dirLabel, netClass, amountText, tradeAccessor, tradeFields, realizedWindows, windowLabel, netText } from './trades.js'
+import { dirLabel, netClass, amountText, tradeAccessor, tradeFields, realizedWindows, windowLabel } from './trades.js'
 import { sortRows, filterRows } from './useTable.js'
 
 const fmt = (n) => String(n)
@@ -36,15 +36,6 @@ describe('realizedWindows (018)', () => {
     expect(windowLabel('7d')).toBe('Last 7 days')
     expect(windowLabel('all')).toBe('All time')
     expect(windowLabel('bogus')).toBe('bogus')
-  })
-})
-
-describe('netText (018)', () => {
-  it('renders a verified net as-is', () => {
-    expect(netText({ net: 9600, netEstimated: false }, fmt)).toBe('9600')
-  })
-  it('prefixes ~ for an unverified (estimated) net', () => {
-    expect(netText({ net: -50000, netEstimated: true }, fmt)).toBe('~-50000')
   })
 })
 

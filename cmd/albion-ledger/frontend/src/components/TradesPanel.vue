@@ -8,16 +8,21 @@ import SortTh from './SortTh.vue'
 import FilterBar from './FilterBar.vue'
 
 const props = defineProps({
-  trades: { type: Array, required: true },   // Trade[]
-  summary: { type: Object, required: true }, // TradeSummary (for the selected window)
-  window: { type: String, default: 'all' },  // realized-P&L window (018)
+  trades: { type: Array, required: true },       // Trade[]
+  summary: { type: Object, required: true },     // TradeSummary (for the selected window)
+  window: { type: String, default: 'session' },  // realized-P&L window (018)
 })
 const emit = defineEmits(['update:window'])
 
-// Direction filter: all / sold (income) / bought (expense incl. fees).
+// The ledger table is scoped to the SAME window as the hero, so the two never contradict
+// (received >= windowStart; 0 = all time). Then the direction segment filters within it.
+const windowed = computed(() => {
+  const start = props.summary.windowStart || 0
+  return start > 0 ? props.trades.filter((t) => (t.received || 0) >= start) : props.trades
+})
 const dirFilter = ref('all')
 const filtered = computed(() =>
-  dirFilter.value === 'all' ? props.trades : props.trades.filter((t) => t.direction === dirFilter.value))
+  dirFilter.value === 'all' ? windowed.value : windowed.value.filter((t) => t.direction === dirFilter.value))
 const table = useTable(filtered, {
   fields: tradeFields,
   accessor: tradeAccessor,
@@ -48,9 +53,8 @@ const initials = (r) => {
   const n = r.itemName || r.itemId || '?'
   return n.replace(/[^A-Za-z0-9 ]/g, '').split(/\s+/).filter(Boolean).slice(0, 2).map((w) => w[0]).join('').toUpperCase() || '?'
 }
-// Signed, coloured net for the last column. A "~" prefix marks a net that could not be
-// verified against the expected order value (018) — honest estimate, not a false exact.
-const netText = (r) => (r.netEstimated ? '~' : '') + (r.net >= 0 ? '+' : '') + fmt(r.net)
+// Signed, coloured net for the last column.
+const netText = (r) => (r.net >= 0 ? '+' : '') + fmt(r.net)
 // realizedWindows drives the window selector; the label reads, the value hits the backend.
 const windows = realizedWindows
 </script>
@@ -69,7 +73,6 @@ const windows = realizedWindows
         <div v-if="summary.setupFee"><dt>Setup fees</dt><dd class="fee">−{{ compact(summary.setupFee) }}</dd></div>
         <div><dt>Expense</dt><dd class="neg">−{{ compact(summary.grossExpense) }}</dd></div>
       </dl>
-      <span v-else class="no-window">No trades in this window.</span>
       <span class="win seg" role="group" aria-label="Realized P&L window">
         <button v-for="w in windows" :key="w.value" :class="{ active: window === w.value }"
           @click="emit('update:window', w.value)" :aria-pressed="window === w.value">{{ w.label }}</button>
@@ -79,9 +82,11 @@ const windows = realizedWindows
       </span>
     </div>
 
-    <StateBlock v-if="trades.length === 0" variant="empty" title="No trades captured yet">
-      Sell or buy on the marketplace — order fills (open the mail), instant sells, quicksells and
-      instant buys all land here, broken down by gross, tax and net. Passive, ToS-safe.
+    <StateBlock v-if="windowed.length === 0" variant="empty"
+      :title="trades.length ? 'No trades in this window' : 'No trades captured yet'">
+      <template v-if="trades.length">Nothing in this time window — pick a wider window above to see more.</template>
+      <template v-else>Sell or buy on the marketplace — order fills (open the mail), instant sells, quicksells and
+      instant buys all land here, broken down by gross, tax and net. Passive, ToS-safe.</template>
     </StateBlock>
 
     <template v-else>
@@ -130,8 +135,7 @@ const windows = realizedWindows
               <td class="num">{{ r.gross ? fmt(r.gross) : '—' }}</td>
               <td class="num fee">{{ r.salesTax ? '−' + fmt(r.salesTax) : '—' }}<span v-if="r.taxEstimated && r.salesTax" class="est" title="Estimated from the sales-tax rate">≈</span></td>
               <td class="num fee">{{ r.setupFee ? '−' + fmt(r.setupFee) : '—' }}</td>
-              <td class="num net" :class="r.net >= 0 ? 'pos' : 'neg'"
-                :title="r.netEstimated ? 'Estimated — the wallet delta did not match the expected order value' : null">{{ netText(r) }}</td>
+              <td class="num net" :class="r.net >= 0 ? 'pos' : 'neg'">{{ netText(r) }}</td>
             </tr>
           </tbody>
         </table>
@@ -151,7 +155,6 @@ const windows = realizedWindows
 .parts dt { font-size: 11px; color: var(--muted); text-transform: uppercase; letter-spacing: .05em; }
 .parts dd { margin: 0; font-size: 15px; font-variant-numeric: tabular-nums; }
 .win { margin-left: auto; }
-.no-window { font-size: 13px; color: var(--muted); font-style: italic; }
 .scope { font-size: 12px; color: var(--muted); font-style: italic; }
 
 .pos { color: var(--good, #3fb950); }

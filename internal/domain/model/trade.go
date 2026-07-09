@@ -15,27 +15,22 @@ package model
 //
 // MailID is the natural key for mail trades; instant trades use a synthesized TradeID.
 type Trade struct {
-	TradeID       string `json:"tradeId"`   // unique key (mail:<id> or inst:<seq>) — dedup
-	Direction     string `json:"direction"` // "sold" (income) | "bought" (expense)
-	Source        string `json:"source"`    // "mail" | "instant" | "quicksell"
-	ItemID        string `json:"itemId"`    // wire uniqueName (with @enchant), may be "" (unknown)
-	ItemName      string `json:"itemName"`  // catalog display name (read-time; falls back to ItemID)
-	ItemIndex     int    `json:"itemIndex"` // catalog index when known (instant sell), else 0
-	PartialAmount int    `json:"partialAmount"`
-	TotalAmount   int    `json:"totalAmount"`
-	Gross         int64  `json:"gross"`    // pre-fee value
-	SetupFee      int64  `json:"setupFee"` // order listing fee (0 for instant)
-	SalesTax      int64  `json:"salesTax"` // market tax on a sale (0 on a buy)
-	Net           int64  `json:"net"`      // wallet delta actual (+sold / −bought)
-	TaxEstimated  bool   `json:"taxEstimated"`
-	// NetEstimated marks an instant trade whose Net could NOT be verified against the
-	// expected order value (item × amount × unit price): the wallet delta fell outside the
-	// tolerance bracket, or only the sign-fallback correlation was available (018). Distinct
-	// from TaxEstimated (mail tax derived from a rate). Older persisted rows lack it → false.
-	NetEstimated bool    `json:"netEstimated"`
-	UnitSilver   float64 `json:"unitSilver"`
-	Received     int64   `json:"received"`   // opaque wire timestamp — ordering only, 0 = unknown
-	LocationID   string  `json:"locationId"` // market location id (may be empty)
+	TradeID       string  `json:"tradeId"`   // unique key (mail:<id> or inst:<seq>) — dedup
+	Direction     string  `json:"direction"` // "sold" (income) | "bought" (expense)
+	Source        string  `json:"source"`    // "mail" | "instant" | "quicksell"
+	ItemID        string  `json:"itemId"`    // wire uniqueName (with @enchant), may be "" (unknown)
+	ItemName      string  `json:"itemName"`  // catalog display name (read-time; falls back to ItemID)
+	ItemIndex     int     `json:"itemIndex"` // catalog index when known (instant sell), else 0
+	PartialAmount int     `json:"partialAmount"`
+	TotalAmount   int     `json:"totalAmount"`
+	Gross         int64   `json:"gross"`    // pre-fee value
+	SetupFee      int64   `json:"setupFee"` // order listing fee (0 for instant)
+	SalesTax      int64   `json:"salesTax"` // market tax on a sale (0 on a buy)
+	Net           int64   `json:"net"`      // wallet delta actual (+sold / −bought)
+	TaxEstimated  bool    `json:"taxEstimated"`
+	UnitSilver    float64 `json:"unitSilver"`
+	Received      int64   `json:"received"`   // opaque wire timestamp — ordering only, 0 = unknown
+	LocationID    string  `json:"locationId"` // market location id (may be empty)
 }
 
 // TradeSummary is the read-time rollup over captured trades (Principle V — derived, not
@@ -50,6 +45,7 @@ type TradeSummary struct {
 	Net          int64  `json:"net"`          // Σ net (income − expense)
 	Count        int    `json:"count"`
 	Scope        string `json:"scope"`
+	WindowStart  int64  `json:"windowStart"` // earliest received-ms in scope (0 = all time); the ledger table filters to this so the hero and the rows always agree (018)
 }
 
 // MailInfo is a persisted mail-type record (017): the id→type map from GetMailInfos,

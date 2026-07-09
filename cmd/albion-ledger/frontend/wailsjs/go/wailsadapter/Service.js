@@ -190,8 +190,8 @@ export function StopFlowPersistence() {
   return window['go']['wailsadapter']['Service']['StopFlowPersistence']();
 }
 
-export function TradeSummary() {
-  return window['go']['wailsadapter']['Service']['TradeSummary']();
+export function TradeSummary(arg1) {
+  return window['go']['wailsadapter']['Service']['TradeSummary'](arg1);
 }
 
 export function Trades() {

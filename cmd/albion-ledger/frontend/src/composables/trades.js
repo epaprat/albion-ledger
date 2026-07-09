@@ -44,9 +44,3 @@ export const realizedWindows = [
 
 // windowLabel maps a window value to its human label (falls back to the raw value).
 export const windowLabel = (w) => (realizedWindows.find((o) => o.value === w) || {}).label || w
-
-// netText renders a net figure, prefixing "~" when the trade's net could not be verified
-// against its expected order value (018) — an honest "estimated" marker, not a false exact.
-export function netText(r, fmt) {
-  return (r.netEstimated ? '~' : '') + fmt(r.net)
-}

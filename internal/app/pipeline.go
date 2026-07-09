@@ -13,6 +13,7 @@ package app
 import (
 	"fmt"
 	"log"
+	"math"
 	"sort"
 	"sync"
 
@@ -192,16 +193,11 @@ type instantCtx struct {
 	deltas    int    // wallet deltas attributed so far (a quicksell disarms at count)
 	expiresMS int64  // correlation window end
 	// Expected-value correlation (018): when the order unit price is known, expectedGross =
-	// Σ (unit price × amount) lets a wallet delta be gated on MAGNITUDE, not just sign —
-	// so unrelated income (loot, escrow, refund) in the window is not mis-attributed.
+	// unit price × amount lets a wallet delta be gated on MAGNITUDE, not just sign — so
+	// unrelated income (loot, escrow, refund) in the window is not mis-attributed. Only the
+	// single instant buy/sell path uses it; quicksell has no per-order quantity on the wire.
 	expectedGross int64 // 0 when unknown
 	expectedKnown bool  // false → fall back to 017 sign-only correlation (no regression)
-	// bestNet tracks the closest correct-sign delta seen for a single trade whose magnitude
-	// fell OUTSIDE the bracket — used to emit an honest "estimated" net on window expiry
-	// rather than silently dropping the trade (FR-003).
-	bestNet      int64
-	bestSet      bool
-	netEstimated bool // net could not be bracket-verified → surfaced as Trade.NetEstimated
 }
 
 // instantWindowMS bounds how long after a trade request a wallet delta may be attributed
@@ -213,8 +209,9 @@ const instantWindowMS = 2000
 // dependent) tax, so the true net is bracketed in [gross×(1−maxTax), gross]. Both bands are
 // far tighter than sign-only: unrelated income almost never lands inside them.
 const (
-	instantBuyEpsilonRate = 0.02 // buy: |delta| within ±2% of expected spend (rounding)
-	instantSellMaxTaxRate = 0.08 // sell: net floor = gross×(1−0.08) (base 4% + safety margin)
+	instantBuyEpsilonRate = 0.02  // buy: |delta| within ±2% of expected spend (rounding)
+	instantSellMaxTaxRate = 0.08  // sell: net floor = gross×(1−0.08) (base 4% + safety margin)
+	instantSellUpperPad   = 0.005 // sell: a sale net can't exceed gross; only a small pad for our own rounding
 )
 
 // mailInfoEntry is one GetMailInfos row cached for a later ReadMail (017).
@@ -280,6 +277,11 @@ func (p *Pipeline) orderValue(orderID int64, amount int) (int64, bool) {
 	if !ok || oi.unitRaw <= 0 || amount <= 0 {
 		return 0, false
 	}
+	// Overflow guard: amount comes straight off the wire (unbounded); a corrupt/hostile
+	// amount × a high unit price would wrap int64 before the divide → a garbage bracket.
+	if oi.unitRaw > math.MaxInt64/int64(amount) {
+		return 0, false
+	}
 	return int64(amount) * oi.unitRaw / silverScale, true
 }
 
@@ -339,10 +341,10 @@ func (p *Pipeline) armInstant(c *instantCtx) {
 // in the window is not mis-attributed; when it is not, the 017 sign-only path applies.
 func (p *Pipeline) correlateWallet(silver int64) {
 	now := p.nowMS()
-	// An expired context is finalized before this balance becomes the baseline: emit an
-	// honest estimate if a close candidate was seen, else drop it (no fabricated trade).
+	// Drop a context whose window elapsed without a clean match — an unverified guess is
+	// worse than an honest omission, so nothing is fabricated.
 	if p.instant != nil && now > p.instant.expiresMS {
-		p.finalizeExpiredInstant()
+		p.instant = nil
 	}
 	if p.walletSeen && p.instant != nil && now <= p.instant.expiresMS {
 		delta := silver - p.walletSilver
@@ -355,51 +357,28 @@ func (p *Pipeline) correlateWallet(silver int64) {
 	p.walletSeen = true
 }
 
-// attributeDelta applies one correct-sign wallet delta to the pending instant context.
+// attributeDelta applies one correct-sign wallet delta to the pending instant context. With
+// a known order price the delta must fall in the expected-value bracket to BE the trade; an
+// out-of-bracket delta is unrelated income (loot/escrow/refund) and is ignored while the
+// context stays armed for the real proceeds. Without a known price the 017 sign-only path
+// applies — quicksell always takes it (per-order fill quantities aren't on the wire).
 func (p *Pipeline) attributeDelta(delta, now int64) {
 	c := p.instant
-	// Fallback: no known price → 017 sign-only correlation, unchanged (no regression).
-	if !c.expectedKnown {
-		c.net += delta
+	if c.expectedKnown && c.single {
+		if !p.deltaInBracket(delta) {
+			return // unrelated income — keep waiting for the real proceeds
+		}
+		c.net = delta
 		c.deltas++
 		p.emitInstantTrade()
-		p.disarmOrExtend(now)
+		p.instant = nil
 		return
 	}
-	if c.single {
-		if p.deltaInBracket(delta) {
-			c.net = delta
-			c.deltas++
-			c.netEstimated = false
-			p.emitInstantTrade()
-			p.instant = nil
-			return
-		}
-		// Out of bracket: this delta is unrelated income (loot/escrow/refund), NOT the
-		// trade. Hold the context; remember the closest candidate so an honest estimate
-		// can be emitted if the real delta never arrives (FR-003).
-		target := c.expectedGross
-		if !c.bestSet || abs64(abs64(delta)-target) < abs64(abs64(c.bestNet)-target) {
-			c.bestNet = delta
-			c.bestSet = true
-		}
-		return
-	}
-	// Quicksell: accumulate (count-capped, 017) but ALSO disarm once the accumulated net
-	// reaches the expected floor, so trailing unrelated income can't be absorbed (018).
+	// Sign-only (unknown price + all quicksell): 017 behavior, unchanged (no regression).
 	c.net += delta
 	c.deltas++
-	reached := c.net >= p.sellNetFloor(c.expectedGross)
-	disarm := (c.count > 0 && c.deltas >= c.count) || reached
-	if disarm {
-		c.netEstimated = !p.sellNetInBracket(c.net, c.expectedGross)
-	}
 	p.emitInstantTrade()
-	if disarm {
-		p.instant = nil
-	} else {
-		c.expiresMS = now + instantWindowMS
-	}
+	p.disarmOrExtend(now)
 }
 
 // disarmOrExtend applies the 017 sign-only disarm rule (single → one delta; quicksell →
@@ -413,29 +392,11 @@ func (p *Pipeline) disarmOrExtend(now int64) {
 	}
 }
 
-// finalizeExpiredInstant closes a context whose window elapsed without a clean match. A
-// single trade with a close-but-out-of-bracket candidate is emitted flagged estimated; a
-// partial quicksell keeps its accumulated (estimated) net; nothing is fabricated.
-func (p *Pipeline) finalizeExpiredInstant() {
-	c := p.instant
-	switch {
-	case c.expectedKnown && c.single && c.bestSet:
-		c.net = c.bestNet
-		c.deltas++
-		c.netEstimated = true
-		p.emitInstantTrade()
-	case c.expectedKnown && !c.single && c.deltas > 0:
-		if !p.sellNetInBracket(c.net, c.expectedGross) {
-			c.netEstimated = true
-			p.emitInstantTrade()
-		}
-	}
-	p.instant = nil
-}
-
 // deltaInBracket reports whether a correct-sign delta matches the expected order value for
-// the current SINGLE instant trade. A buy pays the price exactly (±ε rounding); a sell nets
-// the price minus an unknown (premium-dependent) tax, so |delta| ∈ [gross×(1−maxTax), gross].
+// the current SINGLE instant trade. A buy pays the price exactly (±ε rounding). A sell nets
+// the price minus an unknown (premium-dependent) tax, so its net is bracketed
+// [gross×(1−maxTax), gross]; only a small rounding pad sits above gross (our expected value
+// can round down) — never the full buy ε, which would admit unrelated income above gross.
 func (p *Pipeline) deltaInBracket(delta int64) bool {
 	c := p.instant
 	g := float64(c.expectedGross)
@@ -443,19 +404,7 @@ func (p *Pipeline) deltaInBracket(delta int64) bool {
 	if c.direction == model.TradeBought {
 		return mag >= g*(1-instantBuyEpsilonRate) && mag <= g*(1+instantBuyEpsilonRate)
 	}
-	return mag >= g*(1-instantSellMaxTaxRate) && mag <= g*(1+instantBuyEpsilonRate)
-}
-
-// sellNetInBracket reports whether an accumulated sell net sits within the expected band.
-func (p *Pipeline) sellNetInBracket(net, gross int64) bool {
-	g := float64(gross)
-	n := float64(net)
-	return n >= g*(1-instantSellMaxTaxRate) && n <= g*(1+instantBuyEpsilonRate)
-}
-
-// sellNetFloor is the lowest net a sale of this gross could honestly yield (highest tax).
-func (p *Pipeline) sellNetFloor(gross int64) int64 {
-	return int64(float64(gross) * (1 - instantSellMaxTaxRate))
+	return mag >= g*(1-instantSellMaxTaxRate) && mag <= g*(1+instantSellUpperPad)
 }
 
 // abs64 returns the absolute value of x.
@@ -526,11 +475,10 @@ func (p *Pipeline) emitInstantTrade() {
 		SalesTax:      bd.SalesTax,
 		Net:           bd.Net,
 		TaxEstimated:  bd.Estimated,
-		NetEstimated:  c.netEstimated,
 		Received:      p.nowMS(),
 	})
 	if p.debug {
-		log.Printf("[trade] %s %s net=%d gross=%d estimated=%t (%s)", c.source, c.direction, bd.Net, bd.Gross, c.netEstimated, c.tradeID)
+		log.Printf("[trade] %s %s net=%d gross=%d (%s)", c.source, c.direction, bd.Net, bd.Gross, c.tradeID)
 	}
 }
 
