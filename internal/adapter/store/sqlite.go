@@ -164,6 +164,13 @@ func migrate(db *sql.DB) error {
 	if err := addColumnIfMissing("flow_events", "zone", `TEXT DEFAULT ''`); err != nil {
 		return err
 	}
+	// Ephemeral physical bank containers (keyed by a per-open wire guid) must never have been
+	// persisted (020 fix): they never recur, so they hydrate as stale junk that wrongly wins
+	// the read-time dedup over a fresh K summary. Purge any a buggy build wrote — only the
+	// stable-id K summaries (vault:*) and the self bag/equipped (self-*) are legitimate.
+	if _, err := db.Exec(`DELETE FROM holdings_containers WHERE container_id NOT LIKE 'vault:%' AND container_id NOT LIKE 'self-%'`); err != nil {
+		return err
+	}
 	// The trades table gained a full fee/tax/net breakdown (017 expansion): the original
 	// mail-only shape (mail_id PK, total_silver) is incompatible. The feature is
 	// unreleased, so a pre-expansion table is dropped and recreated by the schema on the

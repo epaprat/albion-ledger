@@ -414,3 +414,24 @@ func TestSeedContainersFillsPreCreatedSelfContainer(t *testing.T) {
 		t.Fatalf("live own-state must replace the hydrated self-bag, got %+v", r)
 	}
 }
+
+// 010/020 live-test — a K summary and a physical container for the SAME (city,tab) must be
+// counted ONCE (physical wins), even when the write-time reconciliation missed and left both
+// in the map. Read-time dedup guards Summary + List (no double-counted net worth).
+func TestSummaryDedupsPhysicalOverSummary(t *testing.T) {
+	a, book := newAgg(t)
+	book.SetEMV(920, 0, 1000, 1000) // value the item
+	// The exact double-count state: a summary + a physical for Lymhurst/Tab1, both holding 3.
+	a.containers["sum"] = &container{location: model.LocBank, city: "Lymhurst", tab: "Tab1", summary: true, lastSeen: 1000,
+		items: map[int]model.HoldingItem{-1: {ObjID: -1, Item: model.Item{Index: 920}, Count: 3}}}
+	a.containers["phys"] = &container{location: model.LocBank, city: "Lymhurst", tab: "Tab1", summary: false, lastSeen: 1000,
+		items: map[int]model.HoldingItem{5: {ObjID: 5, Item: model.Item{Index: 920}, Count: 3}}}
+	a.order = []string{"sum", "phys"}
+
+	if s := a.Summary(2000); s.TotalValue != 3000 { // 3×1000 once, NOT 6000
+		t.Fatalf("physical must win, summary skipped: want TotalValue 3000, got %d", s.TotalValue)
+	}
+	if n := len(a.List()); n != 1 { // the physical stack once, not 2 (physical + summary)
+		t.Fatalf("List must dedup the summary row: want 1, got %d", n)
+	}
+}

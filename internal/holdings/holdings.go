@@ -460,8 +460,12 @@ func (a *Aggregator) List() []model.HoldingItem {
 		sort.Slice(rows, func(i, j int) bool { return rows[i].Item.DisplayName < rows[j].Item.DisplayName })
 		out = append(out, rows...)
 	}
+	physical := a.physicalBankTabsLocked()
 	for _, g := range guids {
 		c := a.containers[g]
+		if a.isDupSummaryLocked(c, physical) {
+			continue // a physical container covers this tab — skip the summary (no duplicate rows)
+		}
 		cityName := c.city
 		if c.location == model.LocBank {
 			cityName = bankCityName(c.city)
@@ -477,9 +481,31 @@ func (a *Aggregator) List() []model.HoldingItem {
 // Summary returns the grand total, unvalued count, and the city → tab rollup
 // (inventory group first, then cities by last-seen). Honest seen/stale per group
 // (Principle X). Equipped is out of scope for this view (feature 004).
+// physicalBankTabsLocked returns the "city\x00tab" set covered by a PHYSICAL bank container
+// (object-based, from an actual open). A K-overview SUMMARY for the same tab is a duplicate
+// of it — summing both double-counts the tab (010) — so read paths skip a summary when a
+// physical peer exists. This read-time guard is robust even when the write-time
+// reconciliation missed (e.g. the physical container's city was backfilled AFTER the K
+// summary arrived, so evictSummaryOverlaps never matched — live-seen 2026-07-10).
+func (a *Aggregator) physicalBankTabsLocked() map[string]bool {
+	set := map[string]bool{}
+	for _, c := range a.containers {
+		if !c.summary && c.location == model.LocBank && len(c.items) > 0 {
+			set[bankCityName(c.city)+"\x00"+c.tab] = true
+		}
+	}
+	return set
+}
+
+// isDupSummaryLocked reports whether c is a K summary whose (city,tab) a physical already covers.
+func (a *Aggregator) isDupSummaryLocked(c *container, physical map[string]bool) bool {
+	return c.summary && c.location == model.LocBank && physical[bankCityName(c.city)+"\x00"+c.tab]
+}
+
 func (a *Aggregator) Summary(nowMS int64) model.HoldingsSummary {
 	a.mu.Lock()
 	defer a.mu.Unlock()
+	physical := a.physicalBankTabsLocked()
 
 	// Build per-city → per-tab accumulators from observed containers.
 	type tabAcc struct {
@@ -505,6 +531,9 @@ func (a *Aggregator) Summary(nowMS int64) model.HoldingsSummary {
 	for _, c := range a.containers {
 		if c.lastSeen == 0 && len(c.items) == 0 {
 			continue // pre-created, never observed: showing it would fake freshness (X/XII)
+		}
+		if a.isDupSummaryLocked(c, physical) {
+			continue // a physical container covers this tab — skip the summary (no double-count)
 		}
 		cityName := invName
 		isInv := true
@@ -652,6 +681,14 @@ func (a *Aggregator) Snapshot() []ContainerSnapshot {
 	defer a.mu.Unlock()
 	out := make([]ContainerSnapshot, 0, len(a.containers))
 	for guid, c := range a.containers {
+		// A PHYSICAL bank container is keyed by an EPHEMERAL wire guid that never recurs
+		// (010): persisting it would hydrate as stale junk next launch (a physical peer that
+		// then wrongly wins the read-time dedup over a fresh K summary). Only the stable-id
+		// K summaries + the self bag/equipped are persisted; the physical view is re-observed
+		// live when the player opens the bank (020 live-test fix).
+		if c.location == model.LocBank && !c.summary {
+			continue
+		}
 		items := make([]model.HoldingItem, 0, len(c.items))
 		for _, it := range c.items {
 			items = append(items, it)
