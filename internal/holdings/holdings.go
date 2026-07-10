@@ -5,6 +5,7 @@
 package holdings
 
 import (
+	"log"
 	"sort"
 	"strings"
 	"sync"
@@ -59,6 +60,15 @@ type Aggregator struct {
 	// cityVaultValue: K-overview per-city vault totals (010); replaced wholesale
 	// each R:516, bounded by the game's location count.
 	cityVaultValue map[string]int64
+
+	debug bool // -debugflow: trace bank-open dedup resolution (holdings double-count investigation)
+}
+
+// SetDebug enables holdings diagnostic logging (wired from the -debugflow flag).
+func (a *Aggregator) SetDebug(v bool) {
+	a.mu.Lock()
+	defer a.mu.Unlock()
+	a.debug = v
 }
 
 // New creates an Aggregator.
@@ -201,6 +211,16 @@ func (a *Aggregator) SetContainer(containerGUID, ownerGUID string, slots []SlotI
 
 	if loc == model.LocBank {
 		a.evictSummaryOverlapsLocked(city, tab, containerGUID)
+	}
+	if a.debug && loc == model.LocBank {
+		summaries := 0
+		for _, other := range a.containers {
+			if other.summary && other.location == model.LocBank && other.city == city && other.tab == tab {
+				summaries++
+			}
+		}
+		log.Printf("[hold] bank open: guid=%s owner=%s tab=%q city=%q items=%d remaining-summaries(same city+tab)=%d",
+			containerGUID, ownerGUID, tab, city, len(slots), summaries)
 	}
 	c := a.ensureContainer(containerGUID)
 	c.summary = false // a physical snapshot claims this container outright

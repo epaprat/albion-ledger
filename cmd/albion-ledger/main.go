@@ -107,6 +107,7 @@ func main() {
 		}
 	}
 	pipe := app.New(svc, probe.New(reg), locs, specCat, nowMS, *debugFlowFlag)
+	svc.SetHoldingsDebug(*debugFlowFlag)
 
 	// Local-first store (Principle VIII): earnings events are persisted to SQLite as
 	// they arrive; the in-memory ledger stays bounded (Principle XI). Best-effort — if

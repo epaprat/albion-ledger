@@ -104,6 +104,10 @@ func NewService(cat port.Catalog, book *valuation.Book, val port.Valuer, emit Em
 	}
 }
 
+// SetHoldingsDebug forwards the -debugflow flag to the holdings aggregator so bank-open
+// dedup resolution is traced (holdings double-count investigation).
+func (s *Service) SetHoldingsDebug(v bool) { s.agg.SetDebug(v) }
+
 // IngestEMV records an item's estimated value and refreshes its view row. A newly
 // known value also back-fills any flow loot/gather rows that were unvalued (FR-009).
 func (s *Service) IngestEMV(index, quality int, value, asOf int64) {
