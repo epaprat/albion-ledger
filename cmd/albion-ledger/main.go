@@ -29,9 +29,9 @@ import (
 	"github.com/epaprat/albion-ledger/internal/domain/model"
 	"github.com/epaprat/albion-ledger/internal/domain/probe"
 	"github.com/epaprat/albion-ledger/internal/locations"
-	"github.com/epaprat/albion-ledger/internal/specnames"
 	"github.com/epaprat/albion-ledger/internal/photon"
 	"github.com/epaprat/albion-ledger/internal/port"
+	"github.com/epaprat/albion-ledger/internal/specnames"
 	"github.com/epaprat/albion-ledger/internal/valuation"
 )
 
@@ -165,6 +165,15 @@ func main() {
 					log.Printf("store LoadTrades: %v", err)
 				}
 				svc.SetTradeStore(flowStore)
+				// Persisted holdings (020): inventory + banks hydrate immediately (stale-
+				// labelled) so the Holdings screen isn't blank until re-opened in game.
+				svc.SetHoldingsStore(flowStore)
+				if snaps, err := flowStore.LoadContainers(ctx); err == nil && len(snaps) > 0 {
+					svc.SeedHoldings(snaps)
+				} else if err != nil {
+					log.Printf("store LoadContainers: %v", err)
+				}
+				svc.StartHoldingsPersistence(ctx)
 				// Persisted mail-type map (017): decode mails whose GetMailInfos list the
 				// game client-cached and never re-sent this session.
 				if infos, err := flowStore.LoadMailInfos(ctx); err == nil && len(infos) > 0 {

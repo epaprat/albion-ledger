@@ -73,6 +73,9 @@ type Service struct {
 	tradeStore TradeStore                           // marketplace trade persistence (017); nil = in-memory
 	trades     *boundedmap.Map[string, model.Trade] // by trade id (dedup, FR-010; bounded FIFO)
 
+	holdingsStore HoldingsStore // holdings snapshot persistence (020); nil = in-memory
+	holdingsDirty atomic.Bool   // a holdings change is owed a flush (set on the pipeline goroutine, read by the flush loop)
+
 	flowBatch bool // coalesce flow-changed emits during a loot burst (019)
 	flowDirty bool // a flow refresh is owed when the batch ends
 
@@ -337,6 +340,7 @@ func (s *Service) SetSpec(spec model.CharacterSpec) {
 }
 
 func (s *Service) emitHoldings() {
+	s.holdingsDirty.Store(true) // a container changed → owe the persistence loop a flush (020)
 	if s.emit != nil {
 		s.emit.Emit(EventHoldingsChanged, s.agg.Summary(s.nowMS()))
 	}
@@ -759,6 +763,72 @@ func (s *Service) SetTradeStore(store TradeStore) {
 	s.mu.Lock()
 	s.tradeStore = store
 	s.mu.Unlock()
+}
+
+// ── Holdings persistence & hydration (020) ───────────────────────────────────
+
+// HoldingsStore persists the holdings snapshot so inventory + banks hydrate immediately
+// on the next launch (stale-labelled until re-seen live).
+type HoldingsStore interface {
+	SaveContainer(ctx context.Context, c holdings.ContainerSnapshot) error
+	LoadContainers(ctx context.Context) ([]holdings.ContainerSnapshot, error)
+}
+
+// SetHoldingsStore wires the holdings persistence sink (nil keeps holdings in-memory).
+func (s *Service) SetHoldingsStore(store HoldingsStore) {
+	s.mu.Lock()
+	s.holdingsStore = store
+	s.mu.Unlock()
+}
+
+// SeedHoldings restores persisted containers into the live aggregator at startup (020).
+// They arrive stale (their original LastSeen) and never clobber a container that live data
+// already claimed this session.
+func (s *Service) SeedHoldings(snaps []holdings.ContainerSnapshot) {
+	if len(snaps) == 0 {
+		return
+	}
+	s.agg.SeedContainers(snaps)
+	s.emitHoldings()
+}
+
+// StartHoldingsPersistence runs a debounced background flush: whenever holdings changed
+// (holdingsDirty), the full bounded snapshot (≤512 containers) is written off the capture
+// goroutine. A final flush runs on ctx cancel so the last state survives a clean shutdown.
+func (s *Service) StartHoldingsPersistence(ctx context.Context) {
+	s.mu.Lock()
+	store := s.holdingsStore
+	s.mu.Unlock()
+	if store == nil {
+		return
+	}
+	go func() {
+		t := time.NewTicker(3 * time.Second)
+		defer t.Stop()
+		for {
+			select {
+			case <-ctx.Done():
+				s.flushHoldings(store)
+				return
+			case <-t.C:
+				s.flushHoldings(store)
+			}
+		}
+	}()
+}
+
+// flushHoldings persists every container if a change is pending, then clears the flag.
+func (s *Service) flushHoldings(store HoldingsStore) {
+	if !s.holdingsDirty.Swap(false) {
+		return
+	}
+	for _, c := range s.agg.Snapshot() {
+		if err := store.SaveContainer(context.Background(), c); err != nil {
+			log.Printf("holdings store write failed (%s): %v", c.GUID, err)
+			s.holdingsDirty.Store(true) // retry on the next tick
+			return
+		}
+	}
 }
 
 // SeedTrades preloads the persisted ledger into the live view at startup (FR-011).

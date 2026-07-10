@@ -5,6 +5,7 @@ package store
 import (
 	"context"
 	"database/sql"
+	"encoding/json"
 	"fmt"
 	"log"
 	"os"
@@ -13,6 +14,7 @@ import (
 	_ "modernc.org/sqlite"
 
 	"github.com/epaprat/albion-ledger/internal/domain/model"
+	"github.com/epaprat/albion-ledger/internal/holdings"
 	"github.com/epaprat/albion-ledger/internal/valuation"
 	"github.com/epaprat/albion-ledger/internal/zonestats"
 )
@@ -74,6 +76,11 @@ CREATE TABLE IF NOT EXISTS trades (
   gross INTEGER, setup_fee INTEGER, sales_tax INTEGER, net INTEGER,
   tax_estimated INTEGER, unit_silver REAL,
   received INTEGER, location_id TEXT
+);
+CREATE TABLE IF NOT EXISTS holdings_containers (
+  container_id TEXT PRIMARY KEY,
+  location TEXT, city TEXT, tab TEXT,
+  items_json TEXT, last_seen INTEGER, pinned INTEGER
 );
 `
 
@@ -621,4 +628,69 @@ func (s *SQLite) LoadTrades(ctx context.Context) ([]model.Trade, error) {
 		out = append(out, t)
 	}
 	return out, rows.Err()
+}
+
+// holdingsContainersCap bounds the persisted holdings snapshot (020); mirrors the live
+// aggregator's containerCap (Principle XI). Pinned (own bag/equipped) survive first.
+const holdingsContainersCap = 512
+
+// SaveContainer upserts one holdings container by its stable id (replace-on-new, FR-003),
+// then prunes beyond the cap keeping pinned + newest-seen.
+func (s *SQLite) SaveContainer(ctx context.Context, c holdings.ContainerSnapshot) error {
+	itemsJSON, err := json.Marshal(c.Items)
+	if err != nil {
+		return err
+	}
+	pinned := 0
+	if c.Pinned {
+		pinned = 1
+	}
+	if _, err := s.db.ExecContext(ctx, `
+		INSERT OR REPLACE INTO holdings_containers
+		  (container_id, location, city, tab, items_json, last_seen, pinned)
+		VALUES (?, ?, ?, ?, ?, ?, ?)`,
+		c.GUID, string(c.Location), c.City, c.Tab, string(itemsJSON), c.LastSeen, pinned,
+	); err != nil {
+		return err
+	}
+	_, err = s.db.ExecContext(ctx, `
+		DELETE FROM holdings_containers WHERE container_id NOT IN (
+		  SELECT container_id FROM holdings_containers ORDER BY pinned DESC, last_seen DESC LIMIT ?)`,
+		holdingsContainersCap)
+	return err
+}
+
+// LoadContainers returns every persisted holdings container for startup hydration (020).
+// A container with corrupt items_json is skipped (never crashes hydration, FR-008).
+func (s *SQLite) LoadContainers(ctx context.Context) ([]holdings.ContainerSnapshot, error) {
+	rows, err := s.db.QueryContext(ctx, `
+		SELECT container_id, location, city, tab, items_json, last_seen, pinned
+		FROM holdings_containers`)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	var out []holdings.ContainerSnapshot
+	for rows.Next() {
+		var c holdings.ContainerSnapshot
+		var loc, itemsJSON string
+		var pinned int
+		if err := rows.Scan(&c.GUID, &loc, &c.City, &c.Tab, &itemsJSON, &c.LastSeen, &pinned); err != nil {
+			return nil, err
+		}
+		c.Location = model.Location(loc)
+		c.Pinned = pinned == 1
+		if err := json.Unmarshal([]byte(itemsJSON), &c.Items); err != nil {
+			log.Printf("store LoadContainers: skipping corrupt container %s: %v", c.GUID, err)
+			continue
+		}
+		out = append(out, c)
+	}
+	return out, rows.Err()
+}
+
+// DeleteContainer removes a persisted container (e.g. an untracked-put drop).
+func (s *SQLite) DeleteContainer(ctx context.Context, containerID string) error {
+	_, err := s.db.ExecContext(ctx, `DELETE FROM holdings_containers WHERE container_id = ?`, containerID)
+	return err
 }

@@ -629,3 +629,59 @@ func friendlyTab(name string) string {
 	}
 	return name
 }
+
+// ── Persistence (020): snapshot for the store + hydrate on startup ───────────
+
+// ContainerSnapshot is one persisted holdings container: its stable id, metadata, and
+// items — enough to restore the container on the next launch. Its LastSeen carries the
+// original observation time, so the freshness layer (008) renders it stale until it is
+// re-seen live.
+type ContainerSnapshot struct {
+	GUID     string
+	Location model.Location
+	City     string
+	Tab      string
+	LastSeen int64
+	Pinned   bool
+	Items    []model.HoldingItem
+}
+
+// Snapshot returns a read-only copy of every tracked container for persistence (020).
+func (a *Aggregator) Snapshot() []ContainerSnapshot {
+	a.mu.Lock()
+	defer a.mu.Unlock()
+	out := make([]ContainerSnapshot, 0, len(a.containers))
+	for guid, c := range a.containers {
+		items := make([]model.HoldingItem, 0, len(c.items))
+		for _, it := range c.items {
+			items = append(items, it)
+		}
+		out = append(out, ContainerSnapshot{
+			GUID: guid, Location: c.location, City: c.city, Tab: c.tab,
+			LastSeen: c.lastSeen, Pinned: c.pinned, Items: items,
+		})
+	}
+	return out
+}
+
+// SeedContainers restores persisted containers at startup (020). A container whose live
+// data already arrived this session is NEVER overwritten (the seed only fills gaps). The
+// restored LastSeen keeps the freshness/stale labelling honest until a live re-observe.
+func (a *Aggregator) SeedContainers(snaps []ContainerSnapshot) {
+	a.mu.Lock()
+	defer a.mu.Unlock()
+	for _, sn := range snaps {
+		if _, exists := a.containers[sn.GUID]; exists {
+			continue // live data already claimed this container — do not clobber it
+		}
+		c := a.ensureContainer(sn.GUID) // bounded: appends to order + evicts oldest unpinned
+		c.location, c.city, c.tab, c.lastSeen, c.pinned = sn.Location, sn.City, sn.Tab, sn.LastSeen, sn.Pinned
+		c.items = make(map[int]model.HoldingItem, len(sn.Items))
+		for _, it := range sn.Items {
+			c.items[it.ObjID] = it
+			if it.ObjID != 0 {
+				a.objLoc[it.ObjID] = sn.GUID
+			}
+		}
+	}
+}

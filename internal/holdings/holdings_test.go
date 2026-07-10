@@ -346,3 +346,52 @@ func TestPhysicalOpenEvictsSummary(t *testing.T) {
 		t.Fatalf("backfill must migrate + evict the summary overlap: %+v", list)
 	}
 }
+
+// 020 US1 / C2 — Snapshot()→SeedContainers() hydrates a fresh aggregator with the persisted
+// items at their original lastSeen (stale), and a live SetContainer(sameID) REPLACES only
+// that container while other (stale) containers are untouched (SC-002).
+func TestSeedContainersHydratesAndReplaces(t *testing.T) {
+	src, _ := newAgg(t)
+	src.SetContainer("c1", "owner", slots(920, 837), 1000) // 2 items, lastSeen 1000
+	snaps := src.Snapshot()
+	if len(snaps) != 1 || len(snaps[0].Items) != 2 {
+		t.Fatalf("snapshot must carry the container's 2 items, got %+v", snaps)
+	}
+
+	dst, _ := newAgg(t)
+	dst.SeedContainers(snaps)
+	rows := dst.List()
+	if len(rows) != 2 {
+		t.Fatalf("hydrate must restore 2 items, got %d", len(rows))
+	}
+	for _, r := range rows {
+		if r.LastSeen != 1000 {
+			t.Fatalf("hydrated item must carry the persisted lastSeen 1000 (stale), got %d", r.LastSeen)
+		}
+	}
+
+	// A second stale container arrives from persistence.
+	dst.SeedContainers([]ContainerSnapshot{{
+		GUID: "c2", Location: model.LocInventory, Tab: "Bag", LastSeen: 500,
+		Items: []model.HoldingItem{{ObjID: 99, Item: model.Item{Index: 837}, Count: 1, LastSeen: 500}},
+	}})
+	// Live re-observe of c1 replaces it (now 1 item); c2 stays (SC-002 no cross-effect).
+	dst.SetContainer("c1", "owner", slots(920), 2000)
+	if n := len(dst.List()); n != 2 { // c1:1 + c2:1
+		t.Fatalf("after replacing c1, want 2 rows (c1:1 + c2:1), got %d", n)
+	}
+}
+
+// 020 US1 — SeedContainers never clobbers a container that live data already claimed.
+func TestSeedContainersDoesNotClobberLive(t *testing.T) {
+	a, _ := newAgg(t)
+	a.SetContainer("c1", "owner", slots(920), 2000) // live: 1 item
+	a.SeedContainers([]ContainerSnapshot{{
+		GUID: "c1", Location: model.LocInventory, Tab: "Bag", LastSeen: 100,
+		Items: []model.HoldingItem{{ObjID: 5, Item: model.Item{Index: 837}, Count: 9, LastSeen: 100}},
+	}})
+	rows := a.List()
+	if len(rows) != 1 || rows[0].Item.Index != 920 {
+		t.Fatalf("stale seed must not overwrite live c1, got %+v", rows)
+	}
+}
