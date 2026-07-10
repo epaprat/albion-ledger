@@ -780,6 +780,7 @@ type StateStore interface {
 	SaveWallet(ctx context.Context, silver, lastSeen int64) error
 	SaveSpecBoard(ctx context.Context, boardJSON string, lastSeen int64) error
 	SaveFlowCheckpoint(ctx context.Context, cp flow.Checkpoint) error
+	SaveFlowSession(ctx context.Context, cs flow.CompletedSession) error
 }
 
 // SetStateStore wires the view-state persistence sink (nil keeps state in-memory).
@@ -856,6 +857,12 @@ func (s *Service) flushState(store StateStore) {
 				log.Printf("spec-board store write failed: %v", err)
 				s.specDirty.Store(true)
 			}
+		}
+	}
+	// Flow sessions that idle-closed since the last flush → permanent history (020 US4).
+	for _, cs := range s.flow.DrainCompleted() {
+		if err := store.SaveFlowSession(context.Background(), cs); err != nil {
+			log.Printf("flow session store write failed: %v", err)
 		}
 	}
 	// Flow checkpoint (020 US4, AFM): persist the live session every tick so a reopen can

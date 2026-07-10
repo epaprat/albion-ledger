@@ -310,3 +310,24 @@ func TestFlowCheckpointIdle(t *testing.T) {
 		t.Fatal("an idle ledger must not produce a checkpoint")
 	}
 }
+
+// 020 US4 — when a session idle-closes and a new one starts, the closed session is queued
+// for the permanent history (AFM completed-session model).
+func TestFlowMidSessionPromotion(t *testing.T) {
+	l, _ := newLedger()
+	l.IngestSilver("s1", 100, 1000, "mob") // session A
+	l.IngestSilver("s2", 50, 2000, "mob")  // still A → net 150
+	// An earning past the idle window starts session B and promotes A.
+	l.IngestSilver("s3", 200, 2000+DefaultIdleMS+1, "mob")
+
+	done := l.DrainCompleted()
+	if len(done) != 1 || done[0].NetSilver != 150 || done[0].StartedMS != 1000 {
+		t.Fatalf("closed session A must be promoted (net 150), got %+v", done)
+	}
+	if s := l.Summary(2000 + DefaultIdleMS + 1); s.NetSilver != 200 {
+		t.Fatalf("live session B net = %d, want 200", s.NetSilver)
+	}
+	if d := l.DrainCompleted(); len(d) != 0 {
+		t.Fatalf("second drain must be empty, got %d", len(d))
+	}
+}

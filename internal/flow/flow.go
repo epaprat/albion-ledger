@@ -78,7 +78,15 @@ type Ledger struct {
 	fame           int64
 	unvaluedCount  int
 	eventCount     int
+
+	// pendingCompleted holds sessions that closed (idle-timeout → a new session started)
+	// and are waiting to be persisted to the permanent history (020 US4). Bounded: a slow
+	// or absent drainer must not grow it without limit (Principle XI).
+	pendingCompleted []CompletedSession
 }
+
+// pendingCompletedCap bounds the un-drained completed-session queue (Principle XI).
+const pendingCompletedCap = 64
 
 // New creates a Ledger. idleMS<=0 → DefaultIdleMS; maxEvents<=0 → DefaultCap.
 func New(val port.Valuer, idleMS int64, maxEvents int) *Ledger {
@@ -326,6 +334,13 @@ func (l *Ledger) touch(ts int64) {
 }
 
 func (l *Ledger) startSession(ts int64) {
+	// A new session is beginning: the one that just ended (had earnings) is promoted to the
+	// pending history queue before its state is reset (AFM completed-session model, 020 US4).
+	if l.active && l.eventCount > 0 {
+		if len(l.pendingCompleted) < pendingCompletedCap {
+			l.pendingCompleted = append(l.pendingCompleted, l.completedLocked())
+		}
+	}
 	l.active = true
 	l.startedMS = ts
 	l.lastActivityMS = ts
@@ -460,14 +475,8 @@ func (l *Ledger) RestoreCheckpoint(cp Checkpoint, now int64) bool {
 	return true
 }
 
-// CompletedSnapshot summarizes the session (active or last) for the permanent history;
-// ok=false when nothing was ever earned.
-func (l *Ledger) CompletedSnapshot() (CompletedSession, bool) {
-	l.mu.Lock()
-	defer l.mu.Unlock()
-	if l.eventCount == 0 {
-		return CompletedSession{}, false
-	}
+// completedLocked builds the current session's completed summary (caller holds l.mu).
+func (l *Ledger) completedLocked() CompletedSession {
 	elapsed := l.lastActivityMS - l.startedMS
 	var perHour int64
 	if elapsed > 0 {
@@ -477,7 +486,31 @@ func (l *Ledger) CompletedSnapshot() (CompletedSession, bool) {
 		StartedMS: l.startedMS, EndedMS: l.lastActivityMS, ActiveElapsedMS: elapsed,
 		NetSilver: l.netSilver, LootValue: l.lootValue, GatherValue: l.gatherValue, Fame: l.fame,
 		SilverPerHour: perHour, Items: l.itemsLocked(),
-	}, true
+	}
+}
+
+// CompletedSnapshot summarizes the session (active or last) for the permanent history;
+// ok=false when nothing was ever earned.
+func (l *Ledger) CompletedSnapshot() (CompletedSession, bool) {
+	l.mu.Lock()
+	defer l.mu.Unlock()
+	if l.eventCount == 0 {
+		return CompletedSession{}, false
+	}
+	return l.completedLocked(), true
+}
+
+// DrainCompleted returns and clears the sessions that closed since the last drain, so the
+// caller can persist them to the permanent history (020 US4).
+func (l *Ledger) DrainCompleted() []CompletedSession {
+	l.mu.Lock()
+	defer l.mu.Unlock()
+	if len(l.pendingCompleted) == 0 {
+		return nil
+	}
+	out := l.pendingCompleted
+	l.pendingCompleted = nil
+	return out
 }
 
 // CompletedFromCheckpoint builds a completed-session summary directly from a checkpoint —
