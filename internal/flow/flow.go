@@ -378,3 +378,119 @@ func (l *Ledger) removeUnvaluedRef(key ik, id string) {
 		delete(l.unvaluedByItem, key)
 	}
 }
+
+// ── Session checkpoint / resume (020, AFM model) ─────────────────────────────
+
+// CheckpointItem is one per-item session total inside a checkpoint / completed session.
+type CheckpointItem struct {
+	Kind     model.FlowKind
+	Index    int
+	Quality  int
+	Qty      int
+	LastSeen int64
+}
+
+// Checkpoint is the full live-session state, enough to RESUME it on the next launch.
+type Checkpoint struct {
+	StartedMS      int64
+	LastActivityMS int64
+	NetSilver      int64
+	LootValue      int64
+	GatherValue    int64
+	Fame           int64
+	UnvaluedCount  int
+	EventCount     int
+	Zone           string
+	Items          []CheckpointItem
+}
+
+// CompletedSession is a finished session's summary + item breakdown (permanent history).
+type CompletedSession struct {
+	StartedMS       int64
+	EndedMS         int64
+	ActiveElapsedMS int64
+	NetSilver       int64
+	LootValue       int64
+	GatherValue     int64
+	Fame            int64
+	SilverPerHour   int64
+	Items           []CheckpointItem
+}
+
+func (l *Ledger) itemsLocked() []CheckpointItem {
+	out := make([]CheckpointItem, 0, len(l.itemAgg))
+	for k, st := range l.itemAgg {
+		out = append(out, CheckpointItem{Kind: k.kind, Index: k.index, Quality: k.quality, Qty: st.qty, LastSeen: st.lastSeen})
+	}
+	return out
+}
+
+// Checkpoint returns the current live session for persistence; ok=false when idle (no
+// active session to save).
+func (l *Ledger) Checkpoint() (Checkpoint, bool) {
+	l.mu.Lock()
+	defer l.mu.Unlock()
+	if !l.active {
+		return Checkpoint{}, false
+	}
+	return Checkpoint{
+		StartedMS: l.startedMS, LastActivityMS: l.lastActivityMS,
+		NetSilver: l.netSilver, LootValue: l.lootValue, GatherValue: l.gatherValue, Fame: l.fame,
+		UnvaluedCount: l.unvaluedCount, EventCount: l.eventCount, Zone: l.zone,
+		Items: l.itemsLocked(),
+	}, true
+}
+
+// RestoreCheckpoint resumes a persisted session IF it is still within the idle window and no
+// live session has started yet this run. Returns true when resumed.
+func (l *Ledger) RestoreCheckpoint(cp Checkpoint, now int64) bool {
+	l.mu.Lock()
+	defer l.mu.Unlock()
+	if l.active || now-cp.LastActivityMS > l.idleMS {
+		return false
+	}
+	l.active = true
+	l.startedMS, l.lastActivityMS = cp.StartedMS, cp.LastActivityMS
+	l.netSilver, l.lootValue, l.gatherValue, l.fame = cp.NetSilver, cp.LootValue, cp.GatherValue, cp.Fame
+	l.unvaluedCount, l.eventCount, l.zone = cp.UnvaluedCount, cp.EventCount, cp.Zone
+	l.itemAgg = make(map[ikk]*itemStat, len(cp.Items))
+	for _, it := range cp.Items {
+		l.itemAgg[ikk{it.Kind, it.Index, it.Quality}] = &itemStat{qty: it.Qty, lastSeen: it.LastSeen}
+	}
+	return true
+}
+
+// CompletedSnapshot summarizes the session (active or last) for the permanent history;
+// ok=false when nothing was ever earned.
+func (l *Ledger) CompletedSnapshot() (CompletedSession, bool) {
+	l.mu.Lock()
+	defer l.mu.Unlock()
+	if l.eventCount == 0 {
+		return CompletedSession{}, false
+	}
+	elapsed := l.lastActivityMS - l.startedMS
+	var perHour int64
+	if elapsed > 0 {
+		perHour = l.netSilver * 3_600_000 / elapsed
+	}
+	return CompletedSession{
+		StartedMS: l.startedMS, EndedMS: l.lastActivityMS, ActiveElapsedMS: elapsed,
+		NetSilver: l.netSilver, LootValue: l.lootValue, GatherValue: l.gatherValue, Fame: l.fame,
+		SilverPerHour: perHour, Items: l.itemsLocked(),
+	}, true
+}
+
+// CompletedFromCheckpoint builds a completed-session summary directly from a checkpoint —
+// used to promote an idle-expired checkpoint to history at startup, without a live ledger.
+func CompletedFromCheckpoint(cp Checkpoint) CompletedSession {
+	elapsed := cp.LastActivityMS - cp.StartedMS
+	var perHour int64
+	if elapsed > 0 {
+		perHour = cp.NetSilver * 3_600_000 / elapsed
+	}
+	return CompletedSession{
+		StartedMS: cp.StartedMS, EndedMS: cp.LastActivityMS, ActiveElapsedMS: elapsed,
+		NetSilver: cp.NetSilver, LootValue: cp.LootValue, GatherValue: cp.GatherValue, Fame: cp.Fame,
+		SilverPerHour: perHour, Items: cp.Items,
+	}
+}

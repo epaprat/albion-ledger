@@ -6,6 +6,7 @@ import (
 	"testing"
 
 	"github.com/epaprat/albion-ledger/internal/domain/model"
+	"github.com/epaprat/albion-ledger/internal/flow"
 	"github.com/epaprat/albion-ledger/internal/holdings"
 )
 
@@ -116,5 +117,52 @@ func TestSpecBoardRoundTrip(t *testing.T) {
 	board, seen, ok, err := db.LoadSpecBoard(ctx)
 	if err != nil || !ok || seen != 1700 || board != `{"masteries":[{"index":1}]}` {
 		t.Fatalf("spec board round-trip wrong: %q seen=%d ok=%v err=%v", board, seen, ok, err)
+	}
+}
+
+// 020 US4 / C5 — flow checkpoint upserts to one row, loads back, and deletes; completed
+// sessions append to a capped history.
+func TestFlowCheckpointAndSessionStore(t *testing.T) {
+	db, err := Open(filepath.Join(t.TempDir(), "test.db"))
+	if err != nil {
+		t.Fatal(err)
+	}
+	defer db.Close()
+	ctx := context.Background()
+
+	if _, ok, _ := db.LoadFlowCheckpoint(ctx); ok {
+		t.Fatal("empty DB must have no checkpoint")
+	}
+	cp := flow.Checkpoint{StartedMS: 1000, LastActivityMS: 2000, NetSilver: 300, EventCount: 2,
+		Items: []flow.CheckpointItem{{Index: 920, Qty: 5}}}
+	if err := db.SaveFlowCheckpoint(ctx, cp); err != nil {
+		t.Fatal(err)
+	}
+	got, ok, err := db.LoadFlowCheckpoint(ctx)
+	if err != nil || !ok || got.NetSilver != 300 || len(got.Items) != 1 || got.Items[0].Qty != 5 {
+		t.Fatalf("checkpoint round-trip wrong: %+v ok=%v err=%v", got, ok, err)
+	}
+	// Upsert stays a single row.
+	cp.NetSilver = 400
+	if err := db.SaveFlowCheckpoint(ctx, cp); err != nil {
+		t.Fatal(err)
+	}
+	if got, _, _ := db.LoadFlowCheckpoint(ctx); got.NetSilver != 400 {
+		t.Fatalf("checkpoint upsert failed: %d", got.NetSilver)
+	}
+	if err := db.DeleteFlowCheckpoint(ctx); err != nil {
+		t.Fatal(err)
+	}
+	if _, ok, _ := db.LoadFlowCheckpoint(ctx); ok {
+		t.Fatal("checkpoint must be gone after delete")
+	}
+
+	// Completed-session history.
+	if err := db.SaveFlowSession(ctx, flow.CompletedFromCheckpoint(cp)); err != nil {
+		t.Fatal(err)
+	}
+	sessions, err := db.LoadFlowSessions(ctx, 10)
+	if err != nil || len(sessions) != 1 || sessions[0].NetSilver != 400 {
+		t.Fatalf("session history wrong: %+v err=%v", sessions, err)
 	}
 }

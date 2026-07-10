@@ -14,6 +14,7 @@ import (
 	_ "modernc.org/sqlite"
 
 	"github.com/epaprat/albion-ledger/internal/domain/model"
+	"github.com/epaprat/albion-ledger/internal/flow"
 	"github.com/epaprat/albion-ledger/internal/holdings"
 	"github.com/epaprat/albion-ledger/internal/valuation"
 	"github.com/epaprat/albion-ledger/internal/zonestats"
@@ -89,6 +90,16 @@ CREATE TABLE IF NOT EXISTS wallet_state (
 CREATE TABLE IF NOT EXISTS spec_board (
   id INTEGER PRIMARY KEY,
   board_json TEXT, last_seen INTEGER
+);
+CREATE TABLE IF NOT EXISTS flow_checkpoint (
+  id INTEGER PRIMARY KEY,
+  payload_json TEXT, last_activity INTEGER
+);
+CREATE TABLE IF NOT EXISTS flow_sessions (
+  session_id INTEGER PRIMARY KEY AUTOINCREMENT,
+  started_ms INTEGER, ended_ms INTEGER, active_elapsed_ms INTEGER,
+  net_silver INTEGER, loot_value INTEGER, gather_value INTEGER, fame INTEGER,
+  silver_per_hour INTEGER, items_json TEXT
 );
 `
 
@@ -740,4 +751,89 @@ func (s *SQLite) LoadSpecBoard(ctx context.Context) (boardJSON string, lastSeen 
 		return "", 0, false, err
 	}
 	return boardJSON, lastSeen, true, nil
+}
+
+// flowSessionsCap bounds the persisted completed-session history (Principle XI).
+const flowSessionsCap = 200
+
+// SaveFlowCheckpoint upserts the single live-session checkpoint (020 US4, AFM model):
+// a later launch resumes from it. Older checkpoints are overwritten (one row).
+func (s *SQLite) SaveFlowCheckpoint(ctx context.Context, cp flow.Checkpoint) error {
+	b, err := json.Marshal(cp)
+	if err != nil {
+		return err
+	}
+	_, err = s.db.ExecContext(ctx,
+		`INSERT OR REPLACE INTO flow_checkpoint (id, payload_json, last_activity) VALUES (1, ?, ?)`,
+		string(b), cp.LastActivityMS)
+	return err
+}
+
+// LoadFlowCheckpoint returns the persisted live-session checkpoint; ok=false when none or
+// when the payload is corrupt (the caller then starts a clean session, FR-008).
+func (s *SQLite) LoadFlowCheckpoint(ctx context.Context) (cp flow.Checkpoint, ok bool, err error) {
+	var payload string
+	err = s.db.QueryRowContext(ctx, `SELECT payload_json FROM flow_checkpoint WHERE id=1`).Scan(&payload)
+	if err == sql.ErrNoRows {
+		return flow.Checkpoint{}, false, nil
+	}
+	if err != nil {
+		return flow.Checkpoint{}, false, err
+	}
+	if err := json.Unmarshal([]byte(payload), &cp); err != nil {
+		log.Printf("store LoadFlowCheckpoint: corrupt payload, discarding: %v", err)
+		return flow.Checkpoint{}, false, nil
+	}
+	return cp, true, nil
+}
+
+// DeleteFlowCheckpoint clears the live-session checkpoint (after resume or promotion).
+func (s *SQLite) DeleteFlowCheckpoint(ctx context.Context) error {
+	_, err := s.db.ExecContext(ctx, `DELETE FROM flow_checkpoint`)
+	return err
+}
+
+// SaveFlowSession appends one completed session to the permanent history, then prunes
+// beyond the cap (newest kept).
+func (s *SQLite) SaveFlowSession(ctx context.Context, cs flow.CompletedSession) error {
+	items, err := json.Marshal(cs.Items)
+	if err != nil {
+		return err
+	}
+	if _, err := s.db.ExecContext(ctx, `
+		INSERT INTO flow_sessions
+		  (started_ms, ended_ms, active_elapsed_ms, net_silver, loot_value, gather_value, fame, silver_per_hour, items_json)
+		VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+		cs.StartedMS, cs.EndedMS, cs.ActiveElapsedMS, cs.NetSilver, cs.LootValue, cs.GatherValue, cs.Fame, cs.SilverPerHour, string(items),
+	); err != nil {
+		return err
+	}
+	_, err = s.db.ExecContext(ctx, `
+		DELETE FROM flow_sessions WHERE session_id NOT IN (
+		  SELECT session_id FROM flow_sessions ORDER BY ended_ms DESC LIMIT ?)`, flowSessionsCap)
+	return err
+}
+
+// LoadFlowSessions returns the most recent completed sessions (permanent history).
+func (s *SQLite) LoadFlowSessions(ctx context.Context, limit int) ([]flow.CompletedSession, error) {
+	rows, err := s.db.QueryContext(ctx, `
+		SELECT started_ms, ended_ms, active_elapsed_ms, net_silver, loot_value, gather_value, fame, silver_per_hour, items_json
+		FROM flow_sessions ORDER BY ended_ms DESC LIMIT ?`, limit)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	var out []flow.CompletedSession
+	for rows.Next() {
+		var cs flow.CompletedSession
+		var items string
+		if err := rows.Scan(&cs.StartedMS, &cs.EndedMS, &cs.ActiveElapsedMS, &cs.NetSilver, &cs.LootValue, &cs.GatherValue, &cs.Fame, &cs.SilverPerHour, &items); err != nil {
+			return nil, err
+		}
+		if err := json.Unmarshal([]byte(items), &cs.Items); err != nil {
+			continue // skip a corrupt history row
+		}
+		out = append(out, cs)
+	}
+	return out, rows.Err()
 }

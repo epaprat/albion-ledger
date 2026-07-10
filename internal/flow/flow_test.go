@@ -264,3 +264,49 @@ func TestFameSeparateFromSilver(t *testing.T) {
 		t.Fatalf("fame/hr = %d, want 60000", s.FamePerHour)
 	}
 }
+
+// 020 US4 / C5 — a live session checkpoints, resumes within the idle window (totals + time
+// continue), does NOT resume once expired, and promotes to a completed summary.
+func TestFlowCheckpointResume(t *testing.T) {
+	l, _ := newLedger()
+	l.IngestSilver("s1", 100, 1000, "mob")
+	l.IngestSilver("s2", 200, 2000, "mob")
+	cp, ok := l.Checkpoint()
+	if !ok || cp.NetSilver != 300 || cp.EventCount != 2 || cp.StartedMS != 1000 {
+		t.Fatalf("checkpoint wrong: %+v ok=%v", cp, ok)
+	}
+
+	// Resume into a fresh ledger within the idle window → the totals continue.
+	l2, _ := newLedger()
+	if !l2.RestoreCheckpoint(cp, 2000+60_000) {
+		t.Fatal("must resume a checkpoint within the idle window")
+	}
+	if s := l2.Summary(2000 + 60_000); s.NetSilver != 300 {
+		t.Fatalf("resumed net = %d, want 300", s.NetSilver)
+	}
+	// A new earning stacks on the resumed totals.
+	l2.IngestSilver("s3", 50, 2000+120_000, "mob")
+	if s := l2.Summary(2000 + 120_000); s.NetSilver != 350 {
+		t.Fatalf("post-resume net = %d, want 350", s.NetSilver)
+	}
+
+	// An expired checkpoint (past the idle window) must NOT resume.
+	l3, _ := newLedger()
+	if l3.RestoreCheckpoint(cp, 2000+DefaultIdleMS+1) {
+		t.Fatal("expired checkpoint must not resume")
+	}
+
+	// Promoting the checkpoint to history preserves its totals.
+	cs := CompletedFromCheckpoint(cp)
+	if cs.NetSilver != 300 || cs.StartedMS != 1000 || cs.EndedMS != 2000 {
+		t.Fatalf("completed-from-checkpoint wrong: %+v", cs)
+	}
+}
+
+// An idle ledger has no session to checkpoint.
+func TestFlowCheckpointIdle(t *testing.T) {
+	l, _ := newLedger()
+	if _, ok := l.Checkpoint(); ok {
+		t.Fatal("an idle ledger must not produce a checkpoint")
+	}
+}

@@ -779,6 +779,7 @@ type StateStore interface {
 	LoadContainers(ctx context.Context) ([]holdings.ContainerSnapshot, error)
 	SaveWallet(ctx context.Context, silver, lastSeen int64) error
 	SaveSpecBoard(ctx context.Context, boardJSON string, lastSeen int64) error
+	SaveFlowCheckpoint(ctx context.Context, cp flow.Checkpoint) error
 }
 
 // SetStateStore wires the view-state persistence sink (nil keeps state in-memory).
@@ -857,6 +858,25 @@ func (s *Service) flushState(store StateStore) {
 			}
 		}
 	}
+	// Flow checkpoint (020 US4, AFM): persist the live session every tick so a reopen can
+	// resume it. No dirty flag — the session's elapsed time advances continuously, so the
+	// latest checkpoint is always worth writing while a session is active.
+	if cp, ok := s.flow.Checkpoint(); ok {
+		if err := store.SaveFlowCheckpoint(context.Background(), cp); err != nil {
+			log.Printf("flow checkpoint store write failed: %v", err)
+		}
+	}
+}
+
+// ResumeFlow restores a persisted live session at startup (020 US4). Returns true when the
+// session was still within the idle window and resumed; false when it had expired (the
+// caller then promotes the checkpoint to completed history).
+func (s *Service) ResumeFlow(cp flow.Checkpoint) bool {
+	if !s.flow.RestoreCheckpoint(cp, s.nowMS()) {
+		return false
+	}
+	s.emitFlow()
+	return true
 }
 
 // SeedWallet restores the persisted wallet balance at startup (020 US2): shown stale until a
