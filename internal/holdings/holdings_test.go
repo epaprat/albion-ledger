@@ -522,3 +522,31 @@ func TestSummaryReconcilesCityLessPhysicalReverseOrder(t *testing.T) {
 		}
 	}
 }
+
+// 020 live-test (2026-07-10, persistence): a K summary persisted last session hydrates
+// via SeedContainers, then the player opens the SAME bank physically this session. The
+// hydrated summary must keep its Summary flag so the read-time dedup skips it against the
+// live physical — otherwise it loads as a pseudo-physical and both count (247 = 119+128).
+func TestHydratedSummaryDedupsAgainstLivePhysical(t *testing.T) {
+	a, _ := newAgg(t)
+	// Persisted K summary from a prior session (Summary:true is the fix — was lost before).
+	a.SeedContainers([]ContainerSnapshot{{
+		GUID: "vault:Fort Sterling:1", Location: model.LocBank, City: "Fort Sterling", Tab: "1",
+		LastSeen: 1000, Summary: true,
+		Items: []model.HoldingItem{{ObjID: -(920*16 + 1) - 1, Item: model.Item{Index: 920}, Count: 5}},
+	}})
+	if n := len(a.List()); n != 1 {
+		t.Fatalf("hydrated summary must render 1 row, got %d", n)
+	}
+	// Same bank opened physically this session (city inferred from the hydrated summary).
+	a.SetBankVault([]string{"o1"}, []string{"1"})
+	a.SetContainer("physWireGuid", "o1", []SlotItem{{ObjID: 7001, Ref: ItemRef{Index: 920}}}, 2000)
+
+	rows := a.List()
+	if len(rows) != 1 || rows[0].ObjID != 7001 {
+		t.Fatalf("physical must win and the hydrated summary must NOT double-count: %+v", rows)
+	}
+	if rows[0].City != "Fort Sterling" {
+		t.Fatalf("physical must adopt the hydrated summary's city, got %q", rows[0].City)
+	}
+}

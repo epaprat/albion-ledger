@@ -727,7 +727,10 @@ type ContainerSnapshot struct {
 	Tab      string
 	LastSeen int64
 	Pinned   bool
-	Items    []model.HoldingItem
+	Summary  bool // a K-overview summary tab (not a physical open) — restored so the read-time
+	//               physical-vs-summary dedup still works after hydration (020 live-test: a
+	//               summary hydrated as a pseudo-physical double-counted its live physical peer)
+	Items []model.HoldingItem
 }
 
 // Snapshot returns a read-only copy of every tracked container for persistence (020).
@@ -750,7 +753,7 @@ func (a *Aggregator) Snapshot() []ContainerSnapshot {
 		}
 		out = append(out, ContainerSnapshot{
 			GUID: guid, Location: c.location, City: c.city, Tab: c.tab,
-			LastSeen: c.lastSeen, Pinned: c.pinned, Items: items,
+			LastSeen: c.lastSeen, Pinned: c.pinned, Summary: c.summary, Items: items,
 		})
 	}
 	return out
@@ -771,6 +774,8 @@ func (a *Aggregator) SeedContainers(snaps []ContainerSnapshot) {
 		}
 		c := a.ensureContainer(sn.GUID) // returns the pre-created empty one, or a fresh bounded slot
 		c.location, c.city, c.tab, c.lastSeen = sn.Location, sn.City, sn.Tab, sn.LastSeen
+		c.summary = sn.Summary // restore the K-summary flag so the physical-vs-summary
+		//                                  dedup still fires against a live physical open (020 fix)
 		c.pinned = c.pinned || sn.Pinned // keep a pre-created self container pinned
 		c.items = make(map[int]model.HoldingItem, len(sn.Items))
 		for _, it := range sn.Items {

@@ -81,7 +81,8 @@ CREATE TABLE IF NOT EXISTS trades (
 CREATE TABLE IF NOT EXISTS holdings_containers (
   container_id TEXT PRIMARY KEY,
   location TEXT, city TEXT, tab TEXT,
-  items_json TEXT, last_seen INTEGER, pinned INTEGER
+  items_json TEXT, last_seen INTEGER, pinned INTEGER,
+  summary INTEGER DEFAULT 0
 );
 CREATE TABLE IF NOT EXISTS wallet_state (
   id INTEGER PRIMARY KEY,
@@ -162,6 +163,17 @@ func migrate(db *sql.DB) error {
 		return err
 	}
 	if err := addColumnIfMissing("flow_events", "zone", `TEXT DEFAULT ''`); err != nil {
+		return err
+	}
+	// The K-summary flag is persisted (020 live-test fix): without it, a hydrated summary
+	// loaded as a pseudo-physical and the read-time dedup could not skip it, double-counting
+	// its live physical peer (247 = 119 summary + 128 physical). Backfill existing DBs: every
+	// persisted bank container is a summary (Snapshot() never persists a physical open), and
+	// the vault: prefix is the summary stable-id convention.
+	if err := addColumnIfMissing("holdings_containers", "summary", `INTEGER DEFAULT 0`); err != nil {
+		return err
+	}
+	if _, err := db.Exec(`UPDATE holdings_containers SET summary=1 WHERE container_id LIKE 'vault:%'`); err != nil {
 		return err
 	}
 	// Ephemeral physical bank containers (keyed by a per-open wire guid) must never have been
@@ -671,11 +683,15 @@ func (s *SQLite) SaveContainer(ctx context.Context, c holdings.ContainerSnapshot
 	if c.Pinned {
 		pinned = 1
 	}
+	summary := 0
+	if c.Summary {
+		summary = 1
+	}
 	if _, err := s.db.ExecContext(ctx, `
 		INSERT OR REPLACE INTO holdings_containers
-		  (container_id, location, city, tab, items_json, last_seen, pinned)
-		VALUES (?, ?, ?, ?, ?, ?, ?)`,
-		c.GUID, string(c.Location), c.City, c.Tab, string(itemsJSON), c.LastSeen, pinned,
+		  (container_id, location, city, tab, items_json, last_seen, pinned, summary)
+		VALUES (?, ?, ?, ?, ?, ?, ?, ?)`,
+		c.GUID, string(c.Location), c.City, c.Tab, string(itemsJSON), c.LastSeen, pinned, summary,
 	); err != nil {
 		return err
 	}
@@ -690,7 +706,7 @@ func (s *SQLite) SaveContainer(ctx context.Context, c holdings.ContainerSnapshot
 // A container with corrupt items_json is skipped (never crashes hydration, FR-008).
 func (s *SQLite) LoadContainers(ctx context.Context) ([]holdings.ContainerSnapshot, error) {
 	rows, err := s.db.QueryContext(ctx, `
-		SELECT container_id, location, city, tab, items_json, last_seen, pinned
+		SELECT container_id, location, city, tab, items_json, last_seen, pinned, summary
 		FROM holdings_containers`)
 	if err != nil {
 		return nil, err
@@ -700,12 +716,13 @@ func (s *SQLite) LoadContainers(ctx context.Context) ([]holdings.ContainerSnapsh
 	for rows.Next() {
 		var c holdings.ContainerSnapshot
 		var loc, itemsJSON string
-		var pinned int
-		if err := rows.Scan(&c.GUID, &loc, &c.City, &c.Tab, &itemsJSON, &c.LastSeen, &pinned); err != nil {
+		var pinned, summary int
+		if err := rows.Scan(&c.GUID, &loc, &c.City, &c.Tab, &itemsJSON, &c.LastSeen, &pinned, &summary); err != nil {
 			return nil, err
 		}
 		c.Location = model.Location(loc)
 		c.Pinned = pinned == 1
+		c.Summary = summary == 1
 		if err := json.Unmarshal([]byte(itemsJSON), &c.Items); err != nil {
 			log.Printf("store LoadContainers: skipping corrupt container %s: %v", c.GUID, err)
 			continue
