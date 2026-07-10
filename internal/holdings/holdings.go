@@ -79,6 +79,14 @@ func New(cat port.Catalog, val port.Valuer, staleAfter int64) *Aggregator {
 func (a *Aggregator) SetCurrentCity(city string) {
 	a.mu.Lock()
 	defer a.mu.Unlock()
+	a.setCurrentCityLocked(city)
+}
+
+// setCurrentCityLocked is SetCurrentCity's body under an already-held lock. It is
+// also invoked from SetContainer when the city is inferred mid-session (event 163
+// never fired), so an inferred city triggers the SAME backfill/migrate/evict heal
+// as a real city-entry — otherwise earlier city-less tabs stay stranded.
+func (a *Aggregator) setCurrentCityLocked(city string) {
 	a.currentCity = city
 	if city == "" {
 		return
@@ -175,7 +183,19 @@ func (a *Aggregator) SetContainer(containerGUID, ownerGUID string, slots []SlotI
 		if tabName != "" {
 			tab = tabName
 		}
-		city = a.currentCity              // "" until a current city is known (US3)
+		city = a.currentCity // "" until a current city is known (US3)
+		if city == "" {
+			// Mid-session start: event 163 (city entry) never fired, so currentCity is
+			// unknown and this physically-opened tab would land city-less ("Bank" ghost +
+			// no dedup against its K summary → double-count, live-seen 2026-07-10). Derive
+			// the city from the K overview: a summary with THIS tab name pins it when the
+			// name is unique to one city. Once resolved, pin currentCity so the remaining
+			// tabs — including names shared across cities (e.g. "Hammadde") — inherit it.
+			if inferred := a.inferBankCityLocked(tab); inferred != "" {
+				city = inferred
+				a.setCurrentCityLocked(inferred) // full heal: migrate/evict any earlier city-less tabs
+			}
+		}
 		a.bankOwnerCity[ownerGUID] = city // opening the tab pins its city (most reliable)
 	}
 
@@ -500,6 +520,25 @@ func (a *Aggregator) physicalBankTabsLocked() map[string]bool {
 // isDupSummaryLocked reports whether c is a K summary whose (city,tab) a physical already covers.
 func (a *Aggregator) isDupSummaryLocked(c *container, physical map[string]bool) bool {
 	return c.summary && c.location == model.LocBank && physical[bankCityName(c.city)+"\x00"+c.tab]
+}
+
+// inferBankCityLocked derives the current bank's city from the K overview when a tab
+// opens before the city is known (mid-session start, event 163 never fired). A K
+// SUMMARY carrying this tab name pins the city ONLY when the name is unique to one
+// city — ambiguous names shared across cities (e.g. "Hammadde") return "" and wait
+// for an unambiguous tab in the same physical open to resolve currentCity first.
+func (a *Aggregator) inferBankCityLocked(tab string) string {
+	found := ""
+	for _, c := range a.containers {
+		if !c.summary || c.location != model.LocBank || c.tab != tab || c.city == "" {
+			continue
+		}
+		if found != "" && found != c.city {
+			return "" // same tab name in two cities — cannot disambiguate
+		}
+		found = c.city
+	}
+	return found
 }
 
 func (a *Aggregator) Summary(nowMS int64) model.HoldingsSummary {

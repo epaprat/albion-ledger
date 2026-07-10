@@ -435,3 +435,57 @@ func TestSummaryDedupsPhysicalOverSummary(t *testing.T) {
 		t.Fatalf("List must dedup the summary row: want 1, got %d", n)
 	}
 }
+
+// 020 live-test (2026-07-10) — app started already standing at a bank, so event 163 never
+// fired and currentCity stayed "". A physical bank open must still land under the real city
+// (not a "Bank" ghost) and dedup against its K summary: the city is INFERRED from the K
+// overview by matching a tab name unique to one city, then pinned so shared names inherit it.
+func TestBankCityInferredFromSummaryMidSession(t *testing.T) {
+	a, _ := newAgg(t)
+	// K overview arrives for TWO cities. "Setler" is unique to Fort Sterling; "Hammadde"
+	// exists in both → ambiguous on its own.
+	a.SetVaultSummaryTab("vault:Fort Sterling:Setler", "Fort Sterling", "Setler", []ItemRef{{Index: 920, Count: 4}}, 1000)
+	a.SetVaultSummaryTab("vault:Fort Sterling:Hammadde", "Fort Sterling", "Hammadde", []ItemRef{{Index: 837, Count: 5}}, 1000)
+	a.SetVaultSummaryTab("vault:Thetford:Hammadde", "Thetford", "Hammadde", []ItemRef{{Index: 837, Count: 9}}, 1000)
+
+	// Physical open at Fort Sterling (currentCity still ""). Ambiguous "Hammadde" opens FIRST —
+	// it cannot resolve alone, but the unique "Setler" pins the city; once pinned the earlier
+	// city-less Hammadde tab is migrated to Fort Sterling by the heal.
+	a.SetBankVault([]string{"oHam", "oSet"}, []string{"Hammadde", "Setler"})
+	a.SetContainer("physHam", "oHam", []SlotItem{{ObjID: 5001, Ref: ItemRef{Index: 837}}}, 2000)
+	a.SetContainer("physSet", "oSet", []SlotItem{{ObjID: 5002, Ref: ItemRef{Index: 920}}}, 2100)
+
+	for _, r := range a.List() {
+		if r.Location == model.LocBank && r.City == "" {
+			t.Fatalf("physical bank tab left city-less (Bank ghost): %+v", r)
+		}
+	}
+	// Both physical tabs must be Fort Sterling and each counted ONCE (their FS summaries evicted;
+	// the Thetford Hammadde summary is a different city and survives).
+	rows := a.List()
+	fsPhysical := 0
+	for _, r := range rows {
+		if r.City == "Fort Sterling" && r.ObjID >= 0 {
+			fsPhysical++
+		}
+	}
+	if fsPhysical != 2 {
+		t.Fatalf("both FS physical tabs must land under Fort Sterling, got %d in %+v", fsPhysical, rows)
+	}
+	// No Fort Sterling summary may survive alongside its physical peer (dedup).
+	for _, r := range rows {
+		if r.City == "Fort Sterling" && r.ObjID < 0 {
+			t.Fatalf("FS summary must be deduped by its physical peer: %+v", r)
+		}
+	}
+	// Thetford Hammadde (no physical open) still shows as a summary.
+	thetford := false
+	for _, r := range rows {
+		if r.City == "Thetford" && r.Group == "Hammadde" {
+			thetford = true
+		}
+	}
+	if !thetford {
+		t.Fatalf("un-opened Thetford summary must remain: %+v", rows)
+	}
+}
