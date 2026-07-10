@@ -44,6 +44,10 @@ cmd/albion-ledger/build/
 /albion-ledger
 cmd/probe/probe
 cmd/albion-ledger/albion-ledger
+# code-generator scripts, when built from the repo root (they emit data/*.json)
+/gen-spec-nodes
+/gen-catalog
+/gen-clusters
 
 # --- Node / frontend ---
 node_modules/
