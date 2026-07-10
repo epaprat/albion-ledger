@@ -5,6 +5,7 @@ package wailsadapter
 
 import (
 	"context"
+	"encoding/json"
 	"fmt"
 	"log"
 	"sort"
@@ -73,8 +74,10 @@ type Service struct {
 	tradeStore TradeStore                           // marketplace trade persistence (017); nil = in-memory
 	trades     *boundedmap.Map[string, model.Trade] // by trade id (dedup, FR-010; bounded FIFO)
 
-	holdingsStore HoldingsStore // holdings snapshot persistence (020); nil = in-memory
-	holdingsDirty atomic.Bool   // a holdings change is owed a flush (set on the pipeline goroutine, read by the flush loop)
+	holdingsStore StateStore  // view-state persistence (holdings/wallet/spec, 020); nil = in-memory
+	holdingsDirty atomic.Bool // a holdings change is owed a flush (set on the pipeline goroutine, read by the flush loop)
+	walletDirty   atomic.Bool // a wallet change is owed a flush (020 US2)
+	specDirty     atomic.Bool // a spec-board change is owed a flush (020 US3)
 
 	flowBatch bool // coalesce flow-changed emits during a loot burst (019)
 	flowDirty bool // a flow refresh is owed when the batch ends
@@ -334,6 +337,7 @@ func (s *Service) SetSpec(spec model.CharacterSpec) {
 	s.spec = spec
 	snap := s.spec
 	s.mu.Unlock()
+	s.specDirty.Store(true) // persist the full board (020 US3)
 	if s.emit != nil {
 		s.emit.Emit(EventSpecChanged, snap)
 	}
@@ -707,6 +711,7 @@ func (s *Service) SetWallet(silver int64, ts int64) {
 	}
 	s.mu.Unlock()
 	if applied {
+		s.walletDirty.Store(true) // persist the new balance (020 US2)
 		s.emitHoldings()
 	}
 }
@@ -767,15 +772,17 @@ func (s *Service) SetTradeStore(store TradeStore) {
 
 // ── Holdings persistence & hydration (020) ───────────────────────────────────
 
-// HoldingsStore persists the holdings snapshot so inventory + banks hydrate immediately
-// on the next launch (stale-labelled until re-seen live).
-type HoldingsStore interface {
+// StateStore persists the live view state (holdings, wallet, spec board) so every screen
+// hydrates immediately on the next launch (stale-labelled until re-seen live, 020).
+type StateStore interface {
 	SaveContainer(ctx context.Context, c holdings.ContainerSnapshot) error
 	LoadContainers(ctx context.Context) ([]holdings.ContainerSnapshot, error)
+	SaveWallet(ctx context.Context, silver, lastSeen int64) error
+	SaveSpecBoard(ctx context.Context, boardJSON string, lastSeen int64) error
 }
 
-// SetHoldingsStore wires the holdings persistence sink (nil keeps holdings in-memory).
-func (s *Service) SetHoldingsStore(store HoldingsStore) {
+// SetStateStore wires the view-state persistence sink (nil keeps state in-memory).
+func (s *Service) SetStateStore(store StateStore) {
 	s.mu.Lock()
 	s.holdingsStore = store
 	s.mu.Unlock()
@@ -792,10 +799,10 @@ func (s *Service) SeedHoldings(snaps []holdings.ContainerSnapshot) {
 	s.emitHoldings()
 }
 
-// StartHoldingsPersistence runs a debounced background flush: whenever holdings changed
-// (holdingsDirty), the full bounded snapshot (≤512 containers) is written off the capture
-// goroutine. A final flush runs on ctx cancel so the last state survives a clean shutdown.
-func (s *Service) StartHoldingsPersistence(ctx context.Context) {
+// StartStatePersistence runs a debounced background flush: whenever holdings/wallet/spec
+// changed, the bounded snapshot is written off the capture goroutine. A final flush runs on
+// ctx cancel so the last state survives a clean shutdown.
+func (s *Service) StartStatePersistence(ctx context.Context) {
 	s.mu.Lock()
 	store := s.holdingsStore
 	s.mu.Unlock()
@@ -808,27 +815,65 @@ func (s *Service) StartHoldingsPersistence(ctx context.Context) {
 		for {
 			select {
 			case <-ctx.Done():
-				s.flushHoldings(store)
+				s.flushState(store)
 				return
 			case <-t.C:
-				s.flushHoldings(store)
+				s.flushState(store)
 			}
 		}
 	}()
 }
 
-// flushHoldings persists every container if a change is pending, then clears the flag.
-func (s *Service) flushHoldings(store HoldingsStore) {
-	if !s.holdingsDirty.Swap(false) {
-		return
-	}
-	for _, c := range s.agg.Snapshot() {
-		if err := store.SaveContainer(context.Background(), c); err != nil {
-			log.Printf("holdings store write failed (%s): %v", c.GUID, err)
-			s.holdingsDirty.Store(true) // retry on the next tick
-			return
+// flushState persists any pending holdings/wallet/spec change, then clears its flag.
+func (s *Service) flushState(store StateStore) {
+	if s.holdingsDirty.Swap(false) {
+		for _, c := range s.agg.Snapshot() {
+			if err := store.SaveContainer(context.Background(), c); err != nil {
+				log.Printf("holdings store write failed (%s): %v", c.GUID, err)
+				s.holdingsDirty.Store(true) // retry next tick
+				break
+			}
 		}
 	}
+	if s.walletDirty.Swap(false) {
+		s.mu.Lock()
+		silver, known, seen := s.walletSilver, s.walletKnown, s.walletLastSeen
+		s.mu.Unlock()
+		if known {
+			if err := store.SaveWallet(context.Background(), silver, seen); err != nil {
+				log.Printf("wallet store write failed: %v", err)
+				s.walletDirty.Store(true)
+			}
+		}
+	}
+	if s.specDirty.Swap(false) {
+		s.mu.Lock()
+		snap := s.spec
+		s.mu.Unlock()
+		if b, err := json.Marshal(snap); err == nil {
+			if err := store.SaveSpecBoard(context.Background(), string(b), s.nowMS()); err != nil {
+				log.Printf("spec-board store write failed: %v", err)
+				s.specDirty.Store(true)
+			}
+		}
+	}
+}
+
+// SeedWallet restores the persisted wallet balance at startup (020 US2): shown stale until a
+// live E:81 refreshes it. Only applies when a balance was actually persisted (ok).
+func (s *Service) SeedWallet(silver, lastSeen int64) {
+	s.SetWallet(silver, lastSeen)
+}
+
+// SeedSpecBoard restores the persisted spec board at startup (020 US3): the full tree
+// (in-progress + maxed) shows immediately, replaced when the login E:154 board arrives.
+func (s *Service) SeedSpecBoard(boardJSON string) {
+	var spec model.CharacterSpec
+	if err := json.Unmarshal([]byte(boardJSON), &spec); err != nil {
+		log.Printf("spec-board hydrate: corrupt payload, skipping: %v", err)
+		return // fall back to the 011 maxed/enum path (FR-008)
+	}
+	s.SetSpec(spec)
 }
 
 // SeedTrades preloads the persisted ledger into the live view at startup (FR-011).

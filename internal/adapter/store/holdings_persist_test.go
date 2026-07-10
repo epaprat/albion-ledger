@@ -71,3 +71,50 @@ func TestHoldingsContainerCorruptSkipped(t *testing.T) {
 		t.Fatalf("only the good container should survive, got %+v", got)
 	}
 }
+
+// 020 US2 / C3 — wallet balance round-trips; a fresh DB reports ok=false (excluded).
+func TestWalletRoundTrip(t *testing.T) {
+	db, err := Open(filepath.Join(t.TempDir(), "test.db"))
+	if err != nil {
+		t.Fatal(err)
+	}
+	defer db.Close()
+	ctx := context.Background()
+	if _, _, ok, err := db.LoadWallet(ctx); err != nil || ok {
+		t.Fatalf("empty DB must report ok=false, got ok=%v err=%v", ok, err)
+	}
+	if err := db.SaveWallet(ctx, 81_000_000, 1700); err != nil {
+		t.Fatal(err)
+	}
+	silver, seen, ok, err := db.LoadWallet(ctx)
+	if err != nil || !ok || silver != 81_000_000 || seen != 1700 {
+		t.Fatalf("wallet round-trip wrong: silver=%d seen=%d ok=%v err=%v", silver, seen, ok, err)
+	}
+	// Newest-wins upsert (single row).
+	if err := db.SaveWallet(ctx, 90_000_000, 1800); err != nil {
+		t.Fatal(err)
+	}
+	if silver, _, _, _ := db.LoadWallet(ctx); silver != 90_000_000 {
+		t.Fatalf("wallet upsert must replace, got %d", silver)
+	}
+}
+
+// 020 US3 / C4 — spec board JSON round-trips; empty DB reports ok=false.
+func TestSpecBoardRoundTrip(t *testing.T) {
+	db, err := Open(filepath.Join(t.TempDir(), "test.db"))
+	if err != nil {
+		t.Fatal(err)
+	}
+	defer db.Close()
+	ctx := context.Background()
+	if _, _, ok, _ := db.LoadSpecBoard(ctx); ok {
+		t.Fatal("empty DB must report ok=false for spec board")
+	}
+	if err := db.SaveSpecBoard(ctx, `{"masteries":[{"index":1}]}`, 1700); err != nil {
+		t.Fatal(err)
+	}
+	board, seen, ok, err := db.LoadSpecBoard(ctx)
+	if err != nil || !ok || seen != 1700 || board != `{"masteries":[{"index":1}]}` {
+		t.Fatalf("spec board round-trip wrong: %q seen=%d ok=%v err=%v", board, seen, ok, err)
+	}
+}

@@ -82,6 +82,14 @@ CREATE TABLE IF NOT EXISTS holdings_containers (
   location TEXT, city TEXT, tab TEXT,
   items_json TEXT, last_seen INTEGER, pinned INTEGER
 );
+CREATE TABLE IF NOT EXISTS wallet_state (
+  id INTEGER PRIMARY KEY,
+  silver INTEGER, last_seen INTEGER
+);
+CREATE TABLE IF NOT EXISTS spec_board (
+  id INTEGER PRIMARY KEY,
+  board_json TEXT, last_seen INTEGER
+);
 `
 
 // SQLite is a Store backed by a local SQLite database.
@@ -693,4 +701,43 @@ func (s *SQLite) LoadContainers(ctx context.Context) ([]holdings.ContainerSnapsh
 func (s *SQLite) DeleteContainer(ctx context.Context, containerID string) error {
 	_, err := s.db.ExecContext(ctx, `DELETE FROM holdings_containers WHERE container_id = ?`, containerID)
 	return err
+}
+
+// SaveWallet upserts the single last-known wallet balance + its observation time (020 US2).
+func (s *SQLite) SaveWallet(ctx context.Context, silver, lastSeen int64) error {
+	_, err := s.db.ExecContext(ctx,
+		`INSERT OR REPLACE INTO wallet_state (id, silver, last_seen) VALUES (1, ?, ?)`, silver, lastSeen)
+	return err
+}
+
+// LoadWallet returns the persisted wallet balance; ok=false when none was ever seen (so the
+// caller keeps the honest "wallet excluded" state, FR-004).
+func (s *SQLite) LoadWallet(ctx context.Context) (silver, lastSeen int64, ok bool, err error) {
+	err = s.db.QueryRowContext(ctx, `SELECT silver, last_seen FROM wallet_state WHERE id=1`).Scan(&silver, &lastSeen)
+	if err == sql.ErrNoRows {
+		return 0, 0, false, nil
+	}
+	if err != nil {
+		return 0, 0, false, err
+	}
+	return silver, lastSeen, true, nil
+}
+
+// SaveSpecBoard upserts the single full-board snapshot (in-progress + maxed) + time (020 US3).
+func (s *SQLite) SaveSpecBoard(ctx context.Context, boardJSON string, lastSeen int64) error {
+	_, err := s.db.ExecContext(ctx,
+		`INSERT OR REPLACE INTO spec_board (id, board_json, last_seen) VALUES (1, ?, ?)`, boardJSON, lastSeen)
+	return err
+}
+
+// LoadSpecBoard returns the persisted board snapshot; ok=false when none exists.
+func (s *SQLite) LoadSpecBoard(ctx context.Context) (boardJSON string, lastSeen int64, ok bool, err error) {
+	err = s.db.QueryRowContext(ctx, `SELECT board_json, last_seen FROM spec_board WHERE id=1`).Scan(&boardJSON, &lastSeen)
+	if err == sql.ErrNoRows {
+		return "", 0, false, nil
+	}
+	if err != nil {
+		return "", 0, false, err
+	}
+	return boardJSON, lastSeen, true, nil
 }

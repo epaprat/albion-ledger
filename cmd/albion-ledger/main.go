@@ -165,15 +165,25 @@ func main() {
 					log.Printf("store LoadTrades: %v", err)
 				}
 				svc.SetTradeStore(flowStore)
-				// Persisted holdings (020): inventory + banks hydrate immediately (stale-
-				// labelled) so the Holdings screen isn't blank until re-opened in game.
-				svc.SetHoldingsStore(flowStore)
+				// Persisted view state (020): holdings, wallet + net worth, and the spec
+				// board hydrate immediately (stale-labelled) so no screen is blank on open.
+				svc.SetStateStore(flowStore)
 				if snaps, err := flowStore.LoadContainers(ctx); err == nil && len(snaps) > 0 {
 					svc.SeedHoldings(snaps)
 				} else if err != nil {
 					log.Printf("store LoadContainers: %v", err)
 				}
-				svc.StartHoldingsPersistence(ctx)
+				if silver, seen, ok, err := flowStore.LoadWallet(ctx); err != nil {
+					log.Printf("store LoadWallet: %v", err)
+				} else if ok {
+					svc.SeedWallet(silver, seen)
+				}
+				if board, _, ok, err := flowStore.LoadSpecBoard(ctx); err != nil {
+					log.Printf("store LoadSpecBoard: %v", err)
+				} else if ok {
+					svc.SeedSpecBoard(board)
+				}
+				svc.StartStatePersistence(ctx)
 				// Persisted mail-type map (017): decode mails whose GetMailInfos list the
 				// game client-cached and never re-sent this session.
 				if infos, err := flowStore.LoadMailInfos(ctx); err == nil && len(infos) > 0 {
