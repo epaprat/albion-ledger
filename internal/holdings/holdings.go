@@ -358,6 +358,22 @@ const invName = "Inventory"
 func (a *Aggregator) SetVaultSummaryTab(tabGUID, city, tabName string, rows []ItemRef, nowMS int64) {
 	a.mu.Lock()
 	defer a.mu.Unlock()
+	// Physical-first, K-later (the reverse of inferBankCityLocked): the player opened
+	// this bank physically BEFORE any overview, so its tabs are city-less — event 163
+	// never fired and there was no summary yet to infer the city from (live-seen
+	// 2026-07-10: double-count returned as 247 = 119 summary + 128 physical). This
+	// summary now names the city; if a city-less physical carries the same tab name it
+	// IS this bank, so adopt the city and run the full heal (migrate the open tabs +
+	// evict overlaps). The physical-wins guard below then matches and this summary yields.
+	if a.currentCity == "" {
+		for _, other := range a.containers {
+			if !other.summary && other.location == model.LocBank && other.city == "" &&
+				other.tab == tabName && len(other.items) > 0 {
+				a.setCurrentCityLocked(city)
+				break
+			}
+		}
+	}
 	// A PHYSICAL container (object-based, from an actual bank open) already covering
 	// this (city, tab) always wins: it is richer (object ids, declared values, real
 	// qualities), and summing both sources would double-count the tab (live-seen

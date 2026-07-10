@@ -489,3 +489,36 @@ func TestBankCityInferredFromSummaryMidSession(t *testing.T) {
 		t.Fatalf("un-opened Thetford summary must remain: %+v", rows)
 	}
 }
+
+// 020 live-test (2026-07-10, reverse order): bank opened PHYSICALLY before any K overview,
+// so the physical tab is city-less (event 163 never fired, no summary yet to infer from).
+// When the K summary later names the city, a city-less physical with the same tab name must
+// adopt that city and the summary must yield — otherwise both count (live-seen: 247 = 119+128).
+func TestSummaryReconcilesCityLessPhysicalReverseOrder(t *testing.T) {
+	a, _ := newAgg(t)
+	// Physical open FIRST, currentCity unknown → city-less "Bank" group.
+	a.SetBankVault([]string{"oTab1"}, []string{"1"})
+	a.SetContainer("physTab1", "oTab1", []SlotItem{
+		{ObjID: 9001, Ref: ItemRef{Index: 920}}, {ObjID: 9002, Ref: ItemRef{Index: 837}},
+	}, 1000)
+	if a.List()[0].City != "Bank" { // city-less bank rows group under the generic "Bank"
+		t.Fatalf("precondition: physical must be city-less (\"Bank\") before the overview, got %q", a.List()[0].City)
+	}
+	// K overview arrives LATER, naming the city for the same tab name.
+	a.SetVaultSummaryTab("vault:Fort Sterling:1", "Fort Sterling", "1", []ItemRef{
+		{Index: 920, Count: 1}, {Index: 837, Count: 1},
+	}, 2000)
+
+	rows := a.List()
+	if len(rows) != 2 {
+		t.Fatalf("physical must win and summary yield: want 2 physical rows, got %d: %+v", len(rows), rows)
+	}
+	for _, r := range rows {
+		if r.City != "Fort Sterling" {
+			t.Fatalf("physical must adopt the overview's city, got %q: %+v", r.City, r)
+		}
+		if r.ObjID < 0 {
+			t.Fatalf("no synthetic summary row may survive (double-count): %+v", r)
+		}
+	}
+}
