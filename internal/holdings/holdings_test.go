@@ -395,3 +395,22 @@ func TestSeedContainersDoesNotClobberLive(t *testing.T) {
 		t.Fatalf("stale seed must not overwrite live c1, got %+v", rows)
 	}
 }
+
+// 020 fix — a self container pre-created empty by EnsureSelfContainer (unobserved) IS
+// hydrated from persistence, then replaced when live own-state arrives.
+func TestSeedContainersFillsPreCreatedSelfContainer(t *testing.T) {
+	a, _ := newAgg(t)
+	a.EnsureSelfContainer("self-bag", "Bag") // pre-created empty, lastSeen 0
+	a.SeedContainers([]ContainerSnapshot{{
+		GUID: "self-bag", Location: model.LocInventory, Tab: "Bag", LastSeen: 100, Pinned: true,
+		Items: []model.HoldingItem{{ObjID: 7, Item: model.Item{Index: 920}, Count: 1, LastSeen: 100}},
+	}})
+	if rows := a.List(); len(rows) != 1 || rows[0].Item.Index != 920 {
+		t.Fatalf("persisted self-bag must hydrate into the pre-created container, got %+v", rows)
+	}
+	// Live own-state then replaces it.
+	a.SetSelfContainer("self-bag", "Bag", []SlotItem{{ObjID: 8, Ref: ItemRef{Index: 837}}}, 2000)
+	if r := a.List(); len(r) != 1 || r[0].Item.Index != 837 {
+		t.Fatalf("live own-state must replace the hydrated self-bag, got %+v", r)
+	}
+}

@@ -664,18 +664,22 @@ func (a *Aggregator) Snapshot() []ContainerSnapshot {
 	return out
 }
 
-// SeedContainers restores persisted containers at startup (020). A container whose live
-// data already arrived this session is NEVER overwritten (the seed only fills gaps). The
-// restored LastSeen keeps the freshness/stale labelling honest until a live re-observe.
+// SeedContainers restores persisted containers at startup (020). A container that LIVE data
+// already claimed this session (observed: lastSeen>0 or holding items) is NEVER overwritten.
+// A container that merely EXISTS but is unobserved — e.g. the self bag/equipped that
+// EnsureSelfContainer pre-creates empty at startup — IS filled from persistence, so the
+// inventory/equipped hydrate too (fix: they were skipped by a bare "exists → continue").
+// The restored LastSeen keeps the freshness/stale labelling honest until a live re-observe.
 func (a *Aggregator) SeedContainers(snaps []ContainerSnapshot) {
 	a.mu.Lock()
 	defer a.mu.Unlock()
 	for _, sn := range snaps {
-		if _, exists := a.containers[sn.GUID]; exists {
+		if c, exists := a.containers[sn.GUID]; exists && (c.lastSeen > 0 || len(c.items) > 0) {
 			continue // live data already claimed this container — do not clobber it
 		}
-		c := a.ensureContainer(sn.GUID) // bounded: appends to order + evicts oldest unpinned
-		c.location, c.city, c.tab, c.lastSeen, c.pinned = sn.Location, sn.City, sn.Tab, sn.LastSeen, sn.Pinned
+		c := a.ensureContainer(sn.GUID) // returns the pre-created empty one, or a fresh bounded slot
+		c.location, c.city, c.tab, c.lastSeen = sn.Location, sn.City, sn.Tab, sn.LastSeen
+		c.pinned = c.pinned || sn.Pinned // keep a pre-created self container pinned
 		c.items = make(map[int]model.HoldingItem, len(sn.Items))
 		for _, it := range sn.Items {
 			c.items[it.ObjID] = it
