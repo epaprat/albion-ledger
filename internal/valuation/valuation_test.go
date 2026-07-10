@@ -74,12 +74,34 @@ func TestQualityZeroFallbackAcrossLayers(t *testing.T) {
 	}
 }
 
+// 020 live-test (2026-07-10): a HIGHER-quality query must also honor "in-game wins".
+// The game recorded EMV only at normal quality (q0), while a lone troll AODP listing
+// existed at the item's exact quality — a T4 artefact EMV'd at 140s showed as 25M,
+// inflating net worth by 75M. A cross-quality game EMV must beat an exact external.
+func TestGameEMVBeatsExternalAcrossQuality(t *testing.T) {
+	b := NewBook()
+	v := NewValuer(b, 1000)
+	b.SetExternal(1195, 2, 25_000_142, 100) // troll AODP price at the stack's exact quality
+	b.SetEMV(1195, 0, 140, 100)             // the game's own estimate, recorded at q0 only
+	val := v.Value(1195, 2, 200)            // stack is quality 2
+	if val.Source != model.SourceServerEstimate || val.Amount != 140 {
+		t.Fatalf("cross-quality game EMV must beat exact-quality external, got %+v", val)
+	}
+	// With no game EMV anywhere, the external base layer still applies (unchanged).
+	b2 := NewBook()
+	v2 := NewValuer(b2, 1000)
+	b2.SetExternal(1195, 2, 500, 100)
+	if val := v2.Value(1195, 2, 200); val.Source != model.SourceExternal || val.Amount != 500 {
+		t.Fatalf("external base must still price when no in-game data exists: %+v", val)
+	}
+}
+
 func TestRestoreEMVNewestWins(t *testing.T) {
 	b := NewBook()
 	b.SetEMV(920, 1, 100, 500)
 	b.RestoreEMV([]EMVEntry{
-		{Index: 920, Quality: 1, Amount: 1, AsOf: 400},  // older — must not clobber
-		{Index: 837, Quality: 2, Amount: 9, AsOf: 300},  // new key — restores
+		{Index: 920, Quality: 1, Amount: 1, AsOf: 400}, // older — must not clobber
+		{Index: 837, Quality: 2, Amount: 9, AsOf: 300}, // new key — restores
 	})
 	v := NewValuer(b, 1_000_000)
 	if val := v.Value(920, 1, 600); val.Amount != 100 {
