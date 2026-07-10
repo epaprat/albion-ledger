@@ -5,12 +5,40 @@ package app
 // resolves BEFORE the holdings move-application — never as two registrations.
 
 import (
+	"encoding/hex"
+	"fmt"
 	"log"
+	"sort"
 
 	"github.com/epaprat/albion-ledger/internal/adapter/capture"
 	"github.com/epaprat/albion-ledger/internal/domain/model"
 	"github.com/epaprat/albion-ledger/internal/domain/probe"
 )
+
+// dumpMoveParams renders an op-30 move request's raw params (key→value) for the
+// phantom-move investigation: []byte as short hex, everything else via %v. Temporary
+// diagnostic — removed once the slot→object resolution is confirmed.
+func dumpMoveParams(params map[byte]interface{}) string {
+	keys := make([]int, 0, len(params))
+	for k := range params {
+		keys = append(keys, int(k))
+	}
+	sort.Ints(keys)
+	parts := make([]string, 0, len(keys))
+	for _, k := range keys {
+		v := params[byte(k)]
+		if b, ok := v.([]byte); ok {
+			h := hex.EncodeToString(b)
+			if len(h) > 16 {
+				h = h[:16] + "…"
+			}
+			parts = append(parts, fmt.Sprintf("%d=hex:%s", k, h))
+			continue
+		}
+		parts = append(parts, fmt.Sprintf("%d=%v", k, v))
+	}
+	return "{" + fmt.Sprintf("%v", parts) + "}"
+}
 
 func init() {
 	register(model.CatLootSource, handleLootSource)
@@ -32,6 +60,9 @@ func handleLootSource(p *Pipeline, _ probe.Kind, code int, params map[byte]inter
 func handleLootMove(p *Pipeline, _ probe.Kind, code int, params map[byte]interface{}) {
 	switch code {
 	case 30:
+		if p.debug {
+			log.Printf("[hold] op30 raw params: %s", dumpMoveParams(params))
+		}
 		if guid, slot, ok := capture.MoveItem(params); ok {
 			// Moves OUT OF the player's own bag can never be loot pickups — feeding
 			// them to the tracker only pollutes its pending queue (live-seen
