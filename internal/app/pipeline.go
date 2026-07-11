@@ -84,6 +84,11 @@ type Sink interface {
 	SetWallet(silver int64, ts int64)
 	AddTrade(t model.Trade)
 	SaveMailInfo(id int64, typ, location string, received int64)
+	// Ground-truth reconciliation (021, -reconcile): compare the app's derived holdings
+	// view to an authoritative wire snapshot and return the difference.
+	ReconcileInventory(wire []holdings.ItemCount) holdings.ReconcileResult
+	ReconcileEquipped(wire []holdings.ItemCount) holdings.ReconcileResult
+	ReconcileBankTab(city, tab string, wire []holdings.ItemCount) holdings.ReconcileResult
 }
 
 // SpecResolver maps a Destiny Board node id to a readable name + category (011).
@@ -96,11 +101,12 @@ type SpecResolver interface {
 // in cmd/albion-ledger. One instance per capture session, driven by the parser
 // callbacks (OnRequest/OnResponse/OnEvent).
 type Pipeline struct {
-	sink  Sink
-	clf   *probe.Classifier
-	locs  *locations.Locations // cluster-id → zone-name resolver (nil = raw ids)
-	nowMS func() int64
-	debug bool // -debugflow: log flow attribution to stderr
+	sink      Sink
+	clf       *probe.Classifier
+	locs      *locations.Locations // cluster-id → zone-name resolver (nil = raw ids)
+	nowMS     func() int64
+	debug     bool // -debugflow: log flow attribution to stderr
+	reconcile bool // -reconcile: diff the app's holdings against the authoritative wire snapshots
 
 	// self identity for own-earning attribution (005); set on every Join op-2.
 	selfObjID int
@@ -226,6 +232,11 @@ type mailInfoEntry struct {
 
 // mailInfoCap bounds the id→info correlation cache (Principle XI).
 const mailInfoCap = 4096
+
+// SetReconcile enables the ground-truth self-check (021): on every authoritative wire
+// snapshot the app diffs its own holdings view and logs any divergence (-reconcile). Kept
+// off the New signature so it composes with -debugflow without churning every test caller.
+func (p *Pipeline) SetReconcile(v bool) { p.reconcile = v }
 
 // New wires a Pipeline. locs may be nil (zones stay raw cluster ids).
 func New(sink Sink, clf *probe.Classifier, locs *locations.Locations, specNames SpecResolver, nowMS func() int64, debug bool) *Pipeline {
@@ -885,6 +896,68 @@ func (p *Pipeline) ingestSelf(guid, tab string, objIDs []int) {
 		}
 	}
 	p.objMu.Unlock()
+
+	if p.reconcile {
+		p.reconcileSelf(guid, tab, slots)
+	}
+}
+
+// reconcileSelf (021) diffs the app's inventory/equipped section against the authoritative
+// op-2 snapshot (this container's resolved slots) and logs any divergence. The wire multiset
+// is built from RESOLVED slots only — an undeclared object is unknown, not "dropped", so it
+// can't be compared. Silence means the app's view matches the game; a [RECON] line is a bug.
+func (p *Pipeline) reconcileSelf(guid, tab string, slots []holdings.SlotItem) {
+	wire := slotsToCounts(slots)
+	var res holdings.ReconcileResult
+	switch guid {
+	case SelfBagGUID:
+		res = p.sink.ReconcileInventory(wire)
+	case SelfEquipGUID:
+		res = p.sink.ReconcileEquipped(wire)
+	default:
+		return
+	}
+	if !res.Match {
+		log.Printf("[RECON] %s", res.Report)
+	} else if p.debug {
+		log.Printf("[RECON] %s ok (%d items match wire)", tab, len(wire))
+	}
+}
+
+// slotsToCounts collapses resolved slots to an (index,quality)->count multiset.
+func slotsToCounts(slots []holdings.SlotItem) []holdings.ItemCount {
+	m := map[holdings.ItemRef]int{}
+	for _, s := range slots {
+		k := holdings.ItemRef{Index: s.Ref.Index, Quality: s.Ref.Quality}
+		c := s.Ref.Count
+		if c < 1 {
+			c = 1
+		}
+		m[k] += c
+	}
+	out := make([]holdings.ItemCount, 0, len(m))
+	for k, n := range m {
+		out = append(out, holdings.ItemCount{Index: k.Index, Quality: k.Quality, Count: n})
+	}
+	return out
+}
+
+// refsToCounts collapses bank-tab rows to an (index,quality)->count multiset.
+func refsToCounts(rows []holdings.ItemRef) []holdings.ItemCount {
+	m := map[holdings.ItemRef]int{}
+	for _, r := range rows {
+		k := holdings.ItemRef{Index: r.Index, Quality: r.Quality}
+		c := r.Count
+		if c < 1 {
+			c = 1
+		}
+		m[k] += c
+	}
+	out := make([]holdings.ItemCount, 0, len(m))
+	for k, n := range m {
+		out = append(out, holdings.ItemCount{Index: k.Index, Quality: k.Quality, Count: n})
+	}
+	return out
 }
 
 // ── Small helpers ────────────────────────────────────────────────────────────

@@ -65,6 +65,7 @@ func main() {
 	catalogPath := flag.String("catalog", "", "override item catalog file (data/items.json format)")
 	codesPath := flag.String("codes", "", "override code map file (data/codes.json format)")
 	debugFlowFlag := flag.Bool("debugflow", false, "log flow (silver/loot/gather/fame) attribution to stderr")
+	reconcileFlag := flag.Bool("reconcile", false, "self-check: log [RECON] when holdings diverge from the authoritative wire snapshot (works with -replay)")
 	noExternal := flag.Bool("noexternal", false, "disable the community price feed (AODP) — no outbound HTTP")
 	specNodesPath := flag.String("specnodes", "", "override Destiny Board node-name catalog (data/specnodes.json format)")
 	flag.Parse()
@@ -108,6 +109,7 @@ func main() {
 	}
 	pipe := app.New(svc, probe.New(reg), locs, specCat, nowMS, *debugFlowFlag)
 	svc.SetHoldingsDebug(*debugFlowFlag)
+	pipe.SetReconcile(*reconcileFlag)
 
 	// Local-first store (Principle VIII): earnings events are persisted to SQLite as
 	// they arrive; the in-memory ledger stays bounded (Principle XI). Best-effort — if
