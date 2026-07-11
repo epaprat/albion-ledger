@@ -27,6 +27,22 @@ const (
 	maxLootSlots = 64
 )
 
+// IsLootSource reports whether srcObjID is a currently-registered, fresh loot-source
+// announcement (NewLoot/98). A container linked to it is a foreign corpse/chest, not the
+// player's own storage — callers use it to route event-99 snapshots: a loot-sourced
+// container feeds ONLY the loot tracker, never holdings, so items merely VIEWED in a mob's
+// bag don't land in the player's BAG (live-seen 2026-07-10). A bank tab's src (a small
+// constant, never announced as loot) returns false, so banks still feed holdings.
+func (t *Tracker) IsLootSource(srcObjID int, now int64) bool {
+	if srcObjID <= 0 {
+		return false
+	}
+	t.mu.Lock()
+	defer t.mu.Unlock()
+	src, ok := t.sources[srcObjID]
+	return ok && now-src.seenMS <= sourceTTLMS
+}
+
 type source struct {
 	name   string
 	seenMS int64
@@ -54,9 +70,9 @@ type Hit struct {
 // Tracker is the loot-correlation state machine.
 type Tracker struct {
 	mu         sync.Mutex
-	sources    map[int]*source      // lootable objId -> announcement
-	srcOrder   []int                // FIFO for cap eviction
-	containers map[string]*container// container GUID -> slots + source link
+	sources    map[int]*source       // lootable objId -> announcement
+	srcOrder   []int                 // FIFO for cap eviction
+	containers map[string]*container // container GUID -> slots + source link
 	ctrOrder   []string
 	pending    []pendingMove
 	recorded   map[int]int64 // itemObjID -> recorded-at ms (dedup)

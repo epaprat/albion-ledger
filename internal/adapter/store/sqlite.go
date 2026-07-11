@@ -5,6 +5,7 @@ package store
 import (
 	"context"
 	"database/sql"
+	"encoding/json"
 	"fmt"
 	"log"
 	"os"
@@ -13,6 +14,8 @@ import (
 	_ "modernc.org/sqlite"
 
 	"github.com/epaprat/albion-ledger/internal/domain/model"
+	"github.com/epaprat/albion-ledger/internal/flow"
+	"github.com/epaprat/albion-ledger/internal/holdings"
 	"github.com/epaprat/albion-ledger/internal/valuation"
 	"github.com/epaprat/albion-ledger/internal/zonestats"
 )
@@ -75,6 +78,30 @@ CREATE TABLE IF NOT EXISTS trades (
   tax_estimated INTEGER, unit_silver REAL,
   received INTEGER, location_id TEXT
 );
+CREATE TABLE IF NOT EXISTS holdings_containers (
+  container_id TEXT PRIMARY KEY,
+  location TEXT, city TEXT, tab TEXT,
+  items_json TEXT, last_seen INTEGER, pinned INTEGER,
+  summary INTEGER DEFAULT 0
+);
+CREATE TABLE IF NOT EXISTS wallet_state (
+  id INTEGER PRIMARY KEY,
+  silver INTEGER, last_seen INTEGER
+);
+CREATE TABLE IF NOT EXISTS spec_board (
+  id INTEGER PRIMARY KEY,
+  board_json TEXT, last_seen INTEGER
+);
+CREATE TABLE IF NOT EXISTS flow_checkpoint (
+  id INTEGER PRIMARY KEY,
+  payload_json TEXT, last_activity INTEGER
+);
+CREATE TABLE IF NOT EXISTS flow_sessions (
+  session_id INTEGER PRIMARY KEY AUTOINCREMENT,
+  started_ms INTEGER, ended_ms INTEGER, active_elapsed_ms INTEGER,
+  net_silver INTEGER, loot_value INTEGER, gather_value INTEGER, fame INTEGER,
+  silver_per_hour INTEGER, items_json TEXT
+);
 `
 
 // SQLite is a Store backed by a local SQLite database.
@@ -136,6 +163,24 @@ func migrate(db *sql.DB) error {
 		return err
 	}
 	if err := addColumnIfMissing("flow_events", "zone", `TEXT DEFAULT ''`); err != nil {
+		return err
+	}
+	// The K-summary flag is persisted (020 live-test fix): without it, a hydrated summary
+	// loaded as a pseudo-physical and the read-time dedup could not skip it, double-counting
+	// its live physical peer (247 = 119 summary + 128 physical). Backfill existing DBs: every
+	// persisted bank container is a summary (Snapshot() never persists a physical open), and
+	// the vault: prefix is the summary stable-id convention.
+	if err := addColumnIfMissing("holdings_containers", "summary", `INTEGER DEFAULT 0`); err != nil {
+		return err
+	}
+	if _, err := db.Exec(`UPDATE holdings_containers SET summary=1 WHERE container_id LIKE 'vault:%'`); err != nil {
+		return err
+	}
+	// Ephemeral physical bank containers (keyed by a per-open wire guid) must never have been
+	// persisted (020 fix): they never recur, so they hydrate as stale junk that wrongly wins
+	// the read-time dedup over a fresh K summary. Purge any a buggy build wrote — only the
+	// stable-id K summaries (vault:*) and the self bag/equipped (self-*) are legitimate.
+	if _, err := db.Exec(`DELETE FROM holdings_containers WHERE container_id NOT LIKE 'vault:%' AND container_id NOT LIKE 'self-%'`); err != nil {
 		return err
 	}
 	// The trades table gained a full fee/tax/net breakdown (017 expansion): the original
@@ -619,6 +664,200 @@ func (s *SQLite) LoadTrades(ctx context.Context) ([]model.Trade, error) {
 		}
 		t.TaxEstimated = est == 1
 		out = append(out, t)
+	}
+	return out, rows.Err()
+}
+
+// holdingsContainersCap bounds the persisted holdings snapshot (020); mirrors the live
+// aggregator's containerCap (Principle XI). Pinned (own bag/equipped) survive first.
+const holdingsContainersCap = 512
+
+// SaveContainer upserts one holdings container by its stable id (replace-on-new, FR-003),
+// then prunes beyond the cap keeping pinned + newest-seen.
+func (s *SQLite) SaveContainer(ctx context.Context, c holdings.ContainerSnapshot) error {
+	itemsJSON, err := json.Marshal(c.Items)
+	if err != nil {
+		return err
+	}
+	pinned := 0
+	if c.Pinned {
+		pinned = 1
+	}
+	summary := 0
+	if c.Summary {
+		summary = 1
+	}
+	if _, err := s.db.ExecContext(ctx, `
+		INSERT OR REPLACE INTO holdings_containers
+		  (container_id, location, city, tab, items_json, last_seen, pinned, summary)
+		VALUES (?, ?, ?, ?, ?, ?, ?, ?)`,
+		c.GUID, string(c.Location), c.City, c.Tab, string(itemsJSON), c.LastSeen, pinned, summary,
+	); err != nil {
+		return err
+	}
+	_, err = s.db.ExecContext(ctx, `
+		DELETE FROM holdings_containers WHERE container_id NOT IN (
+		  SELECT container_id FROM holdings_containers ORDER BY pinned DESC, last_seen DESC LIMIT ?)`,
+		holdingsContainersCap)
+	return err
+}
+
+// LoadContainers returns every persisted holdings container for startup hydration (020).
+// A container with corrupt items_json is skipped (never crashes hydration, FR-008).
+func (s *SQLite) LoadContainers(ctx context.Context) ([]holdings.ContainerSnapshot, error) {
+	rows, err := s.db.QueryContext(ctx, `
+		SELECT container_id, location, city, tab, items_json, last_seen, pinned, summary
+		FROM holdings_containers`)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	var out []holdings.ContainerSnapshot
+	for rows.Next() {
+		var c holdings.ContainerSnapshot
+		var loc, itemsJSON string
+		var pinned, summary int
+		if err := rows.Scan(&c.GUID, &loc, &c.City, &c.Tab, &itemsJSON, &c.LastSeen, &pinned, &summary); err != nil {
+			return nil, err
+		}
+		c.Location = model.Location(loc)
+		c.Pinned = pinned == 1
+		c.Summary = summary == 1
+		if err := json.Unmarshal([]byte(itemsJSON), &c.Items); err != nil {
+			log.Printf("store LoadContainers: skipping corrupt container %s: %v", c.GUID, err)
+			continue
+		}
+		out = append(out, c)
+	}
+	return out, rows.Err()
+}
+
+// DeleteContainer removes a persisted container (e.g. an untracked-put drop).
+func (s *SQLite) DeleteContainer(ctx context.Context, containerID string) error {
+	_, err := s.db.ExecContext(ctx, `DELETE FROM holdings_containers WHERE container_id = ?`, containerID)
+	return err
+}
+
+// SaveWallet upserts the single last-known wallet balance + its observation time (020 US2).
+func (s *SQLite) SaveWallet(ctx context.Context, silver, lastSeen int64) error {
+	_, err := s.db.ExecContext(ctx,
+		`INSERT OR REPLACE INTO wallet_state (id, silver, last_seen) VALUES (1, ?, ?)`, silver, lastSeen)
+	return err
+}
+
+// LoadWallet returns the persisted wallet balance; ok=false when none was ever seen (so the
+// caller keeps the honest "wallet excluded" state, FR-004).
+func (s *SQLite) LoadWallet(ctx context.Context) (silver, lastSeen int64, ok bool, err error) {
+	err = s.db.QueryRowContext(ctx, `SELECT silver, last_seen FROM wallet_state WHERE id=1`).Scan(&silver, &lastSeen)
+	if err == sql.ErrNoRows {
+		return 0, 0, false, nil
+	}
+	if err != nil {
+		return 0, 0, false, err
+	}
+	return silver, lastSeen, true, nil
+}
+
+// SaveSpecBoard upserts the single full-board snapshot (in-progress + maxed) + time (020 US3).
+func (s *SQLite) SaveSpecBoard(ctx context.Context, boardJSON string, lastSeen int64) error {
+	_, err := s.db.ExecContext(ctx,
+		`INSERT OR REPLACE INTO spec_board (id, board_json, last_seen) VALUES (1, ?, ?)`, boardJSON, lastSeen)
+	return err
+}
+
+// LoadSpecBoard returns the persisted board snapshot; ok=false when none exists.
+func (s *SQLite) LoadSpecBoard(ctx context.Context) (boardJSON string, lastSeen int64, ok bool, err error) {
+	err = s.db.QueryRowContext(ctx, `SELECT board_json, last_seen FROM spec_board WHERE id=1`).Scan(&boardJSON, &lastSeen)
+	if err == sql.ErrNoRows {
+		return "", 0, false, nil
+	}
+	if err != nil {
+		return "", 0, false, err
+	}
+	return boardJSON, lastSeen, true, nil
+}
+
+// flowSessionsCap bounds the persisted completed-session history (Principle XI).
+const flowSessionsCap = 200
+
+// SaveFlowCheckpoint upserts the single live-session checkpoint (020 US4, AFM model):
+// a later launch resumes from it. Older checkpoints are overwritten (one row).
+func (s *SQLite) SaveFlowCheckpoint(ctx context.Context, cp flow.Checkpoint) error {
+	b, err := json.Marshal(cp)
+	if err != nil {
+		return err
+	}
+	_, err = s.db.ExecContext(ctx,
+		`INSERT OR REPLACE INTO flow_checkpoint (id, payload_json, last_activity) VALUES (1, ?, ?)`,
+		string(b), cp.LastActivityMS)
+	return err
+}
+
+// LoadFlowCheckpoint returns the persisted live-session checkpoint; ok=false when none or
+// when the payload is corrupt (the caller then starts a clean session, FR-008).
+func (s *SQLite) LoadFlowCheckpoint(ctx context.Context) (cp flow.Checkpoint, ok bool, err error) {
+	var payload string
+	err = s.db.QueryRowContext(ctx, `SELECT payload_json FROM flow_checkpoint WHERE id=1`).Scan(&payload)
+	if err == sql.ErrNoRows {
+		return flow.Checkpoint{}, false, nil
+	}
+	if err != nil {
+		return flow.Checkpoint{}, false, err
+	}
+	if err := json.Unmarshal([]byte(payload), &cp); err != nil {
+		log.Printf("store LoadFlowCheckpoint: corrupt payload, discarding: %v", err)
+		return flow.Checkpoint{}, false, nil
+	}
+	return cp, true, nil
+}
+
+// DeleteFlowCheckpoint clears the live-session checkpoint (after resume or promotion).
+func (s *SQLite) DeleteFlowCheckpoint(ctx context.Context) error {
+	_, err := s.db.ExecContext(ctx, `DELETE FROM flow_checkpoint`)
+	return err
+}
+
+// SaveFlowSession appends one completed session to the permanent history, then prunes
+// beyond the cap (newest kept).
+func (s *SQLite) SaveFlowSession(ctx context.Context, cs flow.CompletedSession) error {
+	items, err := json.Marshal(cs.Items)
+	if err != nil {
+		return err
+	}
+	if _, err := s.db.ExecContext(ctx, `
+		INSERT INTO flow_sessions
+		  (started_ms, ended_ms, active_elapsed_ms, net_silver, loot_value, gather_value, fame, silver_per_hour, items_json)
+		VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+		cs.StartedMS, cs.EndedMS, cs.ActiveElapsedMS, cs.NetSilver, cs.LootValue, cs.GatherValue, cs.Fame, cs.SilverPerHour, string(items),
+	); err != nil {
+		return err
+	}
+	_, err = s.db.ExecContext(ctx, `
+		DELETE FROM flow_sessions WHERE session_id NOT IN (
+		  SELECT session_id FROM flow_sessions ORDER BY ended_ms DESC LIMIT ?)`, flowSessionsCap)
+	return err
+}
+
+// LoadFlowSessions returns the most recent completed sessions (permanent history).
+func (s *SQLite) LoadFlowSessions(ctx context.Context, limit int) ([]flow.CompletedSession, error) {
+	rows, err := s.db.QueryContext(ctx, `
+		SELECT started_ms, ended_ms, active_elapsed_ms, net_silver, loot_value, gather_value, fame, silver_per_hour, items_json
+		FROM flow_sessions ORDER BY ended_ms DESC LIMIT ?`, limit)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	var out []flow.CompletedSession
+	for rows.Next() {
+		var cs flow.CompletedSession
+		var items string
+		if err := rows.Scan(&cs.StartedMS, &cs.EndedMS, &cs.ActiveElapsedMS, &cs.NetSilver, &cs.LootValue, &cs.GatherValue, &cs.Fame, &cs.SilverPerHour, &items); err != nil {
+			return nil, err
+		}
+		if err := json.Unmarshal([]byte(items), &cs.Items); err != nil {
+			continue // skip a corrupt history row
+		}
+		out = append(out, cs)
 	}
 	return out, rows.Err()
 }

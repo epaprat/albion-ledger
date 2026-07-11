@@ -166,6 +166,39 @@ func TestMoveApplication(t *testing.T) {
 	}
 }
 
+// 007 live-test (2026-07-10): opening a mob's ground loot bag delivers an event-99
+// snapshot of a LOOT container (linked to an announced loot source). Its contents must
+// feed ONLY the loot tracker, never holdings — else items the player merely VIEWED in a
+// mob's bag land under their own BAG though never taken.
+func TestLootContainerStaysOutOfHoldings(t *testing.T) {
+	const mobObj = 166023
+	lootGUID := "008a4d8500000000000000000000000c"
+	attachEvent := map[byte]interface{}{
+		0: int32(mobObj), 1: guidBytes(lootGUID), 2: guidBytes(lootGUID),
+		3: []int32{700, 701}, 252: int16(99),
+	}
+
+	// Loot-sourced container: the gate keeps its contents out of holdings.
+	svc, p := newGlue(t)
+	p.lootTracker.RegisterSource(mobObj, "@MOB_UNDEAD_MAGE", nowMS())
+	p.registerNewItem(32, declParams(700, 920, 1))
+	p.registerNewItem(32, declParams(701, 837, 1))
+	p.dispatch(probe.KindEvent, 99, attachEvent)
+	if n := holdingsCount(svc); n != 0 {
+		t.Fatalf("loot-container contents must NOT enter holdings, got %d rows", n)
+	}
+
+	// Identical snapshot with NO announced source (own/unknown container): the gate does
+	// not apply, so it still reaches holdings — proving the gate targets loot only.
+	svc, p = newGlue(t)
+	p.registerNewItem(32, declParams(700, 920, 1))
+	p.registerNewItem(32, declParams(701, 837, 1))
+	p.dispatch(probe.KindEvent, 99, attachEvent)
+	if n := holdingsCount(svc); n != 2 {
+		t.Fatalf("a non-loot container must still enter holdings, got %d rows", n)
+	}
+}
+
 // Contract rule 6 (T010 regression guard): the same wire sequence produces identical
 // loot Hits with holdings-application active (loot resolve runs first, untouched).
 func TestLootCorrelationUnchangedByApplication(t *testing.T) {
@@ -362,6 +395,7 @@ func TestMoveToHoldingsKnownButTrackerUnknownDst(t *testing.T) {
 		t.Fatal("item must land in the snapshotted bank tab (tracker TTL must not matter)")
 	}
 }
+
 // testSpecNames is a trivial resolver for the pipeline tests (011).
 type testSpecNames struct{}
 

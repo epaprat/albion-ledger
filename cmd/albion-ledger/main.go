@@ -28,10 +28,11 @@ import (
 	"github.com/epaprat/albion-ledger/internal/codes"
 	"github.com/epaprat/albion-ledger/internal/domain/model"
 	"github.com/epaprat/albion-ledger/internal/domain/probe"
+	"github.com/epaprat/albion-ledger/internal/flow"
 	"github.com/epaprat/albion-ledger/internal/locations"
-	"github.com/epaprat/albion-ledger/internal/specnames"
 	"github.com/epaprat/albion-ledger/internal/photon"
 	"github.com/epaprat/albion-ledger/internal/port"
+	"github.com/epaprat/albion-ledger/internal/specnames"
 	"github.com/epaprat/albion-ledger/internal/valuation"
 )
 
@@ -106,6 +107,7 @@ func main() {
 		}
 	}
 	pipe := app.New(svc, probe.New(reg), locs, specCat, nowMS, *debugFlowFlag)
+	svc.SetHoldingsDebug(*debugFlowFlag)
 
 	// Local-first store (Principle VIII): earnings events are persisted to SQLite as
 	// they arrive; the in-memory ledger stays bounded (Principle XI). Best-effort — if
@@ -165,6 +167,37 @@ func main() {
 					log.Printf("store LoadTrades: %v", err)
 				}
 				svc.SetTradeStore(flowStore)
+				// Persisted view state (020): holdings, wallet + net worth, and the spec
+				// board hydrate immediately (stale-labelled) so no screen is blank on open.
+				svc.SetStateStore(flowStore)
+				if snaps, err := flowStore.LoadContainers(ctx); err == nil && len(snaps) > 0 {
+					svc.SeedHoldings(snaps)
+				} else if err != nil {
+					log.Printf("store LoadContainers: %v", err)
+				}
+				if silver, seen, ok, err := flowStore.LoadWallet(ctx); err != nil {
+					log.Printf("store LoadWallet: %v", err)
+				} else if ok {
+					svc.SeedWallet(silver, seen)
+				}
+				if board, _, ok, err := flowStore.LoadSpecBoard(ctx); err != nil {
+					log.Printf("store LoadSpecBoard: %v", err)
+				} else if ok {
+					svc.SeedSpecBoard(board)
+				}
+				// Flow session resume (020 US4, AFM): resume a live earnings session if it
+				// is still within the idle window, else promote it to completed history.
+				if cp, ok, err := flowStore.LoadFlowCheckpoint(ctx); err != nil {
+					log.Printf("store LoadFlowCheckpoint: %v", err)
+				} else if ok && !svc.ResumeFlow(cp) {
+					if err := flowStore.SaveFlowSession(ctx, flow.CompletedFromCheckpoint(cp)); err != nil {
+						log.Printf("store SaveFlowSession: %v", err)
+					}
+					if err := flowStore.DeleteFlowCheckpoint(ctx); err != nil {
+						log.Printf("store DeleteFlowCheckpoint: %v", err)
+					}
+				}
+				svc.StartStatePersistence(ctx)
 				// Persisted mail-type map (017): decode mails whose GetMailInfos list the
 				// game client-cached and never re-sent this session.
 				if infos, err := flowStore.LoadMailInfos(ctx); err == nil && len(infos) > 0 {

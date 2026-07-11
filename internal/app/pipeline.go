@@ -762,6 +762,14 @@ func (p *Pipeline) applyMoveToHoldings(srcGUID string, srcSlot int, dstGUID stri
 			itemObj = id
 			p.bagSlots[srcSlot] = 0
 		}
+		if p.debug {
+			idx := -1
+			if ref, ok := p.resolveObj(itemObj); ok {
+				idx = ref.Index
+			}
+			log.Printf("[hold] bag-move probe: srcSlot=%d → obj=%d idx=%d hasDst=%t dstSlot=%d dst=%s",
+				srcSlot, itemObj, idx, hasDst, dstSlot, dstGUID)
+		}
 	} else if id, ok := p.lootTracker.SlotItem(srcGUID, srcSlot); ok {
 		itemObj = id
 	}

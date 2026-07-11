@@ -111,7 +111,30 @@ func (v *Valuer) Value(index, quality int, nowMS int64) model.Valuation {
 		return v.mk(live.amount, model.SourceLiveMarket, live.asOf, nowMS)
 	case hasEMV:
 		return v.mk(emv.amount, model.SourceServerEstimate, emv.asOf, nowMS)
-	case hasExt:
+	}
+
+	// In-game data wins over the community feed (010 contract, valuation.go:28). An
+	// external (AODP) price is about to apply, but the game may have priced this item at
+	// ANOTHER quality — prefer that, so a lone troll listing at the stack's exact quality
+	// can't override the game's own estimate (live-seen 2026-07-10: a T4 artefact the game
+	// EMV'd at 140s showed as 25M, +75M net worth). This override fires ONLY when an
+	// external would otherwise win; it never values an item that has no external, so loot's
+	// exact-quality deferral (ADR-022) is preserved. Lowest recorded quality wins
+	// (conservative); q0 is scanned since the game often records EMV only at normal quality
+	// for higher-quality stacks.
+	if hasExt {
+		v.book.mu.RLock()
+		defer v.book.mu.RUnlock()
+		for q := 0; q <= 5; q++ {
+			if e, ok := v.book.live[key{index, q}]; ok {
+				return v.mk(e.amount, model.SourceLiveMarket, e.asOf, nowMS)
+			}
+		}
+		for q := 0; q <= 5; q++ {
+			if e, ok := v.book.emv[key{index, q}]; ok {
+				return v.mk(e.amount, model.SourceServerEstimate, e.asOf, nowMS)
+			}
+		}
 		return v.mk(ext.amount, model.SourceExternal, ext.asOf, nowMS)
 	}
 
