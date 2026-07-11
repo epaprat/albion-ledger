@@ -402,6 +402,12 @@ func (a *Aggregator) SetVaultSummaryTab(tabGUID, city, tabName string, rows []It
 	for guid, other := range a.containers {
 		if guid != tabGUID && !other.summary && other.location == model.LocBank &&
 			other.city == city && other.tab == tabName && len(other.items) > 0 {
+			// Physical wins, BUT its stack counts come from object declarations (New*Item) and
+			// go stale when a bank stack changes afterward, while R:518 is the game's FRESH
+			// overview (reconcile-caught 2026-07-12: FS tabs short by a few stacks). Patch the
+			// physical peer's per-item totals to the fresh summary before yielding — object ids
+			// (move tracking) stay intact; only the counts refresh.
+			a.refreshPhysicalCountsLocked(other, rows, nowMS)
 			return
 		}
 	}
@@ -433,6 +439,44 @@ func (a *Aggregator) SetVaultSummaryTab(tabGUID, city, tabName string, rows []It
 		c.items[synthID] = row
 	}
 	a.touchCity(model.LocBank, city, nowMS)
+}
+
+// refreshPhysicalCountsLocked patches a physical bank container's per-item stack totals to a
+// fresh K summary (021). For each (index, quality) the summary reports, if the physical's
+// combined total differs, the difference is applied to one of that item's slots so the group
+// total (what the player sees, grouped by item) matches the fresh count. Object ids are
+// preserved for move tracking; only counts change. Items the physical lacks entirely are left
+// alone (the physical open matched the summary's slot count in practice, so this is a count-
+// only drift; adding synthetic rows into a physical container is avoided).
+func (a *Aggregator) refreshPhysicalCountsLocked(c *container, rows []ItemRef, nowMS int64) {
+	type key struct{ index, quality int }
+	want := map[key]int{}
+	for _, r := range rows {
+		want[key{r.Index, r.Quality}] += r.Count
+	}
+	have := map[key]int{}
+	anySlot := map[key]int{} // group -> a representative objID to carry the correction
+	for objID, it := range c.items {
+		k := key{it.Item.Index, it.Item.Quality}
+		have[k] += stackCount(it)
+		anySlot[k] = objID
+	}
+	changed := false
+	for k, w := range want {
+		objID, ok := anySlot[k]
+		if !ok || w == have[k] {
+			continue // absent from physical, or already fresh
+		}
+		it := c.items[objID]
+		if nc := it.Count + (w - have[k]); nc >= 1 {
+			it.Count = nc
+			c.items[objID] = it
+			changed = true
+		}
+	}
+	if changed {
+		c.lastSeen = nowMS
+	}
 }
 
 // SetCityVaultValues REPLACES the game-reported per-city vault totals from the K

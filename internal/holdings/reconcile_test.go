@@ -101,6 +101,31 @@ func TestVaultSummaryCombinesStackedSlots(t *testing.T) {
 	}
 }
 
+// 021 (reconcile-caught): a physically-opened bank tab shows stack counts from object
+// declarations, which go stale when a stack changes; a fresher R:518 overview must patch the
+// physical peer's counts (object ids preserved) so the total matches the game. FS tabs were
+// short by a few stacks (Expert's Rune 58, etc.) until this refresh.
+func TestVaultSummaryRefreshesStalePhysicalCounts(t *testing.T) {
+	a, _ := newAgg(t)
+	a.SetBankVault([]string{"o2"}, []string{"2"})
+	a.SetCurrentCity("Fort Sterling")
+	// Physical open: Expert's Rune (idx 837) at a STALE count of 100.
+	a.SetContainer("phys2", "o2", []SlotItem{{ObjID: 6001, Ref: ItemRef{Index: 837, Quality: 1, Count: 100}}}, 1000)
+	// Fresh overview says there are actually 158 (a 58 deposit landed after the declaration).
+	a.SetVaultSummaryTab("vault:Fort Sterling:2", "Fort Sterling", "2", []ItemRef{{Index: 837, Quality: 1, Count: 158}}, 2000)
+
+	rows := a.List()
+	if len(rows) != 1 {
+		t.Fatalf("still one deduped row, got %d: %+v", len(rows), rows)
+	}
+	if rows[0].ObjID != 6001 {
+		t.Fatalf("physical object id must survive (move tracking), got %d", rows[0].ObjID)
+	}
+	if rows[0].Count != 158 {
+		t.Fatalf("stale physical count must be refreshed to the fresh overview 158, got %d", rows[0].Count)
+	}
+}
+
 // 021: a bank tab deduped correctly reconciles clean against R:518; a genuinely over-counted
 // tab (two physical containers for the same city+tab) surfaces as EXTRA.
 func TestReconcileBankTabDoubleCount(t *testing.T) {
