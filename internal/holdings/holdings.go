@@ -416,7 +416,18 @@ func (a *Aggregator) SetVaultSummaryTab(tabGUID, city, tabName string, rows []It
 	c.items = make(map[int]model.HoldingItem, len(rows))
 	c.lastSeen = nowMS
 	for _, r := range rows {
+		// The synthetic id is keyed on (index, quality), so the SAME item+quality spread
+		// across several bank slots collides onto one entry. Overwriting kept only the last
+		// slot's count and silently dropped the rest — a large under-count for stacked
+		// resources (reconcile-caught 2026-07-11: Thetford Hammadde short by 2997, Medium
+		// Hide 107 kept, 1998 lost). Combine instead: the summary view shows one total per
+		// item, which is exactly what the player sees in the overview.
 		synthID := -(r.Index*16 + r.Quality) - 1
+		if existing, ok := c.items[synthID]; ok {
+			existing.Count += r.Count
+			c.items[synthID] = existing
+			continue
+		}
 		row := a.row(r.Index, r.Quality, r.Count, model.LocBank, city, tabName, nowMS)
 		row.ObjID = synthID
 		c.items[synthID] = row

@@ -74,6 +74,33 @@ func TestReconcileEquippedSeparateFromBag(t *testing.T) {
 	}
 }
 
+// 021 (reconcile-caught): a bank tab that holds the SAME item+quality in several slots must
+// COMBINE the counts, not keep only the last slot. R:518 sends one row per slot; the summary
+// synthetic id is keyed on (index, quality), so overwriting silently dropped stacked resources
+// (Thetford Hammadde short by 2997: Medium Hide 107 kept, 1998 lost).
+func TestVaultSummaryCombinesStackedSlots(t *testing.T) {
+	a, _ := newAgg(t)
+	a.SetVaultSummaryTab("vault:Thetford:Hammadde", "Thetford", "Hammadde", []ItemRef{
+		{Index: 920, Quality: 1, Count: 107},  // Medium Hide, slot A
+		{Index: 920, Quality: 1, Count: 1998}, // Medium Hide, slot B — same item+quality
+		{Index: 837, Quality: 1, Count: 999},  // a different item
+	}, 1000)
+	total := 0
+	var hide int
+	for _, r := range a.List() {
+		total += r.Count
+		if r.Item.Index == 920 {
+			hide += r.Count
+		}
+	}
+	if hide != 2105 {
+		t.Fatalf("stacked slots must combine: Medium Hide want 2105 (107+1998), got %d", hide)
+	}
+	if total != 3104 {
+		t.Fatalf("tab total want 3104 (2105+999), got %d", total)
+	}
+}
+
 // 021: a bank tab deduped correctly reconciles clean against R:518; a genuinely over-counted
 // tab (two physical containers for the same city+tab) surfaces as EXTRA.
 func TestReconcileBankTabDoubleCount(t *testing.T) {
