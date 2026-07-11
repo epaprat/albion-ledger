@@ -71,6 +71,11 @@ func (a *Aggregator) ReconcileBankTab(city, tab string, wire []ItemCount) Reconc
 	a.mu.Lock()
 	defer a.mu.Unlock()
 	physical := a.physicalBankTabsLocked()
+	// Bank tabs are compared by item + count only (quality collapsed). The two authoritative
+	// bank sources disagree on quality for trophy/treasure rows — a physically-opened tab
+	// declares them q0 (event-99) while the R:518 overview reports q1 (live 2026-07-11), a
+	// decode discrepancy independent of count accuracy. Keying on quality would drown the real
+	// signal (leaks / drops / double-counts / the stacked-resource under-count) in that noise.
 	got := map[msKey]int{}
 	for _, c := range a.containers {
 		if c.location != model.LocBank || bankCityName(c.city) != bankCityName(city) || c.tab != tab {
@@ -80,10 +85,14 @@ func (a *Aggregator) ReconcileBankTab(city, tab string, wire []ItemCount) Reconc
 			continue
 		}
 		for _, it := range c.items {
-			got[msKey{it.Item.Index, it.Item.Quality}] += stackCount(it)
+			got[msKey{it.Item.Index, 0}] += stackCount(it)
 		}
 	}
-	return a.reconcileLocked("BANK "+bankCityName(city)+"/"+tab, wire, got)
+	w := make([]ItemCount, len(wire))
+	for i, c := range wire {
+		w[i] = ItemCount{Index: c.Index, Quality: 0, Count: c.Count}
+	}
+	return a.reconcileLocked("BANK "+bankCityName(city)+"/"+tab, w, got)
 }
 
 // sectionMultisetLocked sums (index,quality)->count over every container matching keep.
