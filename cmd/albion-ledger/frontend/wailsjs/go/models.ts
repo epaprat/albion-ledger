@@ -1,5 +1,122 @@
+export namespace flow {
+	
+	export class CheckpointItem {
+	    Kind: string;
+	    Index: number;
+	    Quality: number;
+	    Qty: number;
+	    LastSeen: number;
+	
+	    static createFrom(source: any = {}) {
+	        return new CheckpointItem(source);
+	    }
+	
+	    constructor(source: any = {}) {
+	        if ('string' === typeof source) source = JSON.parse(source);
+	        this.Kind = source["Kind"];
+	        this.Index = source["Index"];
+	        this.Quality = source["Quality"];
+	        this.Qty = source["Qty"];
+	        this.LastSeen = source["LastSeen"];
+	    }
+	}
+	export class Checkpoint {
+	    StartedMS: number;
+	    LastActivityMS: number;
+	    NetSilver: number;
+	    LootValue: number;
+	    GatherValue: number;
+	    Fame: number;
+	    UnvaluedCount: number;
+	    EventCount: number;
+	    Zone: string;
+	    Items: CheckpointItem[];
+	
+	    static createFrom(source: any = {}) {
+	        return new Checkpoint(source);
+	    }
+	
+	    constructor(source: any = {}) {
+	        if ('string' === typeof source) source = JSON.parse(source);
+	        this.StartedMS = source["StartedMS"];
+	        this.LastActivityMS = source["LastActivityMS"];
+	        this.NetSilver = source["NetSilver"];
+	        this.LootValue = source["LootValue"];
+	        this.GatherValue = source["GatherValue"];
+	        this.Fame = source["Fame"];
+	        this.UnvaluedCount = source["UnvaluedCount"];
+	        this.EventCount = source["EventCount"];
+	        this.Zone = source["Zone"];
+	        this.Items = this.convertValues(source["Items"], CheckpointItem);
+	    }
+	
+		convertValues(a: any, classs: any, asMap: boolean = false): any {
+		    if (!a) {
+		        return a;
+		    }
+		    if (a.slice && a.map) {
+		        return (a as any[]).map(elem => this.convertValues(elem, classs));
+		    } else if ("object" === typeof a) {
+		        if (asMap) {
+		            for (const key of Object.keys(a)) {
+		                a[key] = new classs(a[key]);
+		            }
+		            return a;
+		        }
+		        return new classs(a);
+		    }
+		    return a;
+		}
+	}
+
+}
+
 export namespace holdings {
 	
+	export class ContainerSnapshot {
+	    GUID: string;
+	    Location: string;
+	    City: string;
+	    Tab: string;
+	    LastSeen: number;
+	    Pinned: boolean;
+	    Summary: boolean;
+	    Items: model.HoldingItem[];
+	
+	    static createFrom(source: any = {}) {
+	        return new ContainerSnapshot(source);
+	    }
+	
+	    constructor(source: any = {}) {
+	        if ('string' === typeof source) source = JSON.parse(source);
+	        this.GUID = source["GUID"];
+	        this.Location = source["Location"];
+	        this.City = source["City"];
+	        this.Tab = source["Tab"];
+	        this.LastSeen = source["LastSeen"];
+	        this.Pinned = source["Pinned"];
+	        this.Summary = source["Summary"];
+	        this.Items = this.convertValues(source["Items"], model.HoldingItem);
+	    }
+	
+		convertValues(a: any, classs: any, asMap: boolean = false): any {
+		    if (!a) {
+		        return a;
+		    }
+		    if (a.slice && a.map) {
+		        return (a as any[]).map(elem => this.convertValues(elem, classs));
+		    } else if ("object" === typeof a) {
+		        if (asMap) {
+		            for (const key of Object.keys(a)) {
+		                a[key] = new classs(a[key]);
+		            }
+		            return a;
+		        }
+		        return new classs(a);
+		    }
+		    return a;
+		}
+	}
 	export class ItemRef {
 	    Index: number;
 	    Quality: number;
@@ -565,6 +682,7 @@ export namespace model {
 	    net: number;
 	    count: number;
 	    scope: string;
+	    windowStart: number;
 	
 	    static createFrom(source: any = {}) {
 	        return new TradeSummary(source);
@@ -579,6 +697,7 @@ export namespace model {
 	        this.net = source["net"];
 	        this.count = source["count"];
 	        this.scope = source["scope"];
+	        this.windowStart = source["windowStart"];
 	    }
 	}
 	

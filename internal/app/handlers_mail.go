@@ -70,9 +70,7 @@ func handleMailRead(p *Pipeline, _ probe.Kind, _ int, params map[byte]interface{
 	}
 	info, known := p.getMailInfo(id)
 	if !known {
-		if p.debug {
-			log.Printf("[mail] read %d dropped: type unknown (infos not seen this session)", id)
-		}
+		p.dropf("[mail] read %d dropped: type unknown (infos not seen this session)", id)
 		return
 	}
 	parsed, ok := mailtrade.ParseBody(mailtrade.TypeFromString(info.typ), body)
@@ -98,7 +96,7 @@ func handleMailRead(p *Pipeline, _ probe.Kind, _ int, params map[byte]interface{
 		SalesTax:      bd.SalesTax,
 		Net:           bd.Net,
 		TaxEstimated:  bd.Estimated,
-		UnitSilver: parsed.UnitSilver,
+		UnitSilver:    parsed.UnitSilver,
 		// Order by the real sale time from the mail (normalized to unix ms) so a recent
 		// order-fill sorts by when it SOLD, not when the mail was opened; fall back to
 		// capture time when the wire carries no usable timestamp.

@@ -9,6 +9,7 @@ import (
 	"sort"
 	"sync"
 
+	"github.com/epaprat/albion-ledger/internal/boundedmap"
 	"github.com/epaprat/albion-ledger/internal/domain/model"
 	"github.com/epaprat/albion-ledger/internal/port"
 )
@@ -62,12 +63,11 @@ type Ledger struct {
 	selfName  string
 	zone      string // current zone/cluster label, stamped onto each event (006 analytics)
 
-	events         map[string]*model.FlowEvent // by id (bounded ring)
-	order          []string                    // event ids, oldest first
-	dedup          map[string]struct{}         // seen ids (persists past ring eviction, FR-008)
-	dedupOrder     []string
-	unvaluedByItem map[ik][]string     // item identity -> live unvalued event ids (FR-009)
-	itemAgg        map[ikk]*itemStat   // per-item session totals (loot/gather breakdown)
+	events         map[string]*model.FlowEvent       // by id (bounded ring)
+	order          []string                          // event ids, oldest first
+	dedup          *boundedmap.Map[string, struct{}] // seen ids (persists past ring eviction, FR-008; bounded)
+	unvaluedByItem map[ik][]string                   // item identity -> live unvalued event ids (FR-009)
+	itemAgg        map[ikk]*itemStat                 // per-item session totals (loot/gather breakdown)
 
 	startedMS      int64
 	lastActivityMS int64
@@ -78,7 +78,15 @@ type Ledger struct {
 	fame           int64
 	unvaluedCount  int
 	eventCount     int
+
+	// pendingCompleted holds sessions that closed (idle-timeout → a new session started)
+	// and are waiting to be persisted to the permanent history (020 US4). Bounded: a slow
+	// or absent drainer must not grow it without limit (Principle XI).
+	pendingCompleted []CompletedSession
 }
+
+// pendingCompletedCap bounds the un-drained completed-session queue (Principle XI).
+const pendingCompletedCap = 64
 
 // New creates a Ledger. idleMS<=0 → DefaultIdleMS; maxEvents<=0 → DefaultCap.
 func New(val port.Valuer, idleMS int64, maxEvents int) *Ledger {
@@ -91,7 +99,7 @@ func New(val port.Valuer, idleMS int64, maxEvents int) *Ledger {
 	return &Ledger{
 		val: val, idleMS: idleMS, maxEvents: maxEvents,
 		events:         map[string]*model.FlowEvent{},
-		dedup:          map[string]struct{}{},
+		dedup:          boundedmap.New[string, struct{}](maxEvents * 4),
 		unvaluedByItem: map[ik][]string{},
 		itemAgg:        map[ikk]*itemStat{},
 	}
@@ -326,13 +334,19 @@ func (l *Ledger) touch(ts int64) {
 }
 
 func (l *Ledger) startSession(ts int64) {
+	// A new session is beginning: the one that just ended (had earnings) is promoted to the
+	// pending history queue before its state is reset (AFM completed-session model, 020 US4).
+	if l.active && l.eventCount > 0 {
+		if len(l.pendingCompleted) < pendingCompletedCap {
+			l.pendingCompleted = append(l.pendingCompleted, l.completedLocked())
+		}
+	}
 	l.active = true
 	l.startedMS = ts
 	l.lastActivityMS = ts
 	l.events = map[string]*model.FlowEvent{}
 	l.order = nil
-	l.dedup = map[string]struct{}{}
-	l.dedupOrder = nil
+	l.dedup = boundedmap.New[string, struct{}](l.maxEvents * 4)
 	l.unvaluedByItem = map[ik][]string{}
 	l.itemAgg = map[ikk]*itemStat{}
 	l.netSilver, l.lootValue, l.gatherValue, l.fame = 0, 0, 0, 0
@@ -342,16 +356,10 @@ func (l *Ledger) startSession(ts int64) {
 // dup returns true if id was already seen this session; otherwise records it. The
 // dedup set persists past ring eviction so a re-sent event never double-counts (FR-008).
 func (l *Ledger) dup(id string) bool {
-	if _, ok := l.dedup[id]; ok {
+	if _, ok := l.dedup.Get(id); ok {
 		return true
 	}
-	l.dedup[id] = struct{}{}
-	l.dedupOrder = append(l.dedupOrder, id)
-	if len(l.dedupOrder) > l.maxEvents*4 { // one append per call → at most one over
-		old := l.dedupOrder[0]
-		l.dedupOrder = l.dedupOrder[1:]
-		delete(l.dedup, old)
-	}
+	l.dedup.Put(id, struct{}{}) // bounded at maxEvents*4, oldest-evicted
 	return false
 }
 
@@ -383,5 +391,139 @@ func (l *Ledger) removeUnvaluedRef(key ik, id string) {
 	}
 	if len(l.unvaluedByItem[key]) == 0 {
 		delete(l.unvaluedByItem, key)
+	}
+}
+
+// ── Session checkpoint / resume (020, AFM model) ─────────────────────────────
+
+// CheckpointItem is one per-item session total inside a checkpoint / completed session.
+type CheckpointItem struct {
+	Kind     model.FlowKind
+	Index    int
+	Quality  int
+	Qty      int
+	LastSeen int64
+}
+
+// Checkpoint is the full live-session state, enough to RESUME it on the next launch.
+type Checkpoint struct {
+	StartedMS      int64
+	LastActivityMS int64
+	NetSilver      int64
+	LootValue      int64
+	GatherValue    int64
+	Fame           int64
+	UnvaluedCount  int
+	EventCount     int
+	Zone           string
+	Items          []CheckpointItem
+}
+
+// CompletedSession is a finished session's summary + item breakdown (permanent history).
+type CompletedSession struct {
+	StartedMS       int64
+	EndedMS         int64
+	ActiveElapsedMS int64
+	NetSilver       int64
+	LootValue       int64
+	GatherValue     int64
+	Fame            int64
+	SilverPerHour   int64
+	Items           []CheckpointItem
+}
+
+func (l *Ledger) itemsLocked() []CheckpointItem {
+	out := make([]CheckpointItem, 0, len(l.itemAgg))
+	for k, st := range l.itemAgg {
+		out = append(out, CheckpointItem{Kind: k.kind, Index: k.index, Quality: k.quality, Qty: st.qty, LastSeen: st.lastSeen})
+	}
+	return out
+}
+
+// Checkpoint returns the current live session for persistence; ok=false when idle (no
+// active session to save).
+func (l *Ledger) Checkpoint() (Checkpoint, bool) {
+	l.mu.Lock()
+	defer l.mu.Unlock()
+	if !l.active {
+		return Checkpoint{}, false
+	}
+	return Checkpoint{
+		StartedMS: l.startedMS, LastActivityMS: l.lastActivityMS,
+		NetSilver: l.netSilver, LootValue: l.lootValue, GatherValue: l.gatherValue, Fame: l.fame,
+		UnvaluedCount: l.unvaluedCount, EventCount: l.eventCount, Zone: l.zone,
+		Items: l.itemsLocked(),
+	}, true
+}
+
+// RestoreCheckpoint resumes a persisted session IF it is still within the idle window and no
+// live session has started yet this run. Returns true when resumed.
+func (l *Ledger) RestoreCheckpoint(cp Checkpoint, now int64) bool {
+	l.mu.Lock()
+	defer l.mu.Unlock()
+	if l.active || now-cp.LastActivityMS > l.idleMS {
+		return false
+	}
+	l.active = true
+	l.startedMS, l.lastActivityMS = cp.StartedMS, cp.LastActivityMS
+	l.netSilver, l.lootValue, l.gatherValue, l.fame = cp.NetSilver, cp.LootValue, cp.GatherValue, cp.Fame
+	l.unvaluedCount, l.eventCount, l.zone = cp.UnvaluedCount, cp.EventCount, cp.Zone
+	l.itemAgg = make(map[ikk]*itemStat, len(cp.Items))
+	for _, it := range cp.Items {
+		l.itemAgg[ikk{it.Kind, it.Index, it.Quality}] = &itemStat{qty: it.Qty, lastSeen: it.LastSeen}
+	}
+	return true
+}
+
+// completedLocked builds the current session's completed summary (caller holds l.mu).
+func (l *Ledger) completedLocked() CompletedSession {
+	elapsed := l.lastActivityMS - l.startedMS
+	var perHour int64
+	if elapsed > 0 {
+		perHour = l.netSilver * 3_600_000 / elapsed
+	}
+	return CompletedSession{
+		StartedMS: l.startedMS, EndedMS: l.lastActivityMS, ActiveElapsedMS: elapsed,
+		NetSilver: l.netSilver, LootValue: l.lootValue, GatherValue: l.gatherValue, Fame: l.fame,
+		SilverPerHour: perHour, Items: l.itemsLocked(),
+	}
+}
+
+// CompletedSnapshot summarizes the session (active or last) for the permanent history;
+// ok=false when nothing was ever earned.
+func (l *Ledger) CompletedSnapshot() (CompletedSession, bool) {
+	l.mu.Lock()
+	defer l.mu.Unlock()
+	if l.eventCount == 0 {
+		return CompletedSession{}, false
+	}
+	return l.completedLocked(), true
+}
+
+// DrainCompleted returns and clears the sessions that closed since the last drain, so the
+// caller can persist them to the permanent history (020 US4).
+func (l *Ledger) DrainCompleted() []CompletedSession {
+	l.mu.Lock()
+	defer l.mu.Unlock()
+	if len(l.pendingCompleted) == 0 {
+		return nil
+	}
+	out := l.pendingCompleted
+	l.pendingCompleted = nil
+	return out
+}
+
+// CompletedFromCheckpoint builds a completed-session summary directly from a checkpoint —
+// used to promote an idle-expired checkpoint to history at startup, without a live ledger.
+func CompletedFromCheckpoint(cp Checkpoint) CompletedSession {
+	elapsed := cp.LastActivityMS - cp.StartedMS
+	var perHour int64
+	if elapsed > 0 {
+		perHour = cp.NetSilver * 3_600_000 / elapsed
+	}
+	return CompletedSession{
+		StartedMS: cp.StartedMS, EndedMS: cp.LastActivityMS, ActiveElapsedMS: elapsed,
+		NetSilver: cp.NetSilver, LootValue: cp.LootValue, GatherValue: cp.GatherValue, Fame: cp.Fame,
+		SilverPerHour: perHour, Items: cp.Items,
 	}
 }

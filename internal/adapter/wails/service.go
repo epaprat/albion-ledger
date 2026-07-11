@@ -5,6 +5,7 @@ package wailsadapter
 
 import (
 	"context"
+	"encoding/json"
 	"fmt"
 	"log"
 	"sort"
@@ -13,6 +14,7 @@ import (
 	"sync/atomic"
 	"time"
 
+	"github.com/epaprat/albion-ledger/internal/boundedmap"
 	"github.com/epaprat/albion-ledger/internal/domain/model"
 	"github.com/epaprat/albion-ledger/internal/flow"
 	"github.com/epaprat/albion-ledger/internal/holdings"
@@ -40,12 +42,13 @@ const (
 
 // Service holds the bounded live-view state and the bound methods.
 type Service struct {
-	cat   port.Catalog
-	book  *valuation.Book
-	val   port.Valuer
-	emit  Emitter
-	cap   int
-	nowMS func() int64
+	cat     port.Catalog
+	book    *valuation.Book
+	val     port.Valuer
+	emit    Emitter
+	cap     int
+	nowMS   func() int64
+	startMS int64 // process/session start (realized-P&L window "session", 018)
 
 	agg  *holdings.Aggregator
 	flow *flow.Ledger
@@ -68,9 +71,16 @@ type Service struct {
 	walletKnown     bool
 	walletLastSeen  int64
 
-	tradeStore TradeStore             // marketplace trade persistence (017); nil = in-memory
-	trades     map[string]model.Trade // by trade id (dedup, FR-010)
-	tradeOrder []string               // insertion order for FIFO cap eviction
+	tradeStore TradeStore                           // marketplace trade persistence (017); nil = in-memory
+	trades     *boundedmap.Map[string, model.Trade] // by trade id (dedup, FR-010; bounded FIFO)
+
+	holdingsStore StateStore  // view-state persistence (holdings/wallet/spec, 020); nil = in-memory
+	holdingsDirty atomic.Bool // a holdings change is owed a flush (set on the pipeline goroutine, read by the flush loop)
+	walletDirty   atomic.Bool // a wallet change is owed a flush (020 US2)
+	specDirty     atomic.Bool // a spec-board change is owed a flush (020 US3)
+
+	flowBatch bool // coalesce flow-changed emits during a loot burst (019)
+	flowDirty bool // a flow refresh is owed when the batch ends
 
 	mu     sync.Mutex
 	items  map[int]*model.LiveViewItem // by item index
@@ -85,13 +95,18 @@ func NewService(cat port.Catalog, book *valuation.Book, val port.Valuer, emit Em
 	}
 	return &Service{
 		cat: cat, book: book, val: val, emit: emit, cap: cap, nowMS: nowMS,
+		startMS:       nowMS(),
 		items:         map[int]*model.LiveViewItem{},
-		trades:        map[string]model.Trade{},
+		trades:        boundedmap.New[string, model.Trade](cap),
 		agg:           holdings.New(cat, val, model.DefaultStaleAfterMS),
 		flow:          flow.New(val, flow.DefaultIdleMS, flow.DefaultCap),
 		externalNudge: make(chan struct{}, 1),
 	}
 }
+
+// SetHoldingsDebug forwards the -debugflow flag to the holdings aggregator so bank-open
+// dedup resolution is traced (holdings double-count investigation).
+func (s *Service) SetHoldingsDebug(v bool) { s.agg.SetDebug(v) }
 
 // IngestEMV records an item's estimated value and refreshes its view row. A newly
 // known value also back-fills any flow loot/gather rows that were unvalued (FR-009).
@@ -326,12 +341,14 @@ func (s *Service) SetSpec(spec model.CharacterSpec) {
 	s.spec = spec
 	snap := s.spec
 	s.mu.Unlock()
+	s.specDirty.Store(true) // persist the full board (020 US3)
 	if s.emit != nil {
 		s.emit.Emit(EventSpecChanged, snap)
 	}
 }
 
 func (s *Service) emitHoldings() {
+	s.holdingsDirty.Store(true) // a container changed → owe the persistence loop a flush (020)
 	if s.emit != nil {
 		s.emit.Emit(EventHoldingsChanged, s.agg.Summary(s.nowMS()))
 	}
@@ -350,7 +367,9 @@ func (s *Service) SetZone(zone string) { s.flow.SetZone(zone) }
 // calls this periodically so idle auto-close and the live elapsed/rate stay observable
 // between earnings — the summary is otherwise only pushed on ingest, which would leave
 // the UI frozen on "Active" after the last earning.
-func (s *Service) EmitFlowNow() { s.emitFlow() }
+// It runs on the status-ticker goroutine, so it broadcasts directly — bypassing the
+// pipeline-only flow-batch flags — to avoid an unsynchronized cross-goroutine read of them.
+func (s *Service) EmitFlowNow() { s.broadcastFlow() }
 
 // IngestSilver records a net-silver earning and broadcasts the flow summary.
 // A deduped (nil) event changes nothing, so it neither persists nor emits.
@@ -385,7 +404,38 @@ func (s *Service) IngestFame(id string, fame int64, ts int64) {
 	}
 }
 
+// BeginFlowBatch/EndFlowBatch coalesce flow-changed refreshes across a burst of ingests
+// (take-all loot) into a single emit (019). The flowBatch/flowDirty flags are touched ONLY
+// by the pipeline goroutine — the Ingest* path plus this Begin/End — so they need no lock.
+// EmitFlowNow (status-ticker goroutine) deliberately bypasses them via broadcastFlow, so
+// there is no cross-goroutine access to these flags.
+func (s *Service) BeginFlowBatch() {
+	s.flowBatch = true
+	s.flowDirty = false
+}
+
+func (s *Service) EndFlowBatch() {
+	s.flowBatch = false
+	if s.flowDirty {
+		s.flowDirty = false
+		s.broadcastFlow()
+	}
+}
+
+// emitFlow is the pipeline-goroutine flow refresh: it coalesces into an open batch when one
+// is active, else broadcasts immediately.
 func (s *Service) emitFlow() {
+	if s.flowBatch {
+		s.flowDirty = true // a refresh is owed; EndFlowBatch will broadcast it once
+		return
+	}
+	s.broadcastFlow()
+}
+
+// broadcastFlow emits the current session summary unconditionally. It touches no batch
+// state (only the immutable emitter + the internally-locked flow ledger), so it is safe to
+// call from any goroutine — the status ticker's EmitFlowNow does.
+func (s *Service) broadcastFlow() {
 	if s.emit != nil {
 		s.emit.Emit(EventFlowChanged, s.flow.Summary(s.nowMS()))
 	}
@@ -665,6 +715,7 @@ func (s *Service) SetWallet(silver int64, ts int64) {
 	}
 	s.mu.Unlock()
 	if applied {
+		s.walletDirty.Store(true) // persist the new balance (020 US2)
 		s.emitHoldings()
 	}
 }
@@ -723,20 +774,148 @@ func (s *Service) SetTradeStore(store TradeStore) {
 	s.mu.Unlock()
 }
 
+// ── Holdings persistence & hydration (020) ───────────────────────────────────
+
+// StateStore persists the live view state (holdings, wallet, spec board) so every screen
+// hydrates immediately on the next launch (stale-labelled until re-seen live, 020).
+type StateStore interface {
+	SaveContainer(ctx context.Context, c holdings.ContainerSnapshot) error
+	LoadContainers(ctx context.Context) ([]holdings.ContainerSnapshot, error)
+	SaveWallet(ctx context.Context, silver, lastSeen int64) error
+	SaveSpecBoard(ctx context.Context, boardJSON string, lastSeen int64) error
+	SaveFlowCheckpoint(ctx context.Context, cp flow.Checkpoint) error
+	SaveFlowSession(ctx context.Context, cs flow.CompletedSession) error
+}
+
+// SetStateStore wires the view-state persistence sink (nil keeps state in-memory).
+func (s *Service) SetStateStore(store StateStore) {
+	s.mu.Lock()
+	s.holdingsStore = store
+	s.mu.Unlock()
+}
+
+// SeedHoldings restores persisted containers into the live aggregator at startup (020).
+// They arrive stale (their original LastSeen) and never clobber a container that live data
+// already claimed this session.
+func (s *Service) SeedHoldings(snaps []holdings.ContainerSnapshot) {
+	if len(snaps) == 0 {
+		return
+	}
+	s.agg.SeedContainers(snaps)
+	s.emitHoldings()
+}
+
+// StartStatePersistence runs a debounced background flush: whenever holdings/wallet/spec
+// changed, the bounded snapshot is written off the capture goroutine. A final flush runs on
+// ctx cancel so the last state survives a clean shutdown.
+func (s *Service) StartStatePersistence(ctx context.Context) {
+	s.mu.Lock()
+	store := s.holdingsStore
+	s.mu.Unlock()
+	if store == nil {
+		return
+	}
+	go func() {
+		t := time.NewTicker(3 * time.Second)
+		defer t.Stop()
+		for {
+			select {
+			case <-ctx.Done():
+				s.flushState(store)
+				return
+			case <-t.C:
+				s.flushState(store)
+			}
+		}
+	}()
+}
+
+// flushState persists any pending holdings/wallet/spec change, then clears its flag.
+func (s *Service) flushState(store StateStore) {
+	if s.holdingsDirty.Swap(false) {
+		for _, c := range s.agg.Snapshot() {
+			if err := store.SaveContainer(context.Background(), c); err != nil {
+				log.Printf("holdings store write failed (%s): %v", c.GUID, err)
+				s.holdingsDirty.Store(true) // retry next tick
+				break
+			}
+		}
+	}
+	if s.walletDirty.Swap(false) {
+		s.mu.Lock()
+		silver, known, seen := s.walletSilver, s.walletKnown, s.walletLastSeen
+		s.mu.Unlock()
+		if known {
+			if err := store.SaveWallet(context.Background(), silver, seen); err != nil {
+				log.Printf("wallet store write failed: %v", err)
+				s.walletDirty.Store(true)
+			}
+		}
+	}
+	if s.specDirty.Swap(false) {
+		s.mu.Lock()
+		snap := s.spec
+		s.mu.Unlock()
+		if b, err := json.Marshal(snap); err == nil {
+			if err := store.SaveSpecBoard(context.Background(), string(b), s.nowMS()); err != nil {
+				log.Printf("spec-board store write failed: %v", err)
+				s.specDirty.Store(true)
+			}
+		}
+	}
+	// Flow sessions that idle-closed since the last flush → permanent history (020 US4).
+	for _, cs := range s.flow.DrainCompleted() {
+		if err := store.SaveFlowSession(context.Background(), cs); err != nil {
+			log.Printf("flow session store write failed: %v", err)
+		}
+	}
+	// Flow checkpoint (020 US4, AFM): persist the live session every tick so a reopen can
+	// resume it. No dirty flag — the session's elapsed time advances continuously, so the
+	// latest checkpoint is always worth writing while a session is active.
+	if cp, ok := s.flow.Checkpoint(); ok {
+		if err := store.SaveFlowCheckpoint(context.Background(), cp); err != nil {
+			log.Printf("flow checkpoint store write failed: %v", err)
+		}
+	}
+}
+
+// ResumeFlow restores a persisted live session at startup (020 US4). Returns true when the
+// session was still within the idle window and resumed; false when it had expired (the
+// caller then promotes the checkpoint to completed history).
+func (s *Service) ResumeFlow(cp flow.Checkpoint) bool {
+	if !s.flow.RestoreCheckpoint(cp, s.nowMS()) {
+		return false
+	}
+	s.emitFlow()
+	return true
+}
+
+// SeedWallet restores the persisted wallet balance at startup (020 US2): shown stale until a
+// live E:81 refreshes it. Only applies when a balance was actually persisted (ok).
+func (s *Service) SeedWallet(silver, lastSeen int64) {
+	s.SetWallet(silver, lastSeen)
+}
+
+// SeedSpecBoard restores the persisted spec board at startup (020 US3): the full tree
+// (in-progress + maxed) shows immediately, replaced when the login E:154 board arrives.
+func (s *Service) SeedSpecBoard(boardJSON string) {
+	var spec model.CharacterSpec
+	if err := json.Unmarshal([]byte(boardJSON), &spec); err != nil {
+		log.Printf("spec-board hydrate: corrupt payload, skipping: %v", err)
+		return // fall back to the 011 maxed/enum path (FR-008)
+	}
+	s.SetSpec(spec)
+}
+
 // SeedTrades preloads the persisted ledger into the live view at startup (FR-011).
-// LoadTrades returns newest-first, but tradeOrder must be oldest-first (evictTrades drops
-// the front as the FIFO victim) — so iterate in reverse, else the first live trade of the
-// session would evict the newest history instead of the oldest (review).
+// LoadTrades returns newest-first, but the cache evicts oldest-inserted first — so seed in
+// reverse (oldest first), else the first live trade of the session would evict the newest
+// history instead of the oldest (review).
 func (s *Service) SeedTrades(trades []model.Trade) {
 	s.mu.Lock()
 	for i := len(trades) - 1; i >= 0; i-- {
-		t := trades[i]
-		if _, ok := s.trades[t.TradeID]; !ok {
-			s.tradeOrder = append(s.tradeOrder, t.TradeID)
-		}
-		s.trades[t.TradeID] = t
+		s.trades.Put(trades[i].TradeID, trades[i])
 	}
-	s.evictTrades()
 	s.mu.Unlock()
 	s.emitTrades()
 }
@@ -746,14 +925,10 @@ func (s *Service) SeedTrades(trades []model.Trade) {
 // and re-emits — no redundant refresh (mirrors SetWallet, 016).
 func (s *Service) AddTrade(t model.Trade) {
 	s.mu.Lock()
-	prev, existed := s.trades[t.TradeID]
+	prev, existed := s.trades.Get(t.TradeID)
 	changed := !existed || prev != t
-	if !existed {
-		s.tradeOrder = append(s.tradeOrder, t.TradeID)
-	}
 	if changed {
-		s.trades[t.TradeID] = t
-		s.evictTrades()
+		s.trades.Put(t.TradeID, t) // new key evicts oldest at cap; existing refreshes in place
 	}
 	store := s.tradeStore
 	s.mu.Unlock()
@@ -766,14 +941,6 @@ func (s *Service) AddTrade(t model.Trade) {
 		}
 	}
 	s.emitTrades()
-}
-
-func (s *Service) evictTrades() {
-	for len(s.trades) > s.cap && len(s.tradeOrder) > 0 {
-		oldest := s.tradeOrder[0]
-		s.tradeOrder = s.tradeOrder[1:]
-		delete(s.trades, oldest)
-	}
 }
 
 // tradeItemName resolves a mail item id to a display name. The catalog keys enchanted
@@ -802,10 +969,7 @@ func (s *Service) tradeItemName(itemID string) string {
 // index (instant sell) resolves through the catalog even without a uniqueName.
 func (s *Service) Trades() []model.Trade {
 	s.mu.Lock()
-	out := make([]model.Trade, 0, len(s.trades))
-	for _, t := range s.trades {
-		out = append(out, t)
-	}
+	out := s.trades.Values()
 	s.mu.Unlock()
 	for i := range out {
 		out[i].ItemName = s.resolveTradeName(out[i])
@@ -845,14 +1009,21 @@ func (s *Service) resolveTradeName(t model.Trade) string {
 	return "Unknown item"
 }
 
-// TradeSummary rolls up the fee/tax/net breakdown over captured trades (read-time,
-// Principle V) — each component summed SEPARATELY (FR-008). Net = income − expense (the
-// real wallet movement). Scope is the honest coverage label.
-func (s *Service) TradeSummary() model.TradeSummary {
+// TradeSummary rolls up the fee/tax/net breakdown over captured trades for a time window
+// (read-time, Principle V) — each component summed SEPARATELY (FR-008). Net = income −
+// expense (the real wallet movement). window ∈ {"session","today","7d","all"} ("" → all).
+// The window boundary is the single realizedWindowStart rule so this and the Holdings
+// header can never disagree (SC-005).
+func (s *Service) TradeSummary(window string) model.TradeSummary {
+	start := s.realizedWindowStart(window)
 	s.mu.Lock()
 	defer s.mu.Unlock()
-	sum := model.TradeSummary{Count: len(s.trades), Scope: "opened mails + live trades"}
-	for _, t := range s.trades {
+	sum := model.TradeSummary{Scope: realizedScope(window), WindowStart: start}
+	for _, t := range s.trades.Values() {
+		if normalizeTradeMs(t.Received) < start {
+			continue // outside the window (heal .NET ticks before comparing)
+		}
+		sum.Count++
 		if t.Direction == model.TradeBought {
 			sum.GrossExpense += t.Gross
 		} else {
@@ -863,6 +1034,43 @@ func (s *Service) TradeSummary() model.TradeSummary {
 		sum.Net += t.Net
 	}
 	return sum
+}
+
+// realizedWindowStart returns the earliest received-ms included for a window (018). ONE
+// rule — received >= start — shared by every realized-P&L read (SC-005).
+func (s *Service) realizedWindowStart(window string) int64 {
+	now := s.nowMS()
+	switch window {
+	case "session":
+		return s.startMS
+	case "today":
+		return startOfLocalDayMS(now)
+	case "7d":
+		return now - 7*86_400_000
+	default: // "all" and any unknown → everything
+		return 0
+	}
+}
+
+// startOfLocalDayMS returns local midnight (ms) for the day containing nowMS.
+func startOfLocalDayMS(nowMS int64) int64 {
+	t := time.UnixMilli(nowMS)
+	y, m, d := t.Date()
+	return time.Date(y, m, d, 0, 0, 0, 0, t.Location()).UnixMilli()
+}
+
+// realizedScope is the honest coverage label shown with a window's totals.
+func realizedScope(window string) string {
+	switch window {
+	case "session":
+		return "this session"
+	case "today":
+		return "today"
+	case "7d":
+		return "last 7 days"
+	default:
+		return "all time"
+	}
 }
 
 // normalizeTradeMs heals a Received value that was persisted as raw .NET DateTime ticks
@@ -877,6 +1085,6 @@ func normalizeTradeMs(v int64) int64 {
 
 func (s *Service) emitTrades() {
 	if s.emit != nil {
-		s.emit.Emit(EventTradesChanged, s.TradeSummary())
+		s.emit.Emit(EventTradesChanged, s.TradeSummary("all"))
 	}
 }

@@ -45,6 +45,7 @@ type TradeSummary struct {
 	Net          int64  `json:"net"`          // Σ net (income − expense)
 	Count        int    `json:"count"`
 	Scope        string `json:"scope"`
+	WindowStart  int64  `json:"windowStart"` // earliest received-ms in scope (0 = all time); the ledger table filters to this so the hero and the rows always agree (018)
 }
 
 // MailInfo is a persisted mail-type record (017): the id→type map from GetMailInfos,

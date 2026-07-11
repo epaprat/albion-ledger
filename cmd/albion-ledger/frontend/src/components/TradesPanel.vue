@@ -2,20 +2,27 @@
 import { computed, reactive, ref } from 'vue'
 import { fmt, compact } from '../format.js'
 import { useTable } from '../composables/useTable.js'
-import { netClass as netClassOf, amountText as amountTextOf, sourceLabel, tradeFields, tradeAccessor } from '../composables/trades.js'
+import { netClass as netClassOf, amountText as amountTextOf, sourceLabel, tradeFields, tradeAccessor, realizedWindows } from '../composables/trades.js'
 import StateBlock from './StateBlock.vue'
 import SortTh from './SortTh.vue'
 import FilterBar from './FilterBar.vue'
 
 const props = defineProps({
-  trades: { type: Array, required: true },   // Trade[]
-  summary: { type: Object, required: true }, // TradeSummary
+  trades: { type: Array, required: true },       // Trade[]
+  summary: { type: Object, required: true },     // TradeSummary (for the selected window)
+  window: { type: String, default: 'session' },  // realized-P&L window (018)
 })
+const emit = defineEmits(['update:window'])
 
-// Direction filter: all / sold (income) / bought (expense incl. fees).
+// The ledger table is scoped to the SAME window as the hero, so the two never contradict
+// (received >= windowStart; 0 = all time). Then the direction segment filters within it.
+const windowed = computed(() => {
+  const start = props.summary.windowStart || 0
+  return start > 0 ? props.trades.filter((t) => (t.received || 0) >= start) : props.trades
+})
 const dirFilter = ref('all')
 const filtered = computed(() =>
-  dirFilter.value === 'all' ? props.trades : props.trades.filter((t) => t.direction === dirFilter.value))
+  dirFilter.value === 'all' ? windowed.value : windowed.value.filter((t) => t.direction === dirFilter.value))
 const table = useTable(filtered, {
   fields: tradeFields,
   accessor: tradeAccessor,
@@ -48,30 +55,38 @@ const initials = (r) => {
 }
 // Signed, coloured net for the last column.
 const netText = (r) => (r.net >= 0 ? '+' : '') + fmt(r.net)
+// realizedWindows drives the window selector; the label reads, the value hits the backend.
+const windows = realizedWindows
 </script>
 
 <template>
   <section aria-label="Trades">
-    <!-- Summary: net leads; income / tax / setup / expense broken out (FR-008) -->
+    <!-- Summary: realized P&L for the selected window; net leads, components broken out -->
     <div class="hero" role="status" aria-live="polite">
       <div class="net-box">
-        <span class="net-label">Net trade</span>
+        <span class="net-label">Realized net · {{ summary.scope }}</span>
         <strong :class="netClass">{{ compact(summary.net) }}</strong>
       </div>
-      <dl class="parts">
+      <dl class="parts" v-if="summary.count">
         <div><dt>Income</dt><dd class="pos">{{ compact(summary.grossIncome) }}</dd></div>
         <div><dt>Sales tax</dt><dd class="fee">−{{ compact(summary.salesTax) }}</dd></div>
         <div v-if="summary.setupFee"><dt>Setup fees</dt><dd class="fee">−{{ compact(summary.setupFee) }}</dd></div>
         <div><dt>Expense</dt><dd class="neg">−{{ compact(summary.grossExpense) }}</dd></div>
       </dl>
+      <span class="win seg" role="group" aria-label="Realized P&L window">
+        <button v-for="w in windows" :key="w.value" :class="{ active: window === w.value }"
+          @click="emit('update:window', w.value)" :aria-pressed="window === w.value">{{ w.label }}</button>
+      </span>
       <span class="scope" :title="'Passive capture — order fills need the mail opened; instant/quicksell reconstructed from the wallet delta'">
-        {{ summary.count }} trades · {{ summary.scope }}
+        {{ summary.count }} trades
       </span>
     </div>
 
-    <StateBlock v-if="trades.length === 0" variant="empty" title="No trades captured yet">
-      Sell or buy on the marketplace — order fills (open the mail), instant sells, quicksells and
-      instant buys all land here, broken down by gross, tax and net. Passive, ToS-safe.
+    <StateBlock v-if="windowed.length === 0" variant="empty"
+      :title="trades.length ? 'No trades in this window' : 'No trades captured yet'">
+      <template v-if="trades.length">Nothing in this time window — pick a wider window above to see more.</template>
+      <template v-else>Sell or buy on the marketplace — order fills (open the mail), instant sells, quicksells and
+      instant buys all land here, broken down by gross, tax and net. Passive, ToS-safe.</template>
     </StateBlock>
 
     <template v-else>
@@ -139,7 +154,8 @@ const netText = (r) => (r.net >= 0 ? '+' : '') + fmt(r.net)
 .parts div { display: flex; flex-direction: column; gap: 2px; }
 .parts dt { font-size: 11px; color: var(--muted); text-transform: uppercase; letter-spacing: .05em; }
 .parts dd { margin: 0; font-size: 15px; font-variant-numeric: tabular-nums; }
-.scope { margin-left: auto; font-size: 12px; color: var(--muted); font-style: italic; }
+.win { margin-left: auto; }
+.scope { font-size: 12px; color: var(--muted); font-style: italic; }
 
 .pos { color: var(--good, #3fb950); }
 .neg { color: var(--bad, #f85149); }

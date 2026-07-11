@@ -5,10 +5,15 @@ import {wailsadapter} from '../models';
 import {holdings} from '../models';
 import {context} from '../models';
 import {port} from '../models';
+import {flow} from '../models';
 
 export function AddTrade(arg1:model.Trade):Promise<void>;
 
+export function BeginFlowBatch():Promise<void>;
+
 export function EmitFlowNow():Promise<void>;
+
+export function EndFlowBatch():Promise<void>;
 
 export function EnsureSelfContainer(arg1:string,arg2:string):Promise<void>;
 
@@ -62,13 +67,23 @@ export function ListItems():Promise<Array<model.LiveViewItem>>;
 
 export function RefreshExternalPrices(arg1:context.Context,arg2:port.PriceFetcher):Promise<number>;
 
+export function ResumeFlow(arg1:flow.Checkpoint):Promise<boolean>;
+
 export function SaveMailInfo(arg1:number,arg2:string,arg3:string,arg4:number):Promise<void>;
 
+export function SeedHoldings(arg1:Array<holdings.ContainerSnapshot>):Promise<void>;
+
+export function SeedSpecBoard(arg1:string):Promise<void>;
+
 export function SeedTrades(arg1:Array<model.Trade>):Promise<void>;
+
+export function SeedWallet(arg1:number,arg2:number):Promise<void>;
 
 export function SetCurrentCity(arg1:string):Promise<void>;
 
 export function SetFlowReader(arg1:wailsadapter.FlowReader,arg2:string):Promise<void>;
+
+export function SetHoldingsDebug(arg1:boolean):Promise<void>;
 
 export function SetSelf(arg1:number,arg2:string):Promise<void>;
 
@@ -77,6 +92,8 @@ export function SetSpec(arg1:model.CharacterSpec):Promise<void>;
 export function SetSpecEnum(arg1:Array<number>):Promise<void>;
 
 export function SetSpecUnlocked(arg1:Array<number>):Promise<void>;
+
+export function SetStateStore(arg1:wailsadapter.StateStore):Promise<void>;
 
 export function SetStatus(arg1:model.CaptureStatusView):Promise<void>;
 
@@ -96,11 +113,13 @@ export function SpecUnlockedSnapshot():Promise<Array<number>>;
 
 export function StartFlowPersistence(arg1:context.Context,arg2:wailsadapter.FlowStore,arg3:string):Promise<void>;
 
+export function StartStatePersistence(arg1:context.Context):Promise<void>;
+
 export function Status():Promise<model.CaptureStatusView>;
 
 export function StopFlowPersistence():Promise<void>;
 
-export function TradeSummary():Promise<model.TradeSummary>;
+export function TradeSummary(arg1:string):Promise<model.TradeSummary>;
 
 export function Trades():Promise<Array<model.Trade>>;
 

@@ -13,10 +13,12 @@ package app
 import (
 	"fmt"
 	"log"
+	"math"
 	"sort"
 	"sync"
 
 	"github.com/epaprat/albion-ledger/internal/adapter/capture"
+	"github.com/epaprat/albion-ledger/internal/boundedmap"
 	"github.com/epaprat/albion-ledger/internal/domain/model"
 	"github.com/epaprat/albion-ledger/internal/domain/probe"
 	"github.com/epaprat/albion-ledger/internal/holdings"
@@ -69,6 +71,11 @@ type Sink interface {
 	IngestMarketPrice(uniqueName string, quality int, silver int64)
 	IngestSilver(id string, net int64, ts int64, source string)
 	IngestLoot(id string, index, quality, count int, ts int64, source string)
+	// BeginFlowBatch/EndFlowBatch coalesce the flow-changed refresh across a burst of loot
+	// ingests (a take-all move drops N items) into a single UI refresh (019). The flow
+	// EVENTS are unchanged — only the emit count drops from N to 1.
+	BeginFlowBatch()
+	EndFlowBatch()
 	IngestGather(id string, index, quality, count int, ts int64, source string)
 	IngestFame(id string, fame int64, ts int64)
 	SetSpec(spec model.CharacterSpec)
@@ -106,9 +113,8 @@ type Pipeline struct {
 	// objReg maps in-world object ids to their item type+quality (New*Item, codes
 	// 30-37); container slots reference object ids. objMu also serializes the pending
 	// queues against the registry (see package comment).
-	objMu    sync.Mutex
-	objReg   map[int]holdings.ItemRef
-	objOrder []int
+	objMu  sync.Mutex
+	objReg *boundedmap.Map[int, holdings.ItemRef]
 
 	// pending queues (internal/pending: cap+TTL+counted drops; loss logs stay here).
 	pendingInv             *pending.Map[string] // own-state slot → its self container (no TTL)
@@ -146,8 +152,7 @@ type Pipeline struct {
 	// R:176 ReadMail looks the type up to parse the body. Bounded (oldest evicted) so a
 	// large mailbox can't grow it without limit (Principle XI). Session-transient — the
 	// resulting Trade is what persists, not this cache.
-	mailInfo      map[int64]mailInfoEntry
-	mailInfoOrder []int64
+	mailInfo *boundedmap.Map[int64, mailInfoEntry]
 
 	// Instant-trade wallet correlation (017 expansion): an instant sell/buy/quicksell
 	// request (op 315/83/485) carries the item+amount but NOT the silver; the silver is
@@ -159,13 +164,22 @@ type Pipeline struct {
 	instant      *instantCtx
 	instantSeq   int64
 
-	// offerCache maps a marketplace sell-offer id → its item uniqueName (from R:81), so an
-	// instant buy (op 83, which carries only the order id) can name its item. Bounded.
-	offerCache map[int64]string
-	offerOrder []int64
+	// offerCache maps a marketplace order id → its item name + unit price + side (from
+	// R:81/82), so an instant buy (op 83, order id only) can name its item AND an instant
+	// sell/buy can build an EXPECTED value (price × amount) to gate the wallet delta (018).
+	// Both offers (sell) and requests (buy) are cached; valuation is still fed offers only.
+	// Bounded.
+	offerCache *boundedmap.Map[int64, orderInfo]
 }
 
-// offerCacheCap bounds the order-id→item cache (Principle XI).
+// orderInfo is one cached marketplace order: item, unit price (×10000), and side (018).
+type orderInfo struct {
+	name    string
+	unitRaw int64
+	isOffer bool // true = sell offer, false = buy request
+}
+
+// offerCacheCap bounds the order-id→info cache (Principle XI).
 const offerCacheCap = 8192
 
 // instantCtx is a pending instant trade awaiting its wallet delta(s) (017).
@@ -181,11 +195,27 @@ type instantCtx struct {
 	single    bool   // true = one delta then disarm (instant sell/buy); false = accumulate a quicksell burst
 	deltas    int    // wallet deltas attributed so far (a quicksell disarms at count)
 	expiresMS int64  // correlation window end
+	// Expected-value correlation (018): when the order unit price is known, expectedGross =
+	// unit price × amount lets a wallet delta be gated on MAGNITUDE, not just sign — so
+	// unrelated income (loot, escrow, refund) in the window is not mis-attributed. Only the
+	// single instant buy/sell path uses it; quicksell has no per-order quantity on the wire.
+	expectedGross int64 // 0 when unknown
+	expectedKnown bool  // false → fall back to 017 sign-only correlation (no regression)
 }
 
 // instantWindowMS bounds how long after a trade request a wallet delta may be attributed
 // to it — long enough for a quicksell burst, short enough to exclude unrelated income.
 const instantWindowMS = 2000
+
+// Expected-value tolerance (018, research D3). A buy pays the order price EXACTLY, so its
+// delta may differ only by rounding. A sell's net is the price minus an unknown (premium-
+// dependent) tax, so the true net is bracketed in [gross×(1−maxTax), gross]. Both bands are
+// far tighter than sign-only: unrelated income almost never lands inside them.
+const (
+	instantBuyEpsilonRate = 0.02  // buy: |delta| within ±2% of expected spend (rounding)
+	instantSellMaxTaxRate = 0.08  // sell: net floor = gross×(1−0.08) (base 4% + safety margin)
+	instantSellUpperPad   = 0.005 // sell: a sale net can't exceed gross; only a small pad for our own rounding
+)
 
 // mailInfoEntry is one GetMailInfos row cached for a later ReadMail (017).
 type mailInfoEntry struct {
@@ -206,7 +236,7 @@ func New(sink Sink, clf *probe.Classifier, locs *locations.Locations, specNames 
 		nowMS:              nowMS,
 		debug:              debug,
 		lootTracker:        loot.New(),
-		objReg:             map[int]holdings.ItemRef{},
+		objReg:             boundedmap.New[int, holdings.ItemRef](objRegCap),
 		pendingInv:         pending.New[string](1024, 0),
 		pendingLootResolve: pending.New[string](256, 10_000),
 		pendingPuts:        pending.New[string](256, 10_000),
@@ -216,45 +246,51 @@ func New(sink Sink, clf *probe.Classifier, locs *locations.Locations, specNames 
 		board:              specboard.New(),
 		specNames:          specNames,
 		specEnum:           specenum.New(),
-		mailInfo:           map[int64]mailInfoEntry{},
-		offerCache:         map[int64]string{},
+		mailInfo:           boundedmap.New[int64, mailInfoEntry](mailInfoCap),
+		offerCache:         boundedmap.New[int64, orderInfo](offerCacheCap),
 	}
 }
 
-// putOffer caches a sell-offer id → item uniqueName (bounded, oldest evicted).
-func (p *Pipeline) putOffer(id int64, uniqueName string) {
-	if id <= 0 || uniqueName == "" {
+// putOrder caches an order id → item name + unit price + side (bounded, oldest evicted).
+// Re-inserting a known id refreshes it (newest-wins price) without growing the order list.
+func (p *Pipeline) putOrder(id int64, uniqueName string, unitRaw int64, isOffer bool) {
+	if id <= 0 || uniqueName == "" || unitRaw <= 0 {
 		return
 	}
-	if _, exists := p.offerCache[id]; !exists {
-		if len(p.offerCache) >= offerCacheCap && len(p.offerOrder) > 0 {
-			delete(p.offerCache, p.offerOrder[0])
-			p.offerOrder = p.offerOrder[1:]
-		}
-		p.offerOrder = append(p.offerOrder, id)
+	p.offerCache.Put(id, orderInfo{name: uniqueName, unitRaw: unitRaw, isOffer: isOffer})
+}
+
+// orderInfoFor returns the cached order for an id (false if never browsed).
+func (p *Pipeline) orderInfoFor(id int64) (orderInfo, bool) {
+	return p.offerCache.Get(id)
+}
+
+// orderValue returns the expected gross (unit price × amount, real silver) for a cached
+// order and whether the price was known — the reference for the delta bracket (018).
+func (p *Pipeline) orderValue(orderID int64, amount int) (int64, bool) {
+	oi, ok := p.offerCache.Get(orderID)
+	if !ok || oi.unitRaw <= 0 || amount <= 0 {
+		return 0, false
 	}
-	p.offerCache[id] = uniqueName
+	// Overflow guard: amount comes straight off the wire (unbounded); a corrupt/hostile
+	// amount × a high unit price would wrap int64 before the divide → a garbage bracket.
+	if oi.unitRaw > math.MaxInt64/int64(amount) {
+		return 0, false
+	}
+	return int64(amount) * oi.unitRaw / silverScale, true
 }
 
 // putMailInfo caches a GetMailInfos row for a later ReadMail, evicting the oldest entry
 // when the cache is full (bounded, Principle XI). Re-inserting a known id refreshes it
 // without growing the order list.
 func (p *Pipeline) putMailInfo(id int64, e mailInfoEntry) {
-	if _, exists := p.mailInfo[id]; !exists {
-		if len(p.mailInfo) >= mailInfoCap && len(p.mailInfoOrder) > 0 {
-			delete(p.mailInfo, p.mailInfoOrder[0])
-			p.mailInfoOrder = p.mailInfoOrder[1:]
-		}
-		p.mailInfoOrder = append(p.mailInfoOrder, id)
-	}
-	p.mailInfo[id] = e
+	p.mailInfo.Put(id, e)
 }
 
 // getMailInfo returns the cached info for a mail id (false if its GetMailInfos row was
 // never seen — the ReadMail is then dropped, the honest passive limit, FR-004).
 func (p *Pipeline) getMailInfo(id int64) (mailInfoEntry, bool) {
-	e, ok := p.mailInfo[id]
-	return e, ok
+	return p.mailInfo.Get(id)
 }
 
 // SeedMailInfos restores the persisted mail-type map at startup so a mail whose
@@ -287,28 +323,83 @@ func (p *Pipeline) armInstant(c *instantCtx) {
 // correlateWallet processes a new wallet balance: it attributes the delta to a fresh
 // instant-trade context (right sign, within window) and emits/updates that trade, then
 // records the balance for the next delta. A delta with no matching context is ignored
-// for trades (it's other income — loot, repair refund).
+// for trades (it's other income — loot, repair refund). When the order price is known,
+// the delta is also gated on MAGNITUDE (expected-value bracket, 018) so unrelated income
+// in the window is not mis-attributed; when it is not, the 017 sign-only path applies.
 func (p *Pipeline) correlateWallet(silver int64) {
 	now := p.nowMS()
+	// Drop a context whose window elapsed without a clean match — an unverified guess is
+	// worse than an honest omission, so nothing is fabricated.
+	if p.instant != nil && now > p.instant.expiresMS {
+		p.instant = nil
+	}
 	if p.walletSeen && p.instant != nil && now <= p.instant.expiresMS {
 		delta := silver - p.walletSilver
 		sold := p.instant.direction == model.TradeSold
 		if (sold && delta > 0) || (!sold && delta < 0) {
-			p.instant.net += delta
-			p.instant.deltas++
-			p.emitInstantTrade()
-			// A single instant trade disarms after its one delta; a quicksell burst keeps
-			// accumulating but is CAPPED at its known item count so it can't absorb an
-			// endless stream of unrelated income within rolling windows (review).
-			if p.instant.single || (p.instant.count > 0 && p.instant.deltas >= p.instant.count) {
-				p.instant = nil
-			} else {
-				p.instant.expiresMS = now + instantWindowMS
-			}
+			p.attributeDelta(delta, now)
 		}
 	}
 	p.walletSilver = silver
 	p.walletSeen = true
+}
+
+// attributeDelta applies one correct-sign wallet delta to the pending instant context. With
+// a known order price the delta must fall in the expected-value bracket to BE the trade; an
+// out-of-bracket delta is unrelated income (loot/escrow/refund) and is ignored while the
+// context stays armed for the real proceeds. Without a known price the 017 sign-only path
+// applies — quicksell always takes it (per-order fill quantities aren't on the wire).
+func (p *Pipeline) attributeDelta(delta, now int64) {
+	c := p.instant
+	if c.expectedKnown && c.single {
+		if !p.deltaInBracket(delta) {
+			return // unrelated income — keep waiting for the real proceeds
+		}
+		c.net = delta
+		c.deltas++
+		p.emitInstantTrade()
+		p.instant = nil
+		return
+	}
+	// Sign-only (unknown price + all quicksell): 017 behavior, unchanged (no regression).
+	c.net += delta
+	c.deltas++
+	p.emitInstantTrade()
+	p.disarmOrExtend(now)
+}
+
+// disarmOrExtend applies the 017 sign-only disarm rule (single → one delta; quicksell →
+// capped at its item count) or extends the window for the next burst delta.
+func (p *Pipeline) disarmOrExtend(now int64) {
+	c := p.instant
+	if c.single || (c.count > 0 && c.deltas >= c.count) {
+		p.instant = nil
+	} else {
+		c.expiresMS = now + instantWindowMS
+	}
+}
+
+// deltaInBracket reports whether a correct-sign delta matches the expected order value for
+// the current SINGLE instant trade. A buy pays the price exactly (±ε rounding). A sell nets
+// the price minus an unknown (premium-dependent) tax, so its net is bracketed
+// [gross×(1−maxTax), gross]; only a small rounding pad sits above gross (our expected value
+// can round down) — never the full buy ε, which would admit unrelated income above gross.
+func (p *Pipeline) deltaInBracket(delta int64) bool {
+	c := p.instant
+	g := float64(c.expectedGross)
+	mag := float64(abs64(delta))
+	if c.direction == model.TradeBought {
+		return mag >= g*(1-instantBuyEpsilonRate) && mag <= g*(1+instantBuyEpsilonRate)
+	}
+	return mag >= g*(1-instantSellMaxTaxRate) && mag <= g*(1+instantSellUpperPad)
+}
+
+// abs64 returns the absolute value of x.
+func abs64(x int64) int64 {
+	if x < 0 {
+		return -x
+	}
+	return x
 }
 
 // seedWalletBaseline records the login wallet (R:2 Join) as the delta baseline, but only
@@ -510,15 +601,8 @@ func (p *Pipeline) registerNewItem(code int, params map[byte]interface{}) {
 		quality = 0
 	}
 	p.objMu.Lock()
-	if _, exists := p.objReg[objID]; !exists {
-		if len(p.objReg) >= objRegCap && len(p.objOrder) > 0 {
-			delete(p.objReg, p.objOrder[0])
-			p.objOrder = p.objOrder[1:]
-		}
-		p.objOrder = append(p.objOrder, objID)
-	}
 	ref := holdings.ItemRef{Index: idx, Quality: quality, Count: count}
-	p.objReg[objID] = ref
+	p.objReg.Put(objID, ref)
 	now := p.nowMS()
 	pendGUID, invPending := p.pendingInv.Take(objID, now)        // own-state slot awaiting this declaration
 	source, lootPending := p.pendingLootResolve.Take(objID, now) // loot hit awaiting it (TTL-guarded:
@@ -558,7 +642,7 @@ func (p *Pipeline) resolveObjects(objIDs []int) []holdings.SlotItem {
 	defer p.objMu.Unlock()
 	slots := make([]holdings.SlotItem, 0, len(objIDs))
 	for _, id := range objIDs {
-		if r, ok := p.objReg[id]; ok {
+		if r, ok := p.objReg.Get(id); ok {
 			slots = append(slots, holdings.SlotItem{ObjID: id, Ref: r})
 		}
 	}
@@ -569,8 +653,7 @@ func (p *Pipeline) resolveObjects(objIDs []int) []holdings.SlotItem {
 func (p *Pipeline) resolveObj(objID int) (holdings.ItemRef, bool) {
 	p.objMu.Lock()
 	defer p.objMu.Unlock()
-	r, ok := p.objReg[objID]
-	return r, ok
+	return p.objReg.Get(objID)
 }
 
 // ── Holdings freshness glue (008) ────────────────────────────────────────────
@@ -640,6 +723,16 @@ func (p *Pipeline) logDrops(dropped int, lastLogMS *int64, nowMS int64, format s
 	}
 }
 
+// dropf logs a one-off "dropped this packet" diagnostic, gated on debug (019). It unifies
+// the repeated `if p.debug { log.Printf(...) }` around single-event drops; the recurring,
+// counted drops keep the rate-limited logDrops above. Behaviour (which data is dropped) is
+// decided by the caller — this only formats the note.
+func (p *Pipeline) dropf(format string, args ...any) {
+	if p.debug {
+		log.Printf(format, args...)
+	}
+}
+
 func (p *Pipeline) queuePendingPut(objID int, target string) {
 	now := p.nowMS()
 	p.objMu.Lock()
@@ -668,6 +761,14 @@ func (p *Pipeline) applyMoveToHoldings(srcGUID string, srcSlot int, dstGUID stri
 		if id, ok := p.bagSlotItem(srcSlot); ok {
 			itemObj = id
 			p.bagSlots[srcSlot] = 0
+		}
+		if p.debug {
+			idx := -1
+			if ref, ok := p.resolveObj(itemObj); ok {
+				idx = ref.Index
+			}
+			log.Printf("[hold] bag-move probe: srcSlot=%d → obj=%d idx=%d hasDst=%t dstSlot=%d dst=%s",
+				srcSlot, itemObj, idx, hasDst, dstSlot, dstGUID)
 		}
 	} else if id, ok := p.lootTracker.SlotItem(srcGUID, srcSlot); ok {
 		itemObj = id
@@ -700,18 +801,14 @@ func (p *Pipeline) applyMovedObject(itemObj int, srcGUID, dstGUID string, dstSlo
 	}
 	if target == "" {
 		p.sink.IngestDeleteItem(itemObj) // leaves every tracked view; reappears via snapshots
-		if p.debug {
-			log.Printf("[hold] move → no dst, dropped from view: obj=%d", itemObj)
-		}
+		p.dropf("[hold] move → no dst, dropped from view: obj=%d", itemObj)
 		return
 	}
 	if ref, ok := p.resolveObj(itemObj); ok {
 		if !p.sink.IngestPutItem(target, itemObj, ref) {
 			p.sink.IngestDeleteItem(itemObj)
 			p.bagSlotClear(itemObj)
-			if p.debug {
-				log.Printf("[hold] move → untracked dst, dropped from view: obj=%d", itemObj)
-			}
+			p.dropf("[hold] move → untracked dst, dropped from view: obj=%d", itemObj)
 			return
 		}
 	} else {
@@ -736,6 +833,13 @@ func (p *Pipeline) ingestLootObj(itemObjID int, ref holdings.ItemRef, source str
 // valuation works (closes the ADR-022 quality-0 gap for loot). Undeclared objects wait
 // in pendingLootResolve until their declaration arrives or the TTL expires.
 func (p *Pipeline) emitLootHits(hits []loot.Hit) {
+	if len(hits) == 0 {
+		return
+	}
+	// A take-all move resolves many hits at once; coalesce their flow refreshes into one
+	// (019). Single-hit callers (op-30) still emit exactly once — behaviour unchanged.
+	p.sink.BeginFlowBatch()
+	defer p.sink.EndFlowBatch()
 	for _, h := range hits {
 		if p.debug {
 			log.Printf("[flow] loot hit: itemObj=%d source=%q", h.ItemObjID, h.Source)

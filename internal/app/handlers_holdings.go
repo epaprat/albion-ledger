@@ -21,16 +21,23 @@ func init() {
 // handleAttachContainer — AttachItemContainer (99): key-3 slots are in-world object
 // ids, resolved to item type+quality via the object registry (New*Item declarations).
 func handleAttachContainer(p *Pipeline, _ probe.Kind, _ int, params map[byte]interface{}) {
-	if cGUID, ownerGUID, objIDs, ok := capture.ContainerItems(params); ok {
+	// The SLOT-INDEXED view (empties preserved) carries the container's source object,
+	// which classifies it: a container linked to an announced LOOT source (a corpse/chest)
+	// is foreign and must feed ONLY the loot tracker, never holdings — else the items the
+	// player merely VIEWED in a mob's bag land under their own BAG though never taken
+	// (live-seen 2026-07-10). Banks (src a small constant, never announced as loot) and the
+	// real bag (op-2, not here) still reach holdings.
+	guid, srcObjID, slots, isContainer := capture.ContainerSlots(params)
+	isLoot := isContainer && p.lootTracker.IsLootSource(srcObjID, p.nowMS())
+	if cGUID, ownerGUID, objIDs, ok := capture.ContainerItems(params); ok && !isLoot {
 		p.sink.IngestContainer(cGUID, ownerGUID, p.resolveObjects(objIDs))
 	}
-	// Loot correlation also needs this container: source link + SLOT-INDEXED map
-	// (empties preserved), and attaching may resolve moves that arrived early.
-	if guid, srcObjID, slots, ok := capture.ContainerSlots(params); ok {
+	// Loot correlation: source link + slot map, and attaching may resolve moves that
+	// arrived early. Live-verified 2026-07-03: key0 IS the source obj id for open-world
+	// loot containers; bank containers carry a small constant (6) — harmless, the tracker
+	// excludes bank-sized containers from loot resolution.
+	if isContainer {
 		if p.debug {
-			// Live-verified 2026-07-03: key0 IS the source obj id for open-world loot
-			// containers; bank containers carry a small constant (6) — harmless, as the
-			// tracker excludes bank-sized containers from loot resolution.
 			log.Printf("[flow] attach: guid=%s src=%d slots=%d", guid, srcObjID, len(slots))
 		}
 		p.emitLootHits(p.lootTracker.AttachContainer(guid, srcObjID, slots, p.nowMS()))

@@ -23,6 +23,7 @@ const zoneWindow = ref('session')    // time window for zone stats
 const flowSummary = ref({ active: false, netSilver: 0, silverPerHour: 0, lootValue: 0, gatherValue: 0, fame: 0, famePerHour: 0, rateReady: false, unvaluedCount: 0, eventCount: 0 })
 const spec = ref({ masteries: [], nodeCount: 0, totalFame: 0, complete: false })
 const trades = ref([])                // Trade[] (017 marketplace P&L)
+const tradeWindow = ref('session')    // realized-P&L time window (018): session|today|7d|all
 const tradeSummary = ref({ grossIncome: 0, grossExpense: 0, salesTax: 0, setupFee: 0, net: 0, count: 0, scope: '' })
 const exportResults = ref({})        // dataset key -> last ExportResult (013)
 const exportBusy = ref(false)
@@ -137,8 +138,9 @@ function setZoneWindow(w) { zoneWindow.value = w; refreshFlow() }
 async function refreshTrades() {
   const s = svc(); if (!s) return
   trades.value = (await s.Trades()) || []
-  tradeSummary.value = await s.TradeSummary()
+  tradeSummary.value = await s.TradeSummary(tradeWindow.value)
 }
+function setTradeWindow(w) { tradeWindow.value = w; refreshTrades() }
 
 // ── CSV export (013) ─────────────────────────────────────────────────────────
 const exportSets = computed(() => ([
@@ -239,10 +241,17 @@ onMounted(async () => {
         :summary="summary"
         :holdings="holdings"
         :encrypted="encrypted"
+        :trade-summary="tradeSummary"
       />
 
-      <!-- TRADES (marketplace P&L, 017) -->
-      <TradesPanel v-else-if="tab === 'trades'" :trades="trades" :summary="tradeSummary" />
+      <!-- TRADES (marketplace P&L, 017; realized-P&L window, 018) -->
+      <TradesPanel
+        v-else-if="tab === 'trades'"
+        :trades="trades"
+        :summary="tradeSummary"
+        :window="tradeWindow"
+        @update:window="setTradeWindow"
+      />
 
       <!-- MARKET -->
       <section v-else-if="tab === 'market'">

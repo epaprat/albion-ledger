@@ -5,6 +5,39 @@ All notable changes to Albion Ledger are documented here. The format follows
 [Semantic Versioning](https://semver.org/). Pre-1.0, minor versions may still
 change the public surface.
 
+## [0.1.3] — 2026-07-11
+
+Picks up where you left off — the app now opens with your last-known data instead
+of a blank slate, adds moment-of-trade profit tracking, and fixes several ways the
+numbers could read wrong.
+
+### Added
+
+- **Opens with your last session** — holdings (inventory, equipped, and each bank
+  tab), wallet, net worth, and your destiny-board progress are saved locally and
+  shown the instant the app opens, clearly labelled as last-known until fresh data
+  arrives in-game. Your earnings session resumes too, and finished sessions are
+  kept as history. Nothing leaves your machine.
+- **Instant-trade profit** — instant sells, buys, and quicksells are correlated
+  with your wallet movement by amount, so their realized profit lands in the Trade
+  ledger alongside order fills. A time-window summary (this session / today / 7
+  days / all time) shows profit and loss over the period you pick.
+
+### Fixed
+
+- **Bank holdings no longer double-count.** Opening a bank in any order (physically
+  first, or via the K overview first), and reopening the app between sessions, all
+  resolve to a single correct total instead of counting a tab twice.
+- **A single bad community-feed price can no longer inflate net worth.** When the
+  game's own estimate exists for an item, it now wins over an outlier external
+  listing, so a lone troll price on a rarely-traded item stops adding phantom
+  millions.
+- **Items you only looked at stay out of your inventory.** Opening a mob's loot bag
+  on the ground no longer adds its contents to your holdings — only what you
+  actually take is counted.
+
+[0.1.3]: https://github.com/epaprat/albion-ledger/releases/tag/v0.1.3
+
 ## [0.1.2] — 2026-07-08
 
 Money in, money out — this release makes the tool answer "what am I worth?" and

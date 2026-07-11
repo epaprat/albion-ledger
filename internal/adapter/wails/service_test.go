@@ -1,6 +1,7 @@
 package wailsadapter
 
 import (
+	"sync"
 	"testing"
 
 	"github.com/epaprat/albion-ledger/internal/catalog"
@@ -8,9 +9,18 @@ import (
 	"github.com/epaprat/albion-ledger/internal/valuation"
 )
 
-type fakeEmitter struct{ events []string }
+// fakeEmitter is thread-safe like the real Wails runtime emitter — flow refreshes can be
+// broadcast from both the pipeline and the status-ticker goroutine.
+type fakeEmitter struct {
+	mu     sync.Mutex
+	events []string
+}
 
-func (f *fakeEmitter) Emit(event string, _ ...interface{}) { f.events = append(f.events, event) }
+func (f *fakeEmitter) Emit(event string, _ ...interface{}) {
+	f.mu.Lock()
+	f.events = append(f.events, event)
+	f.mu.Unlock()
+}
 
 const cat = `{"items":[{"index":1,"uniqueName":"T4_BAG","name":"Adept's Bag"}]}`
 

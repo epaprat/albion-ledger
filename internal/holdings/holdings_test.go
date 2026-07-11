@@ -346,3 +346,207 @@ func TestPhysicalOpenEvictsSummary(t *testing.T) {
 		t.Fatalf("backfill must migrate + evict the summary overlap: %+v", list)
 	}
 }
+
+// 020 US1 / C2 — Snapshot()→SeedContainers() hydrates a fresh aggregator with the persisted
+// items at their original lastSeen (stale), and a live SetContainer(sameID) REPLACES only
+// that container while other (stale) containers are untouched (SC-002).
+func TestSeedContainersHydratesAndReplaces(t *testing.T) {
+	src, _ := newAgg(t)
+	src.SetContainer("c1", "owner", slots(920, 837), 1000) // 2 items, lastSeen 1000
+	snaps := src.Snapshot()
+	if len(snaps) != 1 || len(snaps[0].Items) != 2 {
+		t.Fatalf("snapshot must carry the container's 2 items, got %+v", snaps)
+	}
+
+	dst, _ := newAgg(t)
+	dst.SeedContainers(snaps)
+	rows := dst.List()
+	if len(rows) != 2 {
+		t.Fatalf("hydrate must restore 2 items, got %d", len(rows))
+	}
+	for _, r := range rows {
+		if r.LastSeen != 1000 {
+			t.Fatalf("hydrated item must carry the persisted lastSeen 1000 (stale), got %d", r.LastSeen)
+		}
+	}
+
+	// A second stale container arrives from persistence.
+	dst.SeedContainers([]ContainerSnapshot{{
+		GUID: "c2", Location: model.LocInventory, Tab: "Bag", LastSeen: 500,
+		Items: []model.HoldingItem{{ObjID: 99, Item: model.Item{Index: 837}, Count: 1, LastSeen: 500}},
+	}})
+	// Live re-observe of c1 replaces it (now 1 item); c2 stays (SC-002 no cross-effect).
+	dst.SetContainer("c1", "owner", slots(920), 2000)
+	if n := len(dst.List()); n != 2 { // c1:1 + c2:1
+		t.Fatalf("after replacing c1, want 2 rows (c1:1 + c2:1), got %d", n)
+	}
+}
+
+// 020 US1 — SeedContainers never clobbers a container that live data already claimed.
+func TestSeedContainersDoesNotClobberLive(t *testing.T) {
+	a, _ := newAgg(t)
+	a.SetContainer("c1", "owner", slots(920), 2000) // live: 1 item
+	a.SeedContainers([]ContainerSnapshot{{
+		GUID: "c1", Location: model.LocInventory, Tab: "Bag", LastSeen: 100,
+		Items: []model.HoldingItem{{ObjID: 5, Item: model.Item{Index: 837}, Count: 9, LastSeen: 100}},
+	}})
+	rows := a.List()
+	if len(rows) != 1 || rows[0].Item.Index != 920 {
+		t.Fatalf("stale seed must not overwrite live c1, got %+v", rows)
+	}
+}
+
+// 020 fix — a self container pre-created empty by EnsureSelfContainer (unobserved) IS
+// hydrated from persistence, then replaced when live own-state arrives.
+func TestSeedContainersFillsPreCreatedSelfContainer(t *testing.T) {
+	a, _ := newAgg(t)
+	a.EnsureSelfContainer("self-bag", "Bag") // pre-created empty, lastSeen 0
+	a.SeedContainers([]ContainerSnapshot{{
+		GUID: "self-bag", Location: model.LocInventory, Tab: "Bag", LastSeen: 100, Pinned: true,
+		Items: []model.HoldingItem{{ObjID: 7, Item: model.Item{Index: 920}, Count: 1, LastSeen: 100}},
+	}})
+	if rows := a.List(); len(rows) != 1 || rows[0].Item.Index != 920 {
+		t.Fatalf("persisted self-bag must hydrate into the pre-created container, got %+v", rows)
+	}
+	// Live own-state then replaces it.
+	a.SetSelfContainer("self-bag", "Bag", []SlotItem{{ObjID: 8, Ref: ItemRef{Index: 837}}}, 2000)
+	if r := a.List(); len(r) != 1 || r[0].Item.Index != 837 {
+		t.Fatalf("live own-state must replace the hydrated self-bag, got %+v", r)
+	}
+}
+
+// 010/020 live-test — a K summary and a physical container for the SAME (city,tab) must be
+// counted ONCE (physical wins), even when the write-time reconciliation missed and left both
+// in the map. Read-time dedup guards Summary + List (no double-counted net worth).
+func TestSummaryDedupsPhysicalOverSummary(t *testing.T) {
+	a, book := newAgg(t)
+	book.SetEMV(920, 0, 1000, 1000) // value the item
+	// The exact double-count state: a summary + a physical for Lymhurst/Tab1, both holding 3.
+	a.containers["sum"] = &container{location: model.LocBank, city: "Lymhurst", tab: "Tab1", summary: true, lastSeen: 1000,
+		items: map[int]model.HoldingItem{-1: {ObjID: -1, Item: model.Item{Index: 920}, Count: 3}}}
+	a.containers["phys"] = &container{location: model.LocBank, city: "Lymhurst", tab: "Tab1", summary: false, lastSeen: 1000,
+		items: map[int]model.HoldingItem{5: {ObjID: 5, Item: model.Item{Index: 920}, Count: 3}}}
+	a.order = []string{"sum", "phys"}
+
+	if s := a.Summary(2000); s.TotalValue != 3000 { // 3×1000 once, NOT 6000
+		t.Fatalf("physical must win, summary skipped: want TotalValue 3000, got %d", s.TotalValue)
+	}
+	if n := len(a.List()); n != 1 { // the physical stack once, not 2 (physical + summary)
+		t.Fatalf("List must dedup the summary row: want 1, got %d", n)
+	}
+}
+
+// 020 live-test (2026-07-10) — app started already standing at a bank, so event 163 never
+// fired and currentCity stayed "". A physical bank open must still land under the real city
+// (not a "Bank" ghost) and dedup against its K summary: the city is INFERRED from the K
+// overview by matching a tab name unique to one city, then pinned so shared names inherit it.
+func TestBankCityInferredFromSummaryMidSession(t *testing.T) {
+	a, _ := newAgg(t)
+	// K overview arrives for TWO cities. "Setler" is unique to Fort Sterling; "Hammadde"
+	// exists in both → ambiguous on its own.
+	a.SetVaultSummaryTab("vault:Fort Sterling:Setler", "Fort Sterling", "Setler", []ItemRef{{Index: 920, Count: 4}}, 1000)
+	a.SetVaultSummaryTab("vault:Fort Sterling:Hammadde", "Fort Sterling", "Hammadde", []ItemRef{{Index: 837, Count: 5}}, 1000)
+	a.SetVaultSummaryTab("vault:Thetford:Hammadde", "Thetford", "Hammadde", []ItemRef{{Index: 837, Count: 9}}, 1000)
+
+	// Physical open at Fort Sterling (currentCity still ""). Ambiguous "Hammadde" opens FIRST —
+	// it cannot resolve alone, but the unique "Setler" pins the city; once pinned the earlier
+	// city-less Hammadde tab is migrated to Fort Sterling by the heal.
+	a.SetBankVault([]string{"oHam", "oSet"}, []string{"Hammadde", "Setler"})
+	a.SetContainer("physHam", "oHam", []SlotItem{{ObjID: 5001, Ref: ItemRef{Index: 837}}}, 2000)
+	a.SetContainer("physSet", "oSet", []SlotItem{{ObjID: 5002, Ref: ItemRef{Index: 920}}}, 2100)
+
+	for _, r := range a.List() {
+		if r.Location == model.LocBank && r.City == "" {
+			t.Fatalf("physical bank tab left city-less (Bank ghost): %+v", r)
+		}
+	}
+	// Both physical tabs must be Fort Sterling and each counted ONCE (their FS summaries evicted;
+	// the Thetford Hammadde summary is a different city and survives).
+	rows := a.List()
+	fsPhysical := 0
+	for _, r := range rows {
+		if r.City == "Fort Sterling" && r.ObjID >= 0 {
+			fsPhysical++
+		}
+	}
+	if fsPhysical != 2 {
+		t.Fatalf("both FS physical tabs must land under Fort Sterling, got %d in %+v", fsPhysical, rows)
+	}
+	// No Fort Sterling summary may survive alongside its physical peer (dedup).
+	for _, r := range rows {
+		if r.City == "Fort Sterling" && r.ObjID < 0 {
+			t.Fatalf("FS summary must be deduped by its physical peer: %+v", r)
+		}
+	}
+	// Thetford Hammadde (no physical open) still shows as a summary.
+	thetford := false
+	for _, r := range rows {
+		if r.City == "Thetford" && r.Group == "Hammadde" {
+			thetford = true
+		}
+	}
+	if !thetford {
+		t.Fatalf("un-opened Thetford summary must remain: %+v", rows)
+	}
+}
+
+// 020 live-test (2026-07-10, reverse order): bank opened PHYSICALLY before any K overview,
+// so the physical tab is city-less (event 163 never fired, no summary yet to infer from).
+// When the K summary later names the city, a city-less physical with the same tab name must
+// adopt that city and the summary must yield — otherwise both count (live-seen: 247 = 119+128).
+func TestSummaryReconcilesCityLessPhysicalReverseOrder(t *testing.T) {
+	a, _ := newAgg(t)
+	// Physical open FIRST, currentCity unknown → city-less "Bank" group.
+	a.SetBankVault([]string{"oTab1"}, []string{"1"})
+	a.SetContainer("physTab1", "oTab1", []SlotItem{
+		{ObjID: 9001, Ref: ItemRef{Index: 920}}, {ObjID: 9002, Ref: ItemRef{Index: 837}},
+	}, 1000)
+	if a.List()[0].City != "Bank" { // city-less bank rows group under the generic "Bank"
+		t.Fatalf("precondition: physical must be city-less (\"Bank\") before the overview, got %q", a.List()[0].City)
+	}
+	// K overview arrives LATER, naming the city for the same tab name.
+	a.SetVaultSummaryTab("vault:Fort Sterling:1", "Fort Sterling", "1", []ItemRef{
+		{Index: 920, Count: 1}, {Index: 837, Count: 1},
+	}, 2000)
+
+	rows := a.List()
+	if len(rows) != 2 {
+		t.Fatalf("physical must win and summary yield: want 2 physical rows, got %d: %+v", len(rows), rows)
+	}
+	for _, r := range rows {
+		if r.City != "Fort Sterling" {
+			t.Fatalf("physical must adopt the overview's city, got %q: %+v", r.City, r)
+		}
+		if r.ObjID < 0 {
+			t.Fatalf("no synthetic summary row may survive (double-count): %+v", r)
+		}
+	}
+}
+
+// 020 live-test (2026-07-10, persistence): a K summary persisted last session hydrates
+// via SeedContainers, then the player opens the SAME bank physically this session. The
+// hydrated summary must keep its Summary flag so the read-time dedup skips it against the
+// live physical — otherwise it loads as a pseudo-physical and both count (247 = 119+128).
+func TestHydratedSummaryDedupsAgainstLivePhysical(t *testing.T) {
+	a, _ := newAgg(t)
+	// Persisted K summary from a prior session (Summary:true is the fix — was lost before).
+	a.SeedContainers([]ContainerSnapshot{{
+		GUID: "vault:Fort Sterling:1", Location: model.LocBank, City: "Fort Sterling", Tab: "1",
+		LastSeen: 1000, Summary: true,
+		Items: []model.HoldingItem{{ObjID: -(920*16 + 1) - 1, Item: model.Item{Index: 920}, Count: 5}},
+	}})
+	if n := len(a.List()); n != 1 {
+		t.Fatalf("hydrated summary must render 1 row, got %d", n)
+	}
+	// Same bank opened physically this session (city inferred from the hydrated summary).
+	a.SetBankVault([]string{"o1"}, []string{"1"})
+	a.SetContainer("physWireGuid", "o1", []SlotItem{{ObjID: 7001, Ref: ItemRef{Index: 920}}}, 2000)
+
+	rows := a.List()
+	if len(rows) != 1 || rows[0].ObjID != 7001 {
+		t.Fatalf("physical must win and the hydrated summary must NOT double-count: %+v", rows)
+	}
+	if rows[0].City != "Fort Sterling" {
+		t.Fatalf("physical must adopt the hydrated summary's city, got %q", rows[0].City)
+	}
+}

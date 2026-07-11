@@ -44,7 +44,7 @@ func TestTradeSummary_Breakdown(t *testing.T) {
 	s.AddTrade(model.Trade{TradeID: "c", Direction: model.TradeBought, Gross: 150, Net: -150})
 	s.AddTrade(model.Trade{TradeID: "d", Direction: model.TradeSold, Gross: 100, SetupFee: 5, SalesTax: 4, Net: 96})
 
-	sum := s.TradeSummary()
+	sum := s.TradeSummary("all")
 	if sum.GrossIncome != 600 || sum.GrossExpense != 150 {
 		t.Fatalf("gross wrong: %+v", sum)
 	}
@@ -54,6 +54,37 @@ func TestTradeSummary_Breakdown(t *testing.T) {
 	// Net = 288+192+96 − 150 = 426.
 	if sum.Net != 426 || sum.Count != 4 {
 		t.Fatalf("net/count wrong: %+v", sum)
+	}
+}
+
+// T013/T018 — realized-P&L window filtering: the deterministic boundary is received >=
+// windowStart, and the SAME TradeSummary(window) is the single source both the Trades
+// screen and the Holdings header read (SC-004/SC-005).
+func TestTradeSummary_WindowFilters(t *testing.T) {
+	s, _, _ := newHoldSvc(t)                                                                                  // fixed clock 1000 → startMS 1000
+	s.AddTrade(model.Trade{TradeID: "old", Direction: model.TradeSold, Gross: 100, Net: 90, Received: 500})   // before session
+	s.AddTrade(model.Trade{TradeID: "new", Direction: model.TradeSold, Gross: 200, Net: 180, Received: 1500}) // in session
+
+	if all := s.TradeSummary("all"); all.Count != 2 || all.Net != 270 {
+		t.Fatalf("all-time must include both: %+v", all)
+	}
+	if sess := s.TradeSummary("session"); sess.Count != 1 || sess.Net != 180 {
+		t.Fatalf("session must include only received>=startMS: %+v", sess)
+	}
+	// Boundary: a trade exactly at startMS is included (received >= start).
+	s.AddTrade(model.Trade{TradeID: "edge", Direction: model.TradeSold, Gross: 10, Net: 10, Received: 1000})
+	if sess := s.TradeSummary("session"); sess.Count != 2 {
+		t.Fatalf("boundary received==startMS must be included: %+v", sess)
+	}
+}
+
+// T013 — an empty window honestly reports zero with a labelled scope, never a fake total.
+func TestTradeSummary_EmptyWindowIsZero(t *testing.T) {
+	s, _, _ := newHoldSvc(t)                                                                             // startMS 1000
+	s.AddTrade(model.Trade{TradeID: "pre", Direction: model.TradeSold, Gross: 5, Net: 5, Received: 500}) // before session
+	es := s.TradeSummary("session")
+	if es.Count != 0 || es.Net != 0 || es.Scope != "this session" {
+		t.Fatalf("empty session window must be zero + labelled: %+v", es)
 	}
 }
 
@@ -99,7 +130,7 @@ func TestSeedTrades_RestoresLedger(t *testing.T) {
 	if got := s.Trades(); len(got) != 2 || got[0].TradeID != "mail:2" { // newest (received 20) first
 		t.Fatalf("seed restore wrong: %+v", got)
 	}
-	if sum := s.TradeSummary(); sum.Net != 380 {
+	if sum := s.TradeSummary("all"); sum.Net != 380 {
 		t.Fatalf("seeded net wrong: %+v", sum)
 	}
 }

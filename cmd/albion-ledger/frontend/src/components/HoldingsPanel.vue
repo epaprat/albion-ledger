@@ -13,6 +13,7 @@ const props = defineProps({
   holdings: { type: Array, required: true },  // HoldingItem[]
   encrypted: { type: Boolean, default: false },
   error: { type: String, default: '' },
+  tradeSummary: { type: Object, default: () => ({ net: 0, count: 0, scope: '' }) }, // realized P&L, selected window (018)
 })
 
 // How much higher the game's own estimate is than our valuation — drives the
@@ -97,6 +98,11 @@ const anyVisible = computed(() =>
       <span :title="'Our valuation: live market prices where seen, server/community estimates otherwise. Items we could not price yet are NOT counted.'">Holdings <strong>{{ compact(summary.totalValue) }}</strong> <span class="muted src-note">our prices</span></span>
       <span class="muted" v-if="summary.gameEstTotal" :title="'The game\'s own Estimated Market Value from the bank overview — a rough flat estimate that prices every item.'">· game est {{ compact(summary.gameEstTotal) }}</span>
       <span class="muted" v-if="summary.unvaluedCount">· {{ summary.unvaluedCount }} unpriced</span>
+      <span class="nw-sep">·</span>
+      <span :title="'Realized marketplace profit/loss for the selected window — matches the Trades screen. How much of your net worth change came from trading.'">
+        Trade <strong :class="tradeSummary.net >= 0 ? 'pos' : 'neg'">{{ (tradeSummary.net >= 0 ? '+' : '') + compact(tradeSummary.net) }}</strong>
+        <span class="muted src-note" v-if="tradeSummary.scope">{{ tradeSummary.scope }}</span>
+      </span>
       <span class="filters" v-if="cities.length">
         <label class="sr-pair">City
           <select v-model="cityFilter" aria-label="Filter by city">
@@ -187,6 +193,8 @@ const anyVisible = computed(() =>
 .nw-label { font-size: 11px; color: var(--muted); text-transform: uppercase; letter-spacing: .06em; }
 .net-worth strong { font-size: 20px; color: var(--accent-bright); }
 .nw-excl { font-size: 12px; }
+.total strong.pos { color: var(--good, #3fb950); }
+.total strong.neg { color: var(--bad, #f85149); }
 .nw-sep { color: var(--border); }
 .wallet { font-size: 15px !important; }
 .muted { color: var(--muted); }
