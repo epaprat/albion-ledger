@@ -6,8 +6,16 @@ export function AddTrade(arg1) {
   return window['go']['wailsadapter']['Service']['AddTrade'](arg1);
 }
 
+export function BeginFlowBatch() {
+  return window['go']['wailsadapter']['Service']['BeginFlowBatch']();
+}
+
 export function EmitFlowNow() {
   return window['go']['wailsadapter']['Service']['EmitFlowNow']();
+}
+
+export function EndFlowBatch() {
+  return window['go']['wailsadapter']['Service']['EndFlowBatch']();
 }
 
 export function EnsureSelfContainer(arg1, arg2) {
@@ -114,12 +122,28 @@ export function RefreshExternalPrices(arg1, arg2) {
   return window['go']['wailsadapter']['Service']['RefreshExternalPrices'](arg1, arg2);
 }
 
+export function ResumeFlow(arg1) {
+  return window['go']['wailsadapter']['Service']['ResumeFlow'](arg1);
+}
+
 export function SaveMailInfo(arg1, arg2, arg3, arg4) {
   return window['go']['wailsadapter']['Service']['SaveMailInfo'](arg1, arg2, arg3, arg4);
 }
 
+export function SeedHoldings(arg1) {
+  return window['go']['wailsadapter']['Service']['SeedHoldings'](arg1);
+}
+
+export function SeedSpecBoard(arg1) {
+  return window['go']['wailsadapter']['Service']['SeedSpecBoard'](arg1);
+}
+
 export function SeedTrades(arg1) {
   return window['go']['wailsadapter']['Service']['SeedTrades'](arg1);
+}
+
+export function SeedWallet(arg1, arg2) {
+  return window['go']['wailsadapter']['Service']['SeedWallet'](arg1, arg2);
 }
 
 export function SetCurrentCity(arg1) {
@@ -128,6 +152,10 @@ export function SetCurrentCity(arg1) {
 
 export function SetFlowReader(arg1, arg2) {
   return window['go']['wailsadapter']['Service']['SetFlowReader'](arg1, arg2);
+}
+
+export function SetHoldingsDebug(arg1) {
+  return window['go']['wailsadapter']['Service']['SetHoldingsDebug'](arg1);
 }
 
 export function SetSelf(arg1, arg2) {
@@ -144,6 +172,10 @@ export function SetSpecEnum(arg1) {
 
 export function SetSpecUnlocked(arg1) {
   return window['go']['wailsadapter']['Service']['SetSpecUnlocked'](arg1);
+}
+
+export function SetStateStore(arg1) {
+  return window['go']['wailsadapter']['Service']['SetStateStore'](arg1);
 }
 
 export function SetStatus(arg1) {
@@ -180,6 +212,10 @@ export function SpecUnlockedSnapshot() {
 
 export function StartFlowPersistence(arg1, arg2, arg3) {
   return window['go']['wailsadapter']['Service']['StartFlowPersistence'](arg1, arg2, arg3);
+}
+
+export function StartStatePersistence(arg1) {
+  return window['go']['wailsadapter']['Service']['StartStatePersistence'](arg1);
 }
 
 export function Status() {
