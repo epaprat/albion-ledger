@@ -29,10 +29,16 @@ const rate = (n) => '+' + compact(n) + '/h'
     <div class="hero">
       <div class="hero-main">
         <p class="eyebrow">This session</p>
-        <p class="total num">
-          <span class="coin" aria-hidden="true">◈</span>{{ compact(hero.total) }}
-          <span v-if="hero.fame" class="fame-inline num" title="Fame (separate from silver)">+{{ compact(hero.fame) }}<span class="u">fame</span></span>
-        </p>
+        <div class="totals">
+          <div class="t">
+            <p class="tv num accent"><span class="coin" aria-hidden="true">◈</span>{{ compact(hero.total) }}</p>
+            <p class="tl">silver</p>
+          </div>
+          <div class="t">
+            <p class="tv num">{{ compact(hero.fame) }}</p>
+            <p class="tl">fame</p>
+          </div>
+        </div>
       </div>
       <div class="hero-rates" role="group" aria-label="Combined rates">
         <div class="hr">
@@ -96,18 +102,21 @@ const rate = (n) => '+' + compact(n) + '/h'
   flex-wrap: wrap;
   padding: var(--space-4) var(--space-5) var(--space-3);
 }
-.eyebrow { margin: 0; font-size: 10px; color: var(--muted); text-transform: uppercase; letter-spacing: .08em; }
-.total {
-  margin: 2px 0 0;
+.eyebrow { margin: 0 0 4px; font-size: 10px; color: var(--muted); text-transform: uppercase; letter-spacing: .08em; }
+/* Silver + fame at the SAME weight, each labelled, so it's clear which is which. */
+.totals { display: flex; align-items: baseline; gap: var(--space-5); }
+.t { display: flex; flex-direction: column; }
+.tv {
+  margin: 0;
   font-size: var(--text-hero);
   font-weight: 750;
-  line-height: 1.02;
+  line-height: 1.0;
   letter-spacing: -.02em;
-  color: var(--accent-bright);
+  color: var(--text);
 }
-.coin { font-size: .55em; margin-right: .14em; opacity: .8; vertical-align: .1em; }
-.fame-inline { font-size: .34em; font-weight: 650; color: var(--muted); margin-left: .5em; vertical-align: .28em; letter-spacing: 0; }
-.fame-inline .u { font-size: .8em; margin-left: 2px; }
+.tv.accent { color: var(--accent-bright); }
+.tl { margin: 0; font-size: 11px; color: var(--muted); text-transform: uppercase; letter-spacing: .06em; }
+.coin { font-size: .5em; margin-right: .12em; opacity: .8; vertical-align: .12em; }
 
 .hero-rates { display: flex; align-items: center; gap: var(--space-4); flex-wrap: wrap; }
 .hr { display: flex; flex-direction: column; gap: 1px; min-width: 60px; }
@@ -139,7 +148,7 @@ const rate = (n) => '+' + compact(n) + '/h'
   gap: 4px;
   min-width: 0;
 }
-.card.fame { border-left: 2px solid var(--muted); background: var(--panel-2); }
+.card.fame { background: var(--panel-2); }
 .c-total { margin: 0; font-size: var(--text-xl); font-weight: 750; letter-spacing: -.01em; }
 .c-total .u { font-size: .5em; color: var(--muted); font-weight: 600; }
 .c-rates { display: flex; gap: var(--space-3); margin-top: 2px; }
