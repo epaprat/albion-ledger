@@ -65,6 +65,12 @@ export function ListHoldings():Promise<Array<model.HoldingItem>>;
 
 export function ListItems():Promise<Array<model.LiveViewItem>>;
 
+export function ReconcileBankTab(arg1:string,arg2:string,arg3:Array<holdings.ItemCount>):Promise<holdings.ReconcileResult>;
+
+export function ReconcileEquipped(arg1:Array<holdings.ItemCount>):Promise<holdings.ReconcileResult>;
+
+export function ReconcileInventory(arg1:Array<holdings.ItemCount>):Promise<holdings.ReconcileResult>;
+
 export function RefreshExternalPrices(arg1:context.Context,arg2:port.PriceFetcher):Promise<number>;
 
 export function ResumeFlow(arg1:flow.Checkpoint):Promise<boolean>;
