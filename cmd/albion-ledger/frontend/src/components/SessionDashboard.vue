@@ -15,7 +15,9 @@ const props = defineProps({
 
 const hero = computed(() => earningsHero(props.summary))
 const cards = computed(() => earningsCards(props.summary))
-const rate = (n) => '+' + compact(n) + '/h'
+// compact() already carries a '-' for negatives, so only prepend '+' when non-negative
+// (avoids a "+-5k/h" double sign if a net-loss silver event ever lands).
+const rate = (n) => ((n || 0) < 0 ? '' : '+') + compact(n) + '/h'
 </script>
 
 <template>
