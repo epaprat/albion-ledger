@@ -117,6 +117,22 @@ export namespace holdings {
 		    return a;
 		}
 	}
+	export class ItemCount {
+	    Index: number;
+	    Quality: number;
+	    Count: number;
+	
+	    static createFrom(source: any = {}) {
+	        return new ItemCount(source);
+	    }
+	
+	    constructor(source: any = {}) {
+	        if ('string' === typeof source) source = JSON.parse(source);
+	        this.Index = source["Index"];
+	        this.Quality = source["Quality"];
+	        this.Count = source["Count"];
+	    }
+	}
 	export class ItemRef {
 	    Index: number;
 	    Quality: number;
@@ -132,6 +148,42 @@ export namespace holdings {
 	        this.Quality = source["Quality"];
 	        this.Count = source["Count"];
 	    }
+	}
+	export class ReconcileResult {
+	    Match: boolean;
+	    Extra: ItemCount[];
+	    Missing: ItemCount[];
+	    Report: string;
+	
+	    static createFrom(source: any = {}) {
+	        return new ReconcileResult(source);
+	    }
+	
+	    constructor(source: any = {}) {
+	        if ('string' === typeof source) source = JSON.parse(source);
+	        this.Match = source["Match"];
+	        this.Extra = this.convertValues(source["Extra"], ItemCount);
+	        this.Missing = this.convertValues(source["Missing"], ItemCount);
+	        this.Report = source["Report"];
+	    }
+	
+		convertValues(a: any, classs: any, asMap: boolean = false): any {
+		    if (!a) {
+		        return a;
+		    }
+		    if (a.slice && a.map) {
+		        return (a as any[]).map(elem => this.convertValues(elem, classs));
+		    } else if ("object" === typeof a) {
+		        if (asMap) {
+		            for (const key of Object.keys(a)) {
+		                a[key] = new classs(a[key]);
+		            }
+		            return a;
+		        }
+		        return new classs(a);
+		    }
+		    return a;
+		}
 	}
 	export class SlotItem {
 	    ObjID: number;
