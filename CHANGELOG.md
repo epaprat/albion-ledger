@@ -5,6 +5,31 @@ All notable changes to Albion Ledger are documented here. The format follows
 [Semantic Versioning](https://semver.org/). Pre-1.0, minor versions may still
 change the public surface.
 
+## [0.1.4] — 2026-07-13
+
+Track every earning at a glance, and count the ones that were quietly going missing.
+
+### Added
+
+- **Flow earnings dashboard** — the Flow screen now leads with your session at a glance:
+  for each stream (silver, loot, gather, fame) and combined, it shows the total earned so
+  far, a smoothed "now" rate that reflects how fast you're earning this minute, and your
+  session average — side by side, in one consistent reading. The "now" rate rises when a
+  spot pays off and eases back when you stop, so a single big drop never fakes a sustained
+  figure. Fame stays its own number, never mixed into silver.
+
+### Fixed
+
+- **Gathered resources now count when the app opens mid-session.** Before, if the app was
+  started while you were already out gathering (without crossing a zone), your harvests were
+  silently dropped and only fame counted. The app now identifies you from your own progress
+  stream, so gather (and silver) track immediately.
+- **Bank holdings no longer under-count.** Resources stacked across several bank slots are
+  now summed instead of keeping only the last slot, and stack counts refresh from the game's
+  own overview instead of a stale figure — so net worth reflects what the bank actually holds.
+
+[0.1.4]: https://github.com/epaprat/albion-ledger/releases/tag/v0.1.4
+
 ## [0.1.3] — 2026-07-11
 
 Picks up where you left off — the app now opens with your last-known data instead
