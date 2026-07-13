@@ -161,6 +161,18 @@ func (p *Pipeline) specSelfMatches(params map[byte]interface{}) bool {
 	// another player's. Before the first Join sets selfObjID, trust it (else the
 	// login-burst E:154, which can precede op-2, would be dropped and the panel would
 	// stay empty until the next zone change). Once self is known, filter strictly.
+	if p.selfObjID == 0 && self > 0 {
+		// ADOPT it as our object id (022 fix): a Join only fires at login / zone-change, so a
+		// mid-session start (e.g. a pure gathering run without crossing a portal) leaves self
+		// unknown — and self-gated earnings (gather, silver) are then silently dropped while
+		// fame still counts (live-seen 2026-07-12). The board's k0 is the same object id the
+		// Join would set, so bootstrap from it; a later Join refines name + re-seeds the board.
+		p.selfObjID = self
+		p.sink.SetSelf(self, "")
+		if p.debug {
+			log.Printf("[spec] self bootstrapped from Destiny Board k0=%d (no Join yet)", self)
+		}
+	}
 	return p.selfObjID == 0 || self == p.selfObjID
 }
 

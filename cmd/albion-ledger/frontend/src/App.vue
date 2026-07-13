@@ -3,7 +3,7 @@ import { ref, computed, onMounted } from 'vue'
 import HoldingsPanel from './components/HoldingsPanel.vue'
 import TradesPanel from './components/TradesPanel.vue'
 import FlowPanel from './components/FlowPanel.vue'
-import SessionSummaryBar from './components/SessionSummaryBar.vue'
+import SessionDashboard from './components/SessionDashboard.vue'
 import { fmt, compact, tierLabel, qLabel, srcText } from './format.js'
 import { useTable } from './composables/useTable.js'
 import StateBlock from './components/StateBlock.vue'
@@ -227,7 +227,7 @@ onMounted(async () => {
     <main>
       <!-- FLOW (earnings) -->
       <template v-if="tab === 'flow'">
-        <SessionSummaryBar :summary="flowSummary" />
+        <SessionDashboard :summary="flowSummary" />
         <FlowPanel
           :events="flowEvents" :gather="flowGather" :loot="flowLoot"
           :zones="flowZones" :zone-window="zoneWindow" :encrypted="encrypted"

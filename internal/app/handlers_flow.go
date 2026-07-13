@@ -43,7 +43,11 @@ func handleSilver(p *Pipeline, _ probe.Kind, _ int, params map[byte]interface{})
 func handleGatherFishing(p *Pipeline, _ probe.Kind, code int, params map[byte]interface{}) {
 	switch code {
 	case 61:
-		if gatherer, itemID, amount, ok := capture.HarvestEvent(params); ok && p.isSelfObj(gatherer) {
+		gatherer, itemID, amount, ok := capture.HarvestEvent(params)
+		if ok && !p.isSelfObj(gatherer) && p.debug {
+			log.Printf("[flow] harvest DROPPED (self unknown/other): gatherer=%d self=%d item=%d amount=%d", gatherer, p.selfObjID, itemID, amount)
+		}
+		if ok && p.isSelfObj(gatherer) {
 			// Each harvest tick on the SAME node is a distinct gain (a node yields
 			// several charges), so the dedup id must be per-tick unique — keying by
 			// node+item collapsed multiple charges into one (~3× undercount). Photon

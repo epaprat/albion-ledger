@@ -331,3 +331,112 @@ func TestFlowMidSessionPromotion(t *testing.T) {
 		t.Fatalf("second drain must be empty, got %d", len(d))
 	}
 }
+
+// ── 022 earnings dashboard: EMA "now" rate + per-stream figures ──────────────
+
+// T004: a steady earning pace makes the "now" rate converge toward the true rate (≈ the
+// session average), and the per-stream figures separate correctly.
+func TestNowRateConvergesToSteadyPace(t *testing.T) {
+	l, _ := newLedger()
+	// 100 silver every 1s for 10 minutes → true rate 100/1000ms = 360k/h.
+	var ts int64 = 1000
+	for i := 0; i < 600; i++ {
+		l.IngestSilver("s"+strconv.Itoa(i), 100, ts, "mob")
+		ts += 1000
+	}
+	s := l.Summary(ts)
+	const want = 360_000
+	if s.SilverNowPerHour < want*70/100 || s.SilverNowPerHour > want*130/100 {
+		t.Fatalf("now must converge near the steady rate %d, got %d", want, s.SilverNowPerHour)
+	}
+	if s.SilverAvgPerHour < want*80/100 || s.SilverAvgPerHour > want*120/100 {
+		t.Fatalf("avg must be near the steady rate %d, got %d", want, s.SilverAvgPerHour)
+	}
+}
+
+// T004: a single large pickup lifts "now" well above the average, then decays back toward it
+// without ever presenting the one-off as the sustained figure.
+func TestNowRateSpikeDecays(t *testing.T) {
+	l, _ := newLedger()
+	l.IngestSilver("base", 1000, 1000, "mob")          // small baseline
+	before := l.Summary(120_000).SilverNowPerHour      // just before the spike
+	l.IngestSilver("spike", 5_000_000, 120_000, "mob") // huge one-off at t=2min
+	atSpike := l.Summary(121_000).SilverNowPerHour     // right after the spike
+	if atSpike <= before {
+		t.Fatalf("now must rise on a spike: before=%d at-spike=%d", before, atSpike)
+	}
+	// A 5M one-off must NOT read as a multi-hundred-million/h sustained rate: the EMA caps its
+	// instantaneous contribution near value/tau (~42M/h), far below the naive avg that would
+	// extrapolate 5M-over-2min to ~150M/h (FR-005 — the whole point of smoothing).
+	if atSpike > 60_000_000 {
+		t.Fatalf("a lone spike must not present as an implausible sustained rate, got %d", atSpike)
+	}
+	later := l.Summary(121_000 + 15*60_000).SilverNowPerHour // 15 min later, no new earnings
+	if later >= atSpike {
+		t.Fatalf("now must decay after the spike: at-spike=%d, 15min-later=%d", atSpike, later)
+	}
+}
+
+// T004: with no recent earnings the "now" rate decays toward zero (idle), while totals hold.
+func TestNowRateIdleDecaysToZero(t *testing.T) {
+	l, _ := newLedger()
+	l.IngestSilver("s1", 500_000, 1000, "mob")
+	l.IngestSilver("s2", 500_000, 61_000, "mob") // ~1min so rateReady
+	base := l.Summary(61_000).SilverNowPerHour
+	idle := l.Summary(61_000 + 60*60_000).SilverNowPerHour // 1 hour idle
+	if base <= 0 {
+		t.Fatalf("precondition: now must be positive while earning, got %d", base)
+	}
+	if idle > base/100 {
+		t.Fatalf("now must decay toward zero after long idle: base=%d idle=%d", base, idle)
+	}
+	if l.Summary(61_000+60*60_000).NetSilver != 1_000_000 {
+		t.Fatal("total must hold through idle")
+	}
+}
+
+// T005: per-stream totals & averages separate correctly and fame never enters silver.
+func TestPerStreamSeparation(t *testing.T) {
+	l, book := newLedger()
+	book.SetEMV(920, 0, 10, 500)                                 // loot item worth 10
+	book.SetEMV(837, 0, 20, 500)                                 // gather item worth 20
+	l.IngestSilver("s", 1000, 1000, "mob")                       // silver-only 1000
+	l.IngestLoot("l", model.Item{Index: 920}, 3, 1000, "corpse") // loot 30
+	l.IngestGather("g", model.Item{Index: 837}, 2, 1000, "node") // gather 40
+	l.IngestFame("f", 5000, 1000)                                // fame 5000
+	// Read at exactly 60s active elapsed (rateReady, still within the idle window): avg /h =
+	// total × 3_600_000 / 60_000 = total × 60.
+	s := l.Summary(1000 + 60_000)
+
+	if s.SilverValue != 1000 {
+		t.Fatalf("silver-only total = %d, want 1000 (never loot/gather)", s.SilverValue)
+	}
+	if s.LootValue != 30 || s.GatherValue != 40 {
+		t.Fatalf("loot/gather totals wrong: loot=%d gather=%d", s.LootValue, s.GatherValue)
+	}
+	if s.NetSilver != 1070 {
+		t.Fatalf("combined = %d, want 1070 (silver+loot+gather, no fame)", s.NetSilver)
+	}
+	if s.Fame != 5000 {
+		t.Fatalf("fame = %d, want 5000", s.Fame)
+	}
+	if s.SilverAvgPerHour != 60000 || s.LootAvgPerHour != 1800 || s.GatherAvgPerHour != 2400 {
+		t.Fatalf("per-stream avg wrong (×60): s=%d l=%d g=%d", s.SilverAvgPerHour, s.LootAvgPerHour, s.GatherAvgPerHour)
+	}
+}
+
+// T004: below the measuring gate (<60s active) all rates read 0; totals still show.
+func TestRatesMeasuringGate(t *testing.T) {
+	l, _ := newLedger()
+	l.IngestSilver("s", 5000, 1000, "mob")
+	s := l.Summary(1000 + 30_000) // 30s
+	if s.RateReady {
+		t.Fatal("rate must not be ready before 60s")
+	}
+	if s.SilverNowPerHour != 0 || s.SilverAvgPerHour != 0 || s.NowPerHour != 0 {
+		t.Fatalf("all rates must be 0 while measuring, got now=%d avg=%d combined=%d", s.SilverNowPerHour, s.SilverAvgPerHour, s.NowPerHour)
+	}
+	if s.SilverValue != 5000 {
+		t.Fatalf("total must show even while measuring, got %d", s.SilverValue)
+	}
+}

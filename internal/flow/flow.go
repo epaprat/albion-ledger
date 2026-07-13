@@ -6,6 +6,7 @@
 package flow
 
 import (
+	"math"
 	"sort"
 	"sync"
 
@@ -13,6 +14,42 @@ import (
 	"github.com/epaprat/albion-ledger/internal/domain/model"
 	"github.com/epaprat/albion-ledger/internal/port"
 )
+
+// emaHalfLifeMS is the "now" rate's smoothing half-life (022, research D1): recent
+// earnings dominate but a single pickup can't spike the sustained figure. emaTau converts
+// the half-life to the exponential time constant (tau = halfLife / ln2).
+const emaHalfLifeMS = 5 * 60 * 1000
+
+var emaTau = float64(emaHalfLifeMS) / math.Ln2
+
+// ema is a per-stream exponential moving average of the earning RATE (value-per-ms). Each
+// event decays the running rate by the elapsed time then adds an impulse v/tau (which
+// integrates to exactly v as it decays); reads decay to "now" WITHOUT mutating, so an idle
+// stream's rate falls toward zero. See research.md D1.
+type ema struct {
+	rate   float64
+	lastMS int64
+}
+
+func (e *ema) add(v int64, ts int64) {
+	if e.lastMS != 0 && ts > e.lastMS {
+		e.rate *= math.Exp(-float64(ts-e.lastMS) / emaTau)
+	}
+	e.rate += float64(v) / emaTau
+	e.lastMS = ts
+}
+
+// perHour reports the rate decayed to now, in per-hour units. 0 before any event.
+func (e *ema) perHour(now int64) int64 {
+	if e.lastMS == 0 {
+		return 0
+	}
+	r := e.rate
+	if now > e.lastMS {
+		r *= math.Exp(-float64(now-e.lastMS) / emaTau)
+	}
+	return int64(r * 3_600_000)
+}
 
 const (
 	// DefaultIdleMS auto-closes a session after this long with no earning (idle time
@@ -79,6 +116,9 @@ type Ledger struct {
 	unvaluedCount  int
 	eventCount     int
 
+	// Per-stream "now" rate accumulators (022): silver-only, loot, gather, fame.
+	emaSilver, emaLoot, emaGather, emaFame ema
+
 	// pendingCompleted holds sessions that closed (idle-timeout → a new session started)
 	// and are waiting to be persisted to the permanent history (020 US4). Bounded: a slow
 	// or absent drainer must not grow it without limit (Principle XI).
@@ -139,6 +179,7 @@ func (l *Ledger) IngestSilver(id string, net int64, ts int64, source string) *mo
 		return nil
 	}
 	l.netSilver += net
+	l.emaSilver.add(net, ts) // silver-only "now" rate (022)
 	e := &model.FlowEvent{ID: id, Kind: model.FlowSilver, TS: ts, Count: 1, Silver: net, Valued: true, Source: source, Zone: l.zone}
 	l.push(e)
 	return e
@@ -171,8 +212,10 @@ func (l *Ledger) ingestItem(id string, kind model.FlowKind, item model.Item, cou
 		silver = v.Amount * int64(count)
 		if kind == model.FlowLoot {
 			l.lootValue += silver
+			l.emaLoot.add(silver, ts) // loot "now" rate (022)
 		} else {
 			l.gatherValue += silver
+			l.emaGather.add(silver, ts) // gather "now" rate (022)
 		}
 		l.netSilver += silver
 	} else {
@@ -232,6 +275,7 @@ func (l *Ledger) IngestFame(id string, fame int64, ts int64) *model.FlowEvent {
 		return nil
 	}
 	l.fame += fame
+	l.emaFame.add(fame, ts) // fame "now" rate (022)
 	e := &model.FlowEvent{ID: id, Kind: model.FlowFame, TS: ts, Count: 1, Fame: fame, Valued: true, Zone: l.zone}
 	l.push(e)
 	return e
@@ -294,10 +338,22 @@ func (l *Ledger) Summary(now int64) model.SessionSummary {
 		elapsed = 0
 	}
 	rateReady := elapsed >= rateMinMS
+	silverValue := l.netSilver - l.lootValue - l.gatherValue // silver-only (022)
 	var sph, fph int64
+	var silverAvg, lootAvg, gatherAvg int64
+	var silverNow, lootNow, gatherNow, fameNow, combinedNow int64
 	if rateReady {
 		sph = l.netSilver * 3_600_000 / elapsed
 		fph = l.fame * 3_600_000 / elapsed
+		silverAvg = silverValue * 3_600_000 / elapsed
+		lootAvg = l.lootValue * 3_600_000 / elapsed
+		gatherAvg = l.gatherValue * 3_600_000 / elapsed
+		// "now" rates decay to the read time WITHOUT mutating the accumulators (022).
+		silverNow = l.emaSilver.perHour(now)
+		lootNow = l.emaLoot.perHour(now)
+		gatherNow = l.emaGather.perHour(now)
+		fameNow = l.emaFame.perHour(now)
+		combinedNow = silverNow + lootNow + gatherNow // fame stays separate (SC-005)
 	}
 	return model.SessionSummary{
 		SelfKnown: l.selfObjID > 0,
@@ -306,6 +362,10 @@ func (l *Ledger) Summary(now int64) model.SessionSummary {
 		LootValue: l.lootValue, GatherValue: l.gatherValue,
 		Fame: l.fame, FamePerHour: fph, RateReady: rateReady,
 		UnvaluedCount: l.unvaluedCount, EventCount: l.eventCount,
+		SilverValue: silverValue, SilverAvgPerHour: silverAvg,
+		LootAvgPerHour: lootAvg, GatherAvgPerHour: gatherAvg,
+		SilverNowPerHour: silverNow, LootNowPerHour: lootNow,
+		GatherNowPerHour: gatherNow, FameNowPerHour: fameNow, NowPerHour: combinedNow,
 	}
 }
 

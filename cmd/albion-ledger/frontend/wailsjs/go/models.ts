@@ -661,6 +661,15 @@ export namespace model {
 	    rateReady: boolean;
 	    unvaluedCount: number;
 	    eventCount: number;
+	    silverValue: number;
+	    silverAvgPerHour: number;
+	    lootAvgPerHour: number;
+	    gatherAvgPerHour: number;
+	    silverNowPerHour: number;
+	    lootNowPerHour: number;
+	    gatherNowPerHour: number;
+	    fameNowPerHour: number;
+	    nowPerHour: number;
 	
 	    static createFrom(source: any = {}) {
 	        return new SessionSummary(source);
@@ -681,6 +690,15 @@ export namespace model {
 	        this.rateReady = source["rateReady"];
 	        this.unvaluedCount = source["unvaluedCount"];
 	        this.eventCount = source["eventCount"];
+	        this.silverValue = source["silverValue"];
+	        this.silverAvgPerHour = source["silverAvgPerHour"];
+	        this.lootAvgPerHour = source["lootAvgPerHour"];
+	        this.gatherAvgPerHour = source["gatherAvgPerHour"];
+	        this.silverNowPerHour = source["silverNowPerHour"];
+	        this.lootNowPerHour = source["lootNowPerHour"];
+	        this.gatherNowPerHour = source["gatherNowPerHour"];
+	        this.fameNowPerHour = source["fameNowPerHour"];
+	        this.nowPerHour = source["nowPerHour"];
 	    }
 	}
 	
