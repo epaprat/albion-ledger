@@ -118,6 +118,18 @@ export function ListItems() {
   return window['go']['wailsadapter']['Service']['ListItems']();
 }
 
+export function ReconcileBankTab(arg1, arg2, arg3) {
+  return window['go']['wailsadapter']['Service']['ReconcileBankTab'](arg1, arg2, arg3);
+}
+
+export function ReconcileEquipped(arg1) {
+  return window['go']['wailsadapter']['Service']['ReconcileEquipped'](arg1);
+}
+
+export function ReconcileInventory(arg1) {
+  return window['go']['wailsadapter']['Service']['ReconcileInventory'](arg1);
+}
+
 export function RefreshExternalPrices(arg1, arg2) {
   return window['go']['wailsadapter']['Service']['RefreshExternalPrices'](arg1, arg2);
 }

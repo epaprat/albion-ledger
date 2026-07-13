@@ -43,6 +43,20 @@ type SessionSummary struct {
 	RateReady     bool  `json:"rateReady"`     // elapsed ≥ 60s (SC-006)
 	UnvaluedCount int   `json:"unvaluedCount"` // loot/gather items with unknown value
 	EventCount    int   `json:"eventCount"`    // total flow events this session
+
+	// Per-stream earnings for the dashboard (022). SilverValue is silver-only
+	// (NetSilver − loot − gather); *AvgPerHour is total/activeHours; *NowPerHour is a
+	// smoothed EMA of the recent rate that decays when earning stops (all 0 until RateReady).
+	// Fame stays a separate metric — never summed into any silver field (SC-005).
+	SilverValue      int64 `json:"silverValue"`      // silver-only session total
+	SilverAvgPerHour int64 `json:"silverAvgPerHour"` // silver-only average /h
+	LootAvgPerHour   int64 `json:"lootAvgPerHour"`   // loot average /h
+	GatherAvgPerHour int64 `json:"gatherAvgPerHour"` // gather average /h
+	SilverNowPerHour int64 `json:"silverNowPerHour"` // silver-only EMA "now" /h
+	LootNowPerHour   int64 `json:"lootNowPerHour"`   // loot EMA "now" /h
+	GatherNowPerHour int64 `json:"gatherNowPerHour"` // gather EMA "now" /h
+	FameNowPerHour   int64 `json:"fameNowPerHour"`   // fame EMA "now" /h
+	NowPerHour       int64 `json:"nowPerHour"`       // combined silver+loot+gather EMA "now" /h
 }
 
 // ZoneActivityStatView is one activity-kind row of a zone's breakdown (006). PerHour

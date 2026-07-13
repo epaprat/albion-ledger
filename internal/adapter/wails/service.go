@@ -108,6 +108,17 @@ func NewService(cat port.Catalog, book *valuation.Book, val port.Valuer, emit Em
 // dedup resolution is traced (holdings double-count investigation).
 func (s *Service) SetHoldingsDebug(v bool) { s.agg.SetDebug(v) }
 
+// Ground-truth reconciliation (021): forward to the aggregator's read-only self-check.
+func (s *Service) ReconcileInventory(wire []holdings.ItemCount) holdings.ReconcileResult {
+	return s.agg.ReconcileInventory(wire)
+}
+func (s *Service) ReconcileEquipped(wire []holdings.ItemCount) holdings.ReconcileResult {
+	return s.agg.ReconcileEquipped(wire)
+}
+func (s *Service) ReconcileBankTab(city, tab string, wire []holdings.ItemCount) holdings.ReconcileResult {
+	return s.agg.ReconcileBankTab(city, tab, wire)
+}
+
 // IngestEMV records an item's estimated value and refreshes its view row. A newly
 // known value also back-fills any flow loot/gather rows that were unvalued (FR-009).
 func (s *Service) IngestEMV(index, quality int, value, asOf int64) {

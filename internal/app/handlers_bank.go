@@ -177,4 +177,12 @@ func handleBankTabContent(p *Pipeline, _ probe.Kind, _ int, params map[byte]inte
 	if p.debug {
 		log.Printf("[bank] content tab=%s city=%q name=%q rows=%d valued=%d", tabGUID, meta.city, meta.name, len(rows), valued)
 	}
+	// Ground-truth reconciliation (021): R:518 IS the game's authoritative view of this tab.
+	// The app's deduped view of the same (city, tab) must equal it — a summary counted next
+	// to its physical peer, or a foreign container leaking in, surfaces as a [RECON] line.
+	if p.reconcile {
+		if res := p.sink.ReconcileBankTab(meta.city, meta.name, refsToCounts(refs)); !res.Match {
+			log.Printf("[RECON] %s", res.Report)
+		}
+	}
 }
