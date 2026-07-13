@@ -2,6 +2,7 @@ package capture
 
 import (
 	"context"
+	"fmt"
 	"os"
 	"sync/atomic"
 	"time"
@@ -52,6 +53,11 @@ func (l *LoopReplay) Status() model.CaptureStatus { return l.status }
 
 // Packets streams the looped payloads, closing when a target is reached or ctx is done.
 func (l *LoopReplay) Packets(ctx context.Context) (<-chan []byte, error) {
+	// A run with no stop target would loop forever — reject it loudly rather than
+	// hang the consumer (review 023).
+	if l.targetEvents <= 0 && l.targetDur <= 0 {
+		return nil, fmt.Errorf("loop replay needs a positive event or duration bound")
+	}
 	// Open once up front so a bad path fails loudly before the goroutine starts.
 	f, err := os.Open(l.path)
 	if err != nil {
@@ -68,8 +74,14 @@ func (l *LoopReplay) Packets(ctx context.Context) (<-chan []byte, error) {
 				return
 			}
 			atomic.AddInt64(&l.iterations, 1)
+			before := atomic.LoadInt64(&l.emitted)
 			done, err := l.emitOnce(ctx, out, start)
 			if err != nil || done {
+				return
+			}
+			// A full pass that emitted nothing can never reach an event target —
+			// stop instead of re-opening the file forever (review 023).
+			if atomic.LoadInt64(&l.emitted) == before {
 				return
 			}
 		}

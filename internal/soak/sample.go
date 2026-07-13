@@ -11,9 +11,5 @@ func Sample(x int64) HeapSample {
 	runtime.GC()
 	var m runtime.MemStats
 	runtime.ReadMemStats(&m)
-	return HeapSample{
-		X:              x,
-		HeapInuseBytes: int64(m.HeapInuse),
-		HeapAllocBytes: int64(m.HeapAlloc),
-	}
+	return HeapSample{X: x, HeapInuseBytes: int64(m.HeapInuse)}
 }

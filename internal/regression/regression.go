@@ -10,6 +10,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"os"
+	"path/filepath"
 
 	"github.com/epaprat/albion-ledger/internal/domain/model"
 )
@@ -65,12 +66,10 @@ type AggregateDiff struct {
 
 // RegressionResult is the outcome of a diff (data-model.md).
 type RegressionResult struct {
-	Baseline    AggregateSnapshot
-	Current     AggregateSnapshot
-	Diffs       []AggregateDiff
-	Regressed   bool
-	Established bool
-	FirstRun    bool // baseline was absent → Current written as the initial baseline
+	Baseline  AggregateSnapshot
+	Current   AggregateSnapshot
+	Diffs     []AggregateDiff
+	Regressed bool
 }
 
 // fields returns the (name,value) pairs in canonical order for diffing.
@@ -123,13 +122,19 @@ func LoadBaseline(path string) (snap AggregateSnapshot, found bool, err error) {
 	return snap, true, nil
 }
 
-// Establish writes snap as the baseline at path (canonical, indented JSON). This is
-// the ONLY function that writes the baseline; a mismatch never calls it.
+// Establish writes snap as the baseline at path (canonical, indented JSON),
+// creating the parent directory if needed. This is the ONLY function that writes
+// the baseline; a mismatch never calls it.
 func Establish(path string, snap AggregateSnapshot) error {
 	b, err := json.MarshalIndent(snap, "", "  ")
 	if err != nil {
 		return err
 	}
 	b = append(b, '\n')
+	if dir := filepath.Dir(path); dir != "" && dir != "." {
+		if err := os.MkdirAll(dir, 0o755); err != nil {
+			return err
+		}
+	}
 	return os.WriteFile(path, b, 0o644)
 }

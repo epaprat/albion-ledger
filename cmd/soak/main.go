@@ -25,7 +25,7 @@ func main() {
 	budgetMB := flag.Int("budget-mb", 256, "soak: peak HeapInuse budget in MiB")
 	maxSlopeMB := flag.Float64("max-slope", 0.5, "soak: max growth slope in MiB/min")
 	heapOut := flag.String("heap-out", "", "soak: optional path to write a pprof heap profile")
-	baseline := flag.String("baseline", "internal/regression/testdata/baseline.json", "regress: baseline json path")
+	baseline := flag.String("baseline", "internal/app/testdata/regression_baseline.json", "regress: baseline json path (shared with the go-test gate)")
 	update := flag.Bool("update", false, "regress: (re)establish the baseline from this run")
 	flag.Parse()
 

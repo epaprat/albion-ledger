@@ -19,7 +19,6 @@ import "fmt"
 type HeapSample struct {
 	X              int64 // progress coordinate (ms elapsed, or events processed)
 	HeapInuseBytes int64 // runtime.MemStats.HeapInuse after GC
-	HeapAllocBytes int64 // runtime.MemStats.HeapAlloc after GC
 }
 
 // minSlopeSamples is the fewest samples from which a growth slope is trusted. A
@@ -36,9 +35,9 @@ type SoakReport struct {
 	BudgetBytes    int64
 	MaxSlope       float64 // bytes per one X unit
 	LoopIterations int
-	Truncated      bool
 	Pass           bool
-	FailReason     string
+	Inconclusive   bool   // could not render a slope verdict (too few samples / no X spread)
+	FailReason     string // non-empty when !Pass (names the breach or the inconclusive reason)
 }
 
 // Analyze computes peak + growth slope over the samples and renders the verdict.
@@ -53,6 +52,7 @@ func Analyze(samples []HeapSample, budgetBytes int64, maxSlope float64) SoakRepo
 		MaxSlope:    maxSlope,
 	}
 	if len(samples) < 2 {
+		r.Inconclusive = true
 		r.FailReason = "inconclusive: fewer than 2 heap samples"
 		if len(samples) == 1 {
 			r.PeakHeapBytes = samples[0].HeapInuseBytes
@@ -74,12 +74,14 @@ func Analyze(samples []HeapSample, budgetBytes int64, maxSlope float64) SoakRepo
 		return r
 	}
 	if len(samples) < minSlopeSamples {
+		r.Inconclusive = true
 		r.FailReason = fmt.Sprintf("inconclusive: %d samples, need >= %d to judge growth (run longer / more loops)",
 			len(samples), minSlopeSamples)
 		return r
 	}
 	slope, ok := slopePerX(samples)
 	if !ok {
+		r.Inconclusive = true
 		r.FailReason = "inconclusive: all samples share one progress coordinate (no growth axis)"
 		return r
 	}
