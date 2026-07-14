@@ -66,6 +66,7 @@ func main() {
 	codesPath := flag.String("codes", "", "override code map file (data/codes.json format)")
 	debugFlowFlag := flag.Bool("debugflow", false, "log flow (silver/loot/gather/fame) attribution to stderr")
 	reconcileFlag := flag.Bool("reconcile", false, "self-check: log [RECON] when holdings diverge from the authoritative wire snapshot (works with -replay)")
+	bagProbeFlag := flag.Bool("bagprobe", false, "self-check: log [BAGMOVE] when an inventory object id is reused for a different item (phantom bag-move probe, 023)")
 	noExternal := flag.Bool("noexternal", false, "disable the community price feed (AODP) — no outbound HTTP")
 	specNodesPath := flag.String("specnodes", "", "override Destiny Board node-name catalog (data/specnodes.json format)")
 	flag.Parse()
@@ -110,6 +111,9 @@ func main() {
 	pipe := app.New(svc, probe.New(reg), locs, specCat, nowMS, *debugFlowFlag)
 	svc.SetHoldingsDebug(*debugFlowFlag)
 	pipe.SetReconcile(*reconcileFlag)
+	if *bagProbeFlag {
+		pipe.EnableBagProbe() // live phantom bag-move probe (023 US2); [BAGMOVE] on reuse + summary at shutdown
+	}
 
 	// Local-first store (Principle VIII): earnings events are persisted to SQLite as
 	// they arrive; the in-memory ledger stays bounded (Principle XI). Best-effort — if
@@ -270,6 +274,16 @@ func main() {
 			}()
 		},
 		OnShutdown: func(context.Context) {
+			if *bagProbeFlag {
+				// Explicit end-of-session verdict so a clean run reads observed=0
+				// rather than silence (023 FR-005).
+				res := pipe.BagProbeResult()
+				if res.Observed == 0 {
+					log.Printf("[BAGMOVE] observed=0 reuse events over %d declarations — no phantom bag-move this session", res.Declarations)
+				} else {
+					log.Printf("[BAGMOVE] observed=%d reuse events over %d declarations", res.Observed, res.Declarations)
+				}
+			}
 			if flowStore != nil {
 				svc.StopFlowPersistence() // drain the final batch before the DB closes
 				if err := flowStore.SaveEMVBook(context.Background(), book.SnapshotEMV()); err != nil {
