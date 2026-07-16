@@ -219,7 +219,7 @@ func main() {
 				svc.StartFlowPersistence(ctx, flowStore, sessionID)
 				svc.SetFlowReader(flowStore, sessionID) // zone analytics read side (006)
 			}
-			go runCapture(ctx, *iface, *replay, pipe, svc)
+			go runCapture(ctx, *iface, *replay, pipe, svc, *debugFlowFlag)
 			// Community price base layer (AODP, 010): fills valuation gaps for held
 			// items shortly after startup, then hourly. In-game observations always
 			// override; network failures degrade silently.
@@ -313,7 +313,7 @@ func main() {
 // runCapture drives capture → Photon parse → pipeline dispatch, and periodically
 // pushes capture status to the UI. All classification/handler glue lives in
 // internal/app (feature 009); this function is setup only.
-func runCapture(ctx context.Context, iface, replay string, pipe *app.Pipeline, svc *wailsadapter.Service) {
+func runCapture(ctx context.Context, iface, replay string, pipe *app.Pipeline, svc *wailsadapter.Service, debug bool) {
 	var src port.PacketSource
 	var err error
 	if replay != "" {
@@ -348,6 +348,14 @@ func runCapture(ctx context.Context, iface, replay string, pipe *app.Pipeline, s
 				})
 				if ticks++; ticks%30 == 0 {
 					svc.EmitFlowNow()
+				}
+				// Capture-health heartbeat to stderr so a "nothing is flowing"
+				// session is diagnosable from the log alone: 0 decoded → wrong
+				// interface / not in-game; high encrypted → undecodable stream
+				// (023 follow-up). Gated behind -debugflow to stay quiet by default.
+				if debug && ticks%10 == 0 {
+					log.Printf("[CAPTURE] iface=%s gameServer=%q decoded=%d encrypted=%.0f%%",
+						st.Interface, st.GameServer, st.Decoded, st.EncryptedRate*100)
 				}
 			}
 		}
