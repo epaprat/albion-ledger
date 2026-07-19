@@ -18,6 +18,7 @@ import (
 	"sync"
 
 	"github.com/epaprat/albion-ledger/internal/adapter/capture"
+	"github.com/epaprat/albion-ledger/internal/bagmove"
 	"github.com/epaprat/albion-ledger/internal/boundedmap"
 	"github.com/epaprat/albion-ledger/internal/domain/model"
 	"github.com/epaprat/albion-ledger/internal/domain/probe"
@@ -176,6 +177,11 @@ type Pipeline struct {
 	// Both offers (sell) and requests (buy) are cached; valuation is still fed offers only.
 	// Bounded.
 	offerCache *boundedmap.Map[int64, orderInfo]
+
+	// bagProbe (023, US2): read-only phantom bag-move detector. nil by default — enabled
+	// only via EnableBagProbe (the -bagprobe harness). It observes object-id reuse at the
+	// declaration site and logs [BAGMOVE]; it mutates no pipeline state (FR-006).
+	bagProbe *bagmove.Detector
 }
 
 // orderInfo is one cached marketplace order: item, unit price (×10000), and side (018).
@@ -237,6 +243,23 @@ const mailInfoCap = 4096
 // snapshot the app diffs its own holdings view and logs any divergence (-reconcile). Kept
 // off the New signature so it composes with -debugflow without churning every test caller.
 func (p *Pipeline) SetReconcile(v bool) { p.reconcile = v }
+
+// EnableBagProbe turns on the read-only phantom bag-move detector (023, US2). Off
+// by default; only the -bagprobe harness calls this. Idempotent.
+func (p *Pipeline) EnableBagProbe() {
+	if p.bagProbe == nil {
+		p.bagProbe = bagmove.New(0)
+	}
+}
+
+// BagProbeResult returns the detector summary, or a zero result if the probe was
+// never enabled (Observed==0, an explicit "not observed").
+func (p *Pipeline) BagProbeResult() bagmove.DetectorResult {
+	if p.bagProbe == nil {
+		return bagmove.DetectorResult{}
+	}
+	return p.bagProbe.Result()
+}
 
 // New wires a Pipeline. locs may be nil (zones stay raw cluster ids).
 func New(sink Sink, clf *probe.Classifier, locs *locations.Locations, specNames SpecResolver, nowMS func() int64, debug bool) *Pipeline {
@@ -615,6 +638,13 @@ func (p *Pipeline) registerNewItem(code int, params map[byte]interface{}) {
 	ref := holdings.ItemRef{Index: idx, Quality: quality, Count: count}
 	p.objReg.Put(objID, ref)
 	now := p.nowMS()
+	if p.bagProbe != nil { // 023 US2: read-only object-id reuse probe (no state change)
+		if rec := p.bagProbe.Observe(objID, ref, now); rec != nil {
+			log.Printf("[BAGMOVE] objID=%d prior={idx:%d q:%d n:%d} new={idx:%d q:%d n:%d} firstSeen=%d reuse=%d",
+				rec.ObjID, rec.PriorRef.Index, rec.PriorRef.Quality, rec.PriorRef.Count,
+				rec.NewRef.Index, rec.NewRef.Quality, rec.NewRef.Count, rec.FirstSeenMS, rec.ReuseMS)
+		}
+	}
 	pendGUID, invPending := p.pendingInv.Take(objID, now)        // own-state slot awaiting this declaration
 	source, lootPending := p.pendingLootResolve.Take(objID, now) // loot hit awaiting it (TTL-guarded:
 	target, putPending := p.pendingPuts.Take(objID, now)         // ids are reused across zones — a stale
